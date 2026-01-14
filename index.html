@@ -929,10 +929,13 @@ async function init() {
   initTheme();
   initNavigation();
   initModal();
-  await loadWardInfo();
+
+  // Load everything in parallel for faster page load
+  // Program from Firebase is fast, ward info from Google Sheets is slow
   const results = await Promise.allSettled([
     loadProgram(),
-    loadEvents()
+    loadEvents(),
+    loadWardInfo()
   ]);
   results.forEach((result) => {
     if (result.status === 'rejected') {
