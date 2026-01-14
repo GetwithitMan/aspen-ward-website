@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aspen Ward - Colorado</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            background: linear-gradient(135deg, #f7d7a3, #d4e4bc);
+            color: #333;
+        }
+        .container {
+            text-align: center;
+            padding: 30px;
+            background-color: rgba(255, 255, 255, 0.9);
+            border-radius: 15px;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+            max-width: 500px;
+        }
+        h1 {
+            color: #8b3a3a;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        p {
+            font-size: 1.2em;
+            margin: 10px 0;
+            color: #444;
+        }
+        .logo {
+            width: 150px;
+            margin: 20px 0;
+        }
+        button {
+            padding: 15px 30px;
+            font-size: 1.2em;
+            background-color: #d66d75;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #b55961;
+        }
+        .note {
+            font-style: italic;
+            font-size: 1em;
+            color: #666;
+            margin-top: 20px;
+        }
+        .instructions {
+            font-size: 1em;
+            color: #444;
+            margin-top: 20px;
+        }
+        .instructions img {
+            max-width: 100%;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Aspen Ward - Colorado</h1>
+        <img src="https://storage.googleapis.com/msgsndr/Y17ODAHcaxgHoS9kMX9v/media/680a87879ab62244fd887ceb.png" alt="Church Logo" class="logo">
+        <p>Worship Service: 10:30 AM Every Sunday</p>
+        <button onclick="checkCode()">Join Zoom Meeting</button>
+        <p class="note">To request the password, please reach out to a member of the bishopric.</p>
+        <div class="instructions">
+            <h2>Enable Full Sound for Zoom Meeting</h2>
+            <p><strong>For Desktop/Laptop Users:</strong> Follow these steps to ensure full sound is enabled in Zoom.</p>
+            <img src="https://storage.googleapis.com/msgsndr/Y17ODAHcaxgHoS9kMX9v/media/68989a61efa0f074b074d8c8.png" alt="Desktop Sound Settings">
+            <p><strong>For Mobile Users:</strong> Follow this guide to enable full sound on your phone.</p>
+            <img src="https://storage.googleapis.com/msgsndr/Y17ODAHcaxgHoS9kMX9v/media/68989bc0861757a2c63c7af8.gif" alt="Mobile Sound Settings">
+        </div>
+    </div>
+    <script>
+        function checkCode() {
+            const input = prompt('Enter the code');
+            const zoomLink = 'https://zoom.us/j/98326966066';
+            // Get current date in mmddyyyy format
+            const today = new Date();
+            const month = String(today.getMonth() + 1).padStart(2, '0');
+            const day = String(today.getDate()).padStart(2, '0');
+            const year = today.getFullYear();
+            const correctCode = `${month}${day}${year}`;
+            if (input === correctCode) {
+                window.open(zoomLink, '_blank');
+            } else {
+                alert('Invalid code.');
+            }
+        }
+    </script>
+</body>
+</html>

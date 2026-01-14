@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Aspen Ward Building Room Finder</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      background: linear-gradient(to bottom, #E0F2FE, #F8FAFC); /* Subtle gradient */
+    }
+    .floorplan-container {
+      position: relative;
+      width: 800px;
+      margin: 20px auto;
+      border: 2px solid #ccc;
+      opacity: 0;
+      animation: fadeInFloorplan 1s ease-in-out forwards;
+    }
+    @keyframes fadeInFloorplan {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    .floorplan-container img {
+      width: 100%;
+      display: block;
+    }
+    .room {
+      position: absolute;
+      border: 2px solid transparent;
+      pointer-events: none;
+      transition: border 0.3s;
+    }
+    .highlight {
+      animation: flash-bg 1.5s alternate infinite, flash-border 1.5s alternate infinite;
+      border-radius: 5px;
+    }
+    @keyframes flash-bg {
+      from { background-color: #FF0000; } /* Pure red */
+      to { background-color: #FFC107; } /* Golden yellow */
+    }
+    @keyframes flash-border {
+      from { border-color: #FFFFFF; } /* White border */
+      to { border-color: transparent; }
+    }
+    .room-label {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background-color: rgba(31, 41, 55, 0.6);
+      color: white;
+      font-size: 16px;
+      font-weight: bold;
+      text-align: center;
+      padding: 10px;
+      border-radius: 6px;
+      pointer-events: none;
+      z-index: 10;
+    }
+    .labels {
+      margin: 20px auto;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+      max-width: 800px;
+    }
+    .labels button {
+      margin: 5px;
+      padding: 10px 15px;
+      font-size: 16px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background-color 0.3s, transform 0.2s;
+      animation: pulse 2s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+    }
+    [data-sunday-theme="green"] #sunday-info {
+      color: #047857;
+    }
+    [data-sunday-theme="blue"] #sunday-info {
+      color: #1d4ed8;
+    }
+    [data-sunday-theme="green"] .labels button {
+      background-color: #22C55E;
+    }
+    [data-sunday-theme="green"] .labels button:hover {
+      background-color: #16A34A;
+      animation: none;
+    }
+    [data-sunday-theme="blue"] .labels button {
+      background-color: #4f46e5;
+    }
+    [data-sunday-theme="blue"] .labels button:hover {
+      background-color: #3730a3;
+      animation: none;
+    }
+    .fade-in {
+      display: inline-block;
+      opacity: 0;
+      animation: fadeInText 1.5s ease-in-out forwards;
+    }
+    @keyframes fadeInText {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .tab-button {
+      margin: 0 10px;
+      padding: 12px 20px;
+      font-size: 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      border: none;
+      transition: background-color 0.3s, transform 0.2s;
+    }
+    .tab-button.active {
+      background-color: #3B82F6;
+      color: white;
+    }
+    .tab-button:not(.active) {
+      background-color: #BFDBFE;
+      color: black;
+      border: 1px solid #93C5FD;
+    }
+    .tab-button:hover, .tab-button:focus {
+      transform: scale(1.05);
+    }
+    .tab-button:active {
+      background-color: #2563EB;
+    }
+    .back-to-top {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      width: 50px;
+      height: 50px;
+      background-color: #3B82F6;
+      color: white;
+      border: none;
+      border-radius: 50%;
+      font-size: 24px;
+      cursor: pointer;
+      display: none;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+      transition: transform 0.2s, opacity 0.3s;
+    }
+    .back-to-top:hover, .back-to-top:focus {
+      transform: scale(1.1);
+    }
+    .back-to-top:active {
+      background-color: #2563EB;
+    }
+    .back-to-top.visible {
+      display: block;
+      opacity: 1;
+    }
+  </style>
+</head>
+<body>
+  <div style="text-align: center; margin-bottom: 1rem;">
+    <h1 style="margin-bottom: 0.2em; font-size: 1.8rem; color: #1f2937;">🏢Aspen Ward Building Room Finder</h1>
+    <p id="sunday-info" style="font-size: 1.05rem; margin: 0.8em 0 0.4em; font-weight: 500;"></p>
+    <div style="display: flex; justify-content: center; gap: 2rem; flex-wrap: wrap; font-size: 0.95rem; color: #6b7280; font-style: italic; margin: 0.6em auto 1em; max-width: 600px;">
+      <div>1st & 3rd Sundays:<br><strong>Sunday School</strong></div>
+      <div>2nd & 4th Sundays:<br><strong>Priesthood, Relief Society,<br>Young Men, Young Women</strong></div>
+    </div>
+  </div>
+
+  <div style="margin-bottom: 1rem;">
+    <button id="btn-sunday" class="tab-button active" onclick="switchTab('Sunday School Week')">Sunday School Week</button>
+    <button id="btn-priesthood" class="tab-button" onclick="switchTab('Priesthood RS YM YW')">Priesthood RS YM YW</button>
+  </div>
+  <div class="labels" id="labels"></div>
+  <div class="floorplan-container" id="floorplan">
+    <img src="https://storage.googleapis.com/msgsndr/Y17ODAHcaxgHoS9kMX9v/media/68108f2eeb94a847920987d4.jpeg" alt="Floorplan">
+    <div id="room101" class="room" style="top: 246px; left: 622px; width: 120px; height: 80px;"></div>
+    <div id="room103" class="room" style="top: 332px; left: 656px; width: 87px; height: 52px;"></div>
+    <div id="room104" class="room" style="top: 387px; left: 663px; width: 80px; height: 55px;"></div>
+    <div id="room105" class="room" style="top: 444px; left: 622px; width: 122px; height: 83px;"></div>
+    <div id="room108" class="room" style="top: 639px; left: 618px; width: 122px; height: 87px;"></div>
+    <div id="room109" class="room" style="top: 728px; left: 618px; width: 122px; height: 78px;"></div>
+    <div id="room111" class="room" style="top: 813px; left: 621px; width: 120px; height: 90px;"></div>
+    <div id="room113" class="room" style="top: 906px; left: 633px; width: 108px; height: 84px;"></div>
+    <div id="room114" class="room" style="top: 987px; left: 635px; width: 109px; height: 84px;"></div>
+    <div id="room115" class="room" style="top: 1071px; left: 635px; width: 107px; height: 84px;"></div>
+    <div id="room116" class="room" style="top: 1156px; left: 618px; width: 126px; height: 82px;"></div>
+    <div id="room118" class="room" style="top: 1293px; left: 573px; width: 170px; height: 245px;"></div>
+    <div id="room119" class="room" style="top: 1380px; left: 539px; width: 34px; height: 74px;"></div>
+    <div id="room121" class="room" style="top: 1296px; left: 309px; width: 227px; height: 88px;"></div>
+    <div id="room122" class="room" style="top: 1384px; left: 414px; width: 62px; height: 83px;"></div>
+    <div id="room123" class="room" style="top: 1464px; left: 372px; width: 166px; height: 70px;"></div>
+    <div id="room124" class="room" style="top: 1423px; left: 308px; width: 65px; height: 115px;"></div>
+    <div id="room127" class="room" style="top: 1338px; left: 73px; width: 179px; height: 204px;"></div>
+    <div id="room128" class="room" style="top: 1258px; left: 75px; width: 122px; height: 83px;"></div>
+    <div id="room129" class="room" style="top: 1178px; left: 74px; width: 125px; height: 84px;"></div>
+    <div id="room130" class="room" style="top: 1099px; left: 75px; width: 122px; height: 81px;"></div>
+    <div id="room131" class="room" style="top: 897px; left: 73px; width: 124px; height: 201px;"></div>
+    <div id="room133" class="room" style="top: 701px; left: 67px; width: 129px; height: 192px;"></div>
+    <div id="room134" class="room" style="top: 629px; left: 71px; width: 58px; height: 80px;"></div>
+    <div id="room140" class="room" style="top: 445px; left: 74px; width: 123px; height: 86px;"></div>
+    <div id="room141" class="room" style="top: 387px; left: 75px; width: 83px; height: 58px;"></div>
+    <div id="room142" class="room" style="top: 326px; left: 74px; width: 84px; height: 63px;"></div>
+    <div id="room143" class="room" style="top: 238px; left: 73px; width: 119px; height: 94px;"></div>
+    <div id="room149" class="room" style="top: 598px; left: 268px; width: 282px; height: 463px;"></div>
+    <div id="room151" class="room" style="top: 1067px; left: 332px; width: 151px; height: 137px;"></div>
+    <div id="room153" class="room" style="top: 1114px; left: 251px; width: 76px; height: 65px;"></div>
+  </div>
+  <button class="back-to-top" aria-label="Scroll to top">↑</button>
+
+  <script>
+    const sheetId = '1jRaw9HNeKh4cyIyh8OuPDzyAL7EAewUpkyNt6lFZ_vA';
+    const labelsContainer = document.getElementById('labels');
+    const backToTopBtn = document.querySelector('.back-to-top');
+    let currentTab = 'Sunday%20School%20Week';
+
+    function ordinalSuffix(n) {
+      const s = ["th", "st", "nd", "rd"], v = n % 100;
+      return s[(v - 20) % 10] || s[v] || s[0];
+    }
+
+    function fetchAndBuildButtons() {
+      const sheetJsonUrl = `https://opensheet.elk.sh/${sheetId}/${currentTab}`;
+      fetch(sheetJsonUrl)
+        .then(response => response.json())
+        .then(data => {
+          labelsContainer.innerHTML = '';
+          data.forEach(row => {
+            const roomNumber = row['Room Number'];
+            const roomLabel = row['Room Label'];
+            if (roomNumber && roomLabel) {
+              const cleanRoomNumber = 'room' + roomNumber.replace(/[^0-9]/g, '');
+              const button = document.createElement('button');
+              button.textContent = roomLabel;
+              button.setAttribute('data-room-id', cleanRoomNumber);
+              button.setAttribute('data-label', roomLabel);
+              button.onclick = () => highlightRoom(cleanRoomNumber);
+              labelsContainer.appendChild(button);
+            }
+          });
+        });
+    }
+
+    function highlightRoom(roomId) {
+      document.querySelectorAll('.room').forEach(r => {
+        r.classList.remove('highlight');
+        const label = r.querySelector('.room-label');
+        if (label) r.removeChild(label);
+      });
+      const room = document.getElementById(roomId);
+      if (room) {
+        room.classList.add('highlight');
+        room.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        const labelSpan = document.createElement('span');
+        labelSpan.className = 'room-label';
+        const labelText = document.querySelector(`button[data-room-id="${roomId}"]`)?.getAttribute('data-label') || '';
+        const roomNumber = roomId.replace('room', 'Room ');
+        labelSpan.textContent = `${roomNumber}: ${labelText}`;
+        room.appendChild(labelSpan);
+        setTimeout(() => {
+          room.classList.remove('highlight');
+          if (room.contains(labelSpan)) room.removeChild(labelSpan);
+        }, 10000);
+      }
+    }
+
+    function switchTab(tabName) {
+      currentTab = tabName === 'Sunday School Week' ? 'Sunday%20School%20Week' : 'Priesthood%20RS%20YM%20YW';
+      fetchAndBuildButtons();
+      const btnSunday = document.getElementById('btn-sunday');
+      const btnPriesthood = document.getElementById('btn-priesthood');
+      if (tabName === 'Sunday School Week') {
+        btnSunday.classList.add('active');
+        btnPriesthood.classList.remove('active');
+      } else {
+        btnPriesthood.classList.add('active');
+        btnSunday.classList.remove('active');
+      }
+    }
+
+    // Back to Top button logic
+    window.addEventListener('scroll', () => {
+      if (window.scrollY > 200) {
+        backToTopBtn.classList.add('visible');
+      } else {
+        backToTopBtn.classList.remove('visible');
+      }
+    });
+    backToTopBtn.addEventListener('click', () => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const infoEl = document.getElementById('sunday-info');
+      const today = new Date();
+      const thisSunday = new Date(today);
+      thisSunday.setDate(today.getDate() - today.getDay());
+
+      const sundayMonth = thisSunday.toLocaleString('default', { month: 'long' });
+      const sundayNumber = Math.floor((thisSunday.getDate() - 1) / 7);
+      const sundayStyle = [1, 3].includes(sundayNumber + 1) ? 'blue' : 'green';
+      document.body.setAttribute('data-sunday-theme', sundayStyle);
+
+      const day = thisSunday.getDate();
+      const fullDate = `${sundayMonth} ${day}${ordinalSuffix(day)}`;
+      const mainText = `Sunday, ${fullDate}, is the ${sundayNumber + 1}${ordinalSuffix(sundayNumber + 1)} Sunday of the month.`;
+
+      const nextSunday = new Date(thisSunday);
+      nextSunday.setDate(thisSunday.getDate() + 7);
+      const nextDay = nextSunday.getDate();
+      const nextMonth = nextSunday.toLocaleString('default', { month: 'long' });
+      const nextSundayNumber = Math.floor((nextDay - 1) / 7);
+      const nextLabel = [1, 3].includes(nextSundayNumber + 1) ? 'Sunday School' : 'Priesthood, Relief Society, Young Men, Young Women';
+      const nextPreview = `🔜 Next Sunday (${nextMonth} ${nextDay}${ordinalSuffix(nextDay)}) will be the ${nextSundayNumber + 1}${ordinalSuffix(nextSundayNumber + 1)} Sunday – <em>${nextLabel}</em>.`;
+
+      if (infoEl) {
+        infoEl.innerHTML = `<span class="fade-in">${mainText}</span><br><span class="fade-in" style="font-size: 0.95rem; font-weight: 500; color: #6b7280;">${nextPreview}</span>`;
+      }
+
+      switchTab(sundayStyle === 'blue' ? 'Sunday School Week' : 'Priesthood RS YM YW');
+    });
+
+    setInterval(fetchAndBuildButtons, 300000);
+  </script>
+</body>
+</html>

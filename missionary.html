@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Aspen Ward – Missionary Dinner Signup</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+:root {
+  color-scheme: light dark;
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 14px;
+  --bg: #f9f5ef;
+  --bg-alt: #f2e9dd;
+  --surface: #ffffff;
+  --surface-muted: #fff8f0;
+  --surface-soft: rgba(255, 255, 255, 0.82);
+  --stroke: rgba(61, 41, 21, 0.12);
+  --stroke-strong: rgba(61, 41, 21, 0.18);
+  --ink: #2f1c11;
+  --ink-muted: rgba(47, 28, 17, 0.56);
+  --accent: #7c3aed;
+  --accent-strong: #5b21b6;
+  --accent-contrast: #ffffff;
+  --radius-md: 20px;
+  --radius-sm: 14px;
+  --transition: 180ms ease;
+  --header-height: 64px;
+  --content-width: min(960px, 92vw);
+}
+
+/* General */
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: linear-gradient(180deg, var(--bg) 0%, #fff 60%, var(--bg-alt) 100%);
+  color: var(--ink);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+*, *::before, *::after { box-sizing: border-box; }
+
+/* ===== HEADER ===== */
+.site-header {
+  position: sticky; top: 0; z-index: 30;
+  backdrop-filter: blur(18px);
+  background: color-mix(in srgb, var(--surface-soft) 88%, transparent);
+  border-bottom: 1px solid var(--stroke);
+}
+.header-shell {
+  width: var(--content-width);
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .75rem;
+  padding: .5rem 0;
+}
+
+/* Brand */
+.brand {
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+  text-decoration: none;
+  color: inherit;
+}
+.brand-icon {
+  width: 2.5rem; height: 2.5rem;
+  border-radius: 999px;
+  background: linear-gradient(140deg, var(--accent), var(--accent-strong));
+  color: var(--accent-contrast);
+  display: grid;
+  place-items: center;
+  font-family: 'Playfair Display', serif;
+  font-size: 1.1rem;
+}
+.brand-title { font-family: 'Playfair Display', serif; font-size: 1.2rem; }
+.brand-subtitle { font-size: .82rem; color: var(--ink-muted); }
+
+/* Nav Desktop */
+.primary-nav .nav-list {
+  display: flex;
+  gap: .6rem;
+  list-style: none;
+  margin: 0; padding: 0;
+}
+.nav-link {
+  display: inline-block;
+  padding: .45rem .75rem;
+  border-radius: 12px;
+  border: 1px solid var(--stroke);
+  background: var(--surface);
+  text-decoration: none;
+  color: inherit;
+  font-weight: 500;
+  transition: var(--transition);
+}
+.nav-link:hover { background: var(--surface-muted); }
+
+/* Mobile dropdown */
+.nav-select {
+  display: none;
+}
+@media (max-width: 640px) {
+  .primary-nav .nav-list { display: none; }
+  .nav-select {
+    display: block;
+    padding: .55rem .75rem;
+    border-radius: 12px;
+    border: 1px solid var(--stroke);
+    background: var(--surface);
+    font: inherit;
+  }
+  .brand-title { font-size: 1.05rem; }
+  .brand-subtitle { font-size: .78rem; }
+  .header-shell { gap: .5rem; }
+}
+
+/* ===== CALENDAR ===== */
+.missionary-content {
+  display: flex; flex-direction: column; align-items: center;
+  padding: clamp(1.5rem, 6vw, 2rem) 0;
+}
+.calendar-container {
+  background: var(--surface);
+  padding: 1.5rem;
+  border-radius: 20px;
+  border: 1px solid var(--stroke);
+  max-width: 640px;
+  width: 100%;
+}
+.color-key { display:flex; flex-wrap:wrap; gap:15px; margin-bottom:1rem; font-size:.9rem; }
+.color-box { width:20px; height:20px; border:1px solid var(--stroke); }
+.color-box.green { background:#d4edda; }
+.color-box.blue { background:#cce5ff; }
+.color-box.red { background:#f8d7da; }
+
+.calendar { display:grid; grid-template-columns:repeat(7,1fr); gap:5px; }
+.calendar div {
+  padding:.75rem; text-align:center; border:1px solid var(--stroke);
+  border-radius:14px; min-height:80px;
+  display:flex; flex-direction:column; align-items:center; overflow:hidden;
+}
+.day-header { background:var(--surface-muted); font-weight:600; }
+.day { background:var(--surface); cursor:pointer; }
+.day:hover { background:var(--accent-soft); }
+.day.past { background:#f8d7da; color:#721c24; cursor:not-allowed; }
+.day.current { background:#cce5ff; }
+.day.current:hover { background:#b3d7ff; }
+.day.signed-up { background:#d4edda; }
+.day.signed-up:hover { background:#c3e6cb; }
+.day .info { font-size:.75rem; margin-top:.35rem; line-height:1.2; word-break:break-word; max-width:100%; }
+
+@media (max-width:540px) {
+  .calendar div { padding:.5rem; min-height:60px; font-size:.9rem; }
+  .calendar .day .info {
+    display:block;
+    font-size:.78rem;
+    margin-top:.25rem;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    max-width:100%;
+  }
+}
+</style>
+</head>
+
+<body>
+<div class="app-shell">
+
+  <!-- ===== HEADER ===== -->
+  <header class="site-header" aria-label="Primary navigation">
+    <div class="header-shell">
+      <a class="brand" href="https://aspenward.com/home">
+        <span class="brand-icon">AW</span>
+        <span>
+          <span class="brand-title">Aspen Ward</span><br>
+          <span class="brand-subtitle">Missionary Dinner Signup</span>
+        </span>
+      </a>
+
+      <nav class="primary-nav" id="primary-nav">
+        <ul class="nav-list">
+          <li><a class="nav-link" href="https://aspenward.com/home">Home</a></li>
+          <li><a class="nav-link" href="https://aspenward.com/home#program">Program</a></li>
+          <li><a class="nav-link" href="https://aspenward.com/home#events">Events</a></li>
+          <li><a class="nav-link" href="https://aspenward.com/zoom" target="_blank">ZOOM</a></li>
+        </ul>
+        <!-- Mobile dropdown -->
+        <select id="nav-select" class="nav-select" aria-label="Mobile navigation">
+          <option value="">Menu…</option>
+          <option value="https://aspenward.com/home">Home</option>
+          <option value="https://aspenward.com/home#program">Program</option>
+          <option value="https://aspenward.com/home#events">Events</option>
+          <option value="https://aspenward.com/zoom">ZOOM</option>
+        </select>
+      </nav>
+    </div>
+  </header>
+
+  <!-- ===== MAIN ===== -->
+  <main class="missionary-content">
+    <div class="calendar-container">
+      <div class="color-key">
+        <div><span class="color-box green"></span> Taken</div>
+        <div><span class="color-box blue"></span> Today</div>
+        <div><span class="color-box red"></span> Past / Unavailable</div>
+      </div>
+
+      <div class="calendar-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+        <button id="prev-month">Previous</button>
+        <h2 id="month-year" style="margin:0; font-size:1.4rem;"></h2>
+        <button id="next-month">Next</button>
+      </div>
+      <div class="calendar" id="calendar"></div>
+    </div>
+  </main>
+
+  <footer style="text-align:center; padding:1rem 0; color:var(--ink-muted);">
+    <p style="margin:.25rem 0;">Not an official site of The Church of Jesus Christ of Latter-day Saints.</p>
+    <p style="margin:.25rem 0;">Intended for local Aspen Ward use only.</p>
+  </footer>
+
+</div>
+
+<script type="module">
+/* ===== Mobile dropdown navigation ===== */
+document.getElementById('nav-select')?.addEventListener('change', e => {
+  const url = e.target.value;
+  if (url) window.location.href = url;
+});
+
+/* ===== Firebase + Calendar ===== */
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.7.3/firebase-app.js";
+import { getDatabase, ref, onValue, set, remove } from "https://www.gstatic.com/firebasejs/11.7.3/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBbwlTuMoSMl2vfXA5aHkQM0RC2PUrKDXk",
+  authDomain: "aspen-ward-missionary-dinner.firebaseapp.com",
+  databaseURL: "https://aspen-ward-missionary-dinner-default-rtdb.firebaseio.com",
+  projectId: "aspen-ward-missionary-dinner",
+  storageBucket: "aspen-ward-missionary-dinner.firebasestorage.app",
+  messagingSenderId: "350865820261",
+  appId: "1:350865820261:web:26912e9b753852ae7ed48c",
+  measurementId: "G-G9WT2W399C"
+};
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+let currentMonth = new Date().getMonth();
+let currentYear  = new Date().getFullYear();
+let signups = {};
+
+onValue(ref(db, 'signups'), snap => {
+  signups = snap.val() || {};
+  renderCalendar();
+});
+
+document.getElementById('prev-month').addEventListener('click', prevMonth);
+document.getElementById('next-month').addEventListener('click', nextMonth);
+
+function clearPastSignups() {
+  const now = new Date();
+  for (const k in signups) {
+    const [y,m,d] = k.split('-').map(Number);
+    const start = new Date(y,m,d);
+    const clear = new Date(start.getTime() + 25*60*60*1000);
+    if (now >= clear) remove(ref(db,'signups/'+k));
+  }
+}
+
+function renderCalendar() {
+  clearPastSignups();
+  const cal = document.getElementById('calendar');
+  cal.innerHTML = '';
+  const title = document.getElementById('month-year');
+  const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  title.textContent = `${months[currentMonth]} ${currentYear}`;
+
+  const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  days.forEach(d => { const h=document.createElement('div'); h.className='day-header'; h.textContent=d; cal.appendChild(h); });
+
+  const first = new Date(currentYear,currentMonth,1).getDay();
+  const total = new Date(currentYear,currentMonth+1,0).getDate();
+  for(let i=0;i<first;i++) cal.appendChild(document.createElement('div'));
+
+  const now = new Date();
+  for(let day=1; day<=total; day++){
+    const div = document.createElement('div');
+    div.className='day';
+    div.textContent=day;
+
+    const start = new Date(currentYear,currentMonth,day);
+    const isToday = start.toDateString() === now.toDateString();
+    const isFuture = start > now;
+    const isPast = start < now && !isToday;
+    const key = `${currentYear}-${currentMonth}-${day}`;
+
+    if (isPast) div.classList.add('past');
+    else if (isToday) div.classList.add('current');
+
+    if (signups[key]) {
+      const info = document.createElement('div');
+      info.className = 'info';
+      const { firstName, lastName, phone } = signups[key];
+      const mobileLabel = `${firstName?.[0] ? firstName[0] + '. ' : ''}${lastName || ''}`;
+      const desktopLabel = `${firstName || ''} ${lastName || ''} (${phone || ''})`.trim();
+      info.textContent = window.innerWidth <= 540 ? mobileLabel : desktopLabel;
+      info.title = desktopLabel;
+      div.appendChild(info);
+      if (!isPast) div.classList.add('signed-up');
+    }
+
+    if (isFuture || isToday) {
+      if (!signups[key]) div.addEventListener('click',()=>signup(day));
+      else div.addEventListener('click',()=>editSignup(day));
+    }
+
+    cal.appendChild(div);
+  }
+}
+
+function validatePhone(p){ return /^\(?([0-9]{3})\)?[-. ]?([0-9]{3})[-. ]?([0-9]{4})$/.test(p); }
+function signup(day){
+  const key=`${currentYear}-${currentMonth}-${day}`;
+  if(signups[key]){ alert(`Already taken by ${signups[key].firstName} ${signups[key].lastName}`); return; }
+  const fn=prompt('First name:'); if(!fn?.trim()) return;
+  const ln=prompt('Last name:');  if(!ln?.trim()) return;
+  let ph=prompt('Phone (123-456-7890):'); if(ph===null) return; ph=ph.trim();
+  if(!ph||!validatePhone(ph)){ alert('Invalid phone'); return; }
+  set(ref(db,'signups/'+key),{firstName:fn.trim(),lastName:ln.trim(),phone:ph});
+}
+function editSignup(day){
+  const key=`${currentYear}-${currentMonth}-${day}`;
+  const cur=signups[key];
+  const act=prompt(`"${cur.firstName} ${cur.lastName} (${cur.phone})"\nEnter "update" or "clear":`);
+  if(!act) return;
+  if(act.toLowerCase()==='clear'){
+    if(confirm('Clear this signup?')) remove(ref(db,'signups/'+key));
+  }else if(act.toLowerCase()==='update'){
+    const fn=prompt('New first name:',cur.firstName); if(!fn?.trim()) return;
+    const ln=prompt('New last name:',cur.lastName);  if(!ln?.trim()) return;
+    let ph=prompt('New phone:',cur.phone); if(ph===null) return; ph=ph.trim();
+    if(!ph||!validatePhone(ph)){ alert('Invalid phone'); return; }
+    if(confirm('Update?')) set(ref(db,'signups/'+key),{firstName:fn.trim(),lastName:ln.trim(),phone:ph});
+  }
+}
+
+function prevMonth(){ currentMonth--; if(currentMonth<0){currentMonth=11;currentYear--;} renderCalendar(); }
+function nextMonth(){ currentMonth++; if(currentMonth>11){currentMonth=0;currentYear++;} renderCalendar(); }
+</script>
+</body>
+</html>
