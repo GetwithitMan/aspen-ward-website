@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Aspen Ward – Admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/dist/output.css">
+<style>
+/* Admin-specific styles */
+.admin-content {
+  width: var(--content-width);
+  margin: 0 auto;
+  padding: 2rem 0;
+}
+
+.login-card {
+  max-width: 360px;
+  margin: 4rem auto;
+  padding: 2rem;
+  background: var(--surface);
+  border: 1px solid var(--stroke);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+}
+
+.login-card h1 {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.5rem;
+  margin: 0 0 1.5rem;
+  text-align: center;
+}
+
+.form-group {
+  margin-bottom: 1rem;
+}
+
+.form-group label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--stroke);
+  border-radius: var(--radius-sm);
+  font: inherit;
+  background: var(--surface);
+  color: var(--ink);
+}
+
+.form-group input:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.error-message {
+  color: var(--warning);
+  font-size: 0.9rem;
+  margin-top: 0.5rem;
+  display: none;
+}
+
+.error-message.visible {
+  display: block;
+}
+
+/* Editor styles */
+.editor-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.editor-header h1 {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.8rem;
+  margin: 0;
+}
+
+.editor-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.program-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--surface);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  box-shadow: var(--shadow-md);
+}
+
+.program-table th,
+.program-table td {
+  padding: 0.75rem;
+  text-align: left;
+  border-bottom: 1px solid var(--stroke);
+}
+
+.program-table th {
+  background: var(--surface-muted);
+  font-weight: 600;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.program-table input,
+.program-table textarea {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid var(--stroke);
+  border-radius: 6px;
+  font: inherit;
+  font-size: 0.9rem;
+  background: var(--surface);
+  color: var(--ink);
+  resize: vertical;
+}
+
+.program-table input:focus,
+.program-table textarea:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.program-table .col-program { width: 20%; }
+.program-table .col-details { width: 40%; }
+.program-table .col-link { width: 25%; }
+.program-table .col-accent { width: 10%; }
+.program-table .col-actions { width: 5%; text-align: center; }
+
+.btn-delete {
+  background: none;
+  border: none;
+  color: var(--warning);
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 6px;
+  transition: background 0.2s;
+}
+
+.btn-delete:hover {
+  background: rgba(217, 119, 6, 0.1);
+}
+
+.btn-icon {
+  padding: 0.5rem 1rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.section-row {
+  background: var(--accent-soft) !important;
+}
+
+.section-row input {
+  font-weight: 600;
+  color: var(--accent-strong);
+}
+
+.status-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 1rem;
+  background: var(--surface);
+  border-top: 1px solid var(--stroke);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 -4px 20px rgba(0,0,0,0.1);
+}
+
+.status-text {
+  font-size: 0.9rem;
+  color: var(--ink-soft);
+}
+
+.status-text.saving {
+  color: var(--accent);
+}
+
+.status-text.saved {
+  color: #22c55e;
+}
+
+.status-text.error {
+  color: var(--warning);
+}
+
+/* Add padding at bottom for status bar */
+.admin-content {
+  padding-bottom: 5rem;
+}
+
+.help-text {
+  font-size: 0.85rem;
+  color: var(--ink-muted);
+  margin-bottom: 1rem;
+  padding: 1rem;
+  background: var(--surface-muted);
+  border-radius: var(--radius-sm);
+}
+
+.help-text code {
+  background: var(--accent-soft);
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+  font-size: 0.85em;
+}
+
+@media (max-width: 768px) {
+  .program-table {
+    display: block;
+    overflow-x: auto;
+  }
+
+  .program-table th,
+  .program-table td {
+    min-width: 120px;
+  }
+
+  .col-details { min-width: 200px !important; }
+}
+</style>
+</head>
+<body>
+
+<!-- Login Screen -->
+<div id="login-screen">
+  <div class="login-card">
+    <h1>Admin Login</h1>
+    <form id="login-form">
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password" required autocomplete="current-password">
+        <p class="error-message" id="login-error">Invalid password</p>
+      </div>
+      <button type="submit" class="btn full">Sign In</button>
+    </form>
+  </div>
+</div>
+
+<!-- Editor Screen (hidden by default) -->
+<div id="editor-screen" hidden>
+  <header class="site-header">
+    <div class="header-shell">
+      <a class="brand" href="/">
+        <span class="brand-icon">AW</span>
+        <span class="brand-copy">
+          <span class="brand-title">Aspen Ward</span>
+          <span class="brand-subtitle">Program Editor</span>
+        </span>
+      </a>
+      <div class="header-actions">
+        <button class="btn ghost" id="logout-btn">Logout</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="admin-content">
+    <div class="editor-header">
+      <h1>Sunday Program Editor</h1>
+      <div class="editor-actions">
+        <button class="btn ghost btn-icon" id="add-row-btn">+ Add Row</button>
+        <button class="btn ghost btn-icon" id="add-section-btn">+ Add Section</button>
+        <button class="btn" id="save-btn">Save Changes</button>
+      </div>
+    </div>
+
+    <div class="help-text">
+      <strong>Tips:</strong> Use <code>#SECTION:banner</code> or <code>#SECTION:announcements</code> in the Program column to create special sections.
+      The Accent column accepts color values like <code>#ff6b6b</code> for announcements.
+    </div>
+
+    <table class="program-table" id="program-table">
+      <thead>
+        <tr>
+          <th class="col-program">Program</th>
+          <th class="col-details">Details</th>
+          <th class="col-link">Link</th>
+          <th class="col-accent">Accent</th>
+          <th class="col-actions"></th>
+        </tr>
+      </thead>
+      <tbody id="table-body">
+        <!-- Rows inserted by JS -->
+      </tbody>
+    </table>
+  </main>
+
+  <div class="status-bar">
+    <span class="status-text" id="status-text">Ready</span>
+    <button class="btn" id="save-btn-bottom">Save Changes</button>
+  </div>
+</div>
+
+<script type="module">
+/**
+ * IMPORTANT: Replace this URL with your deployed Google Apps Script Web App URL
+ * See docs/google-apps-script.js for setup instructions
+ */
+const SCRIPT_URL = 'YOUR_GOOGLE_APPS_SCRIPT_URL_HERE';
+
+// State
+let programData = [];
+let hasUnsavedChanges = false;
+let sessionPassword = '';
+
+// DOM Elements
+const loginScreen = document.getElementById('login-screen');
+const editorScreen = document.getElementById('editor-screen');
+const loginForm = document.getElementById('login-form');
+const loginError = document.getElementById('login-error');
+const tableBody = document.getElementById('table-body');
+const statusText = document.getElementById('status-text');
+const saveBtn = document.getElementById('save-btn');
+const saveBtnBottom = document.getElementById('save-btn-bottom');
+const addRowBtn = document.getElementById('add-row-btn');
+const addSectionBtn = document.getElementById('add-section-btn');
+const logoutBtn = document.getElementById('logout-btn');
+
+// Check for saved session
+const savedPassword = sessionStorage.getItem('adminPassword');
+if (savedPassword) {
+  sessionPassword = savedPassword;
+  showEditor();
+}
+
+// Login form handler
+loginForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const password = document.getElementById('password').value;
+
+  setStatus('Logging in...', 'saving');
+
+  try {
+    const response = await callApi('login', { password });
+
+    if (response.success) {
+      sessionPassword = password;
+      sessionStorage.setItem('adminPassword', password);
+      loginError.classList.remove('visible');
+      showEditor();
+    } else {
+      loginError.classList.add('visible');
+      setStatus('Login failed', 'error');
+    }
+  } catch (error) {
+    console.error('Login error:', error);
+    loginError.textContent = 'Connection error. Check the API URL.';
+    loginError.classList.add('visible');
+    setStatus('Connection error', 'error');
+  }
+});
+
+// Logout handler
+logoutBtn.addEventListener('click', () => {
+  if (hasUnsavedChanges && !confirm('You have unsaved changes. Are you sure you want to logout?')) {
+    return;
+  }
+  sessionPassword = '';
+  sessionStorage.removeItem('adminPassword');
+  loginScreen.hidden = false;
+  editorScreen.hidden = true;
+  document.getElementById('password').value = '';
+});
+
+// Show editor and load data
+async function showEditor() {
+  loginScreen.hidden = true;
+  editorScreen.hidden = false;
+  await loadProgram();
+}
+
+// Load program data
+async function loadProgram() {
+  setStatus('Loading...', 'saving');
+
+  try {
+    const response = await callApi('read', { password: sessionPassword });
+
+    if (response.success) {
+      programData = response.data;
+      renderTable();
+      setStatus('Loaded ' + programData.length + ' rows', 'saved');
+    } else {
+      setStatus('Error: ' + response.error, 'error');
+
+      if (response.error.includes('password')) {
+        sessionStorage.removeItem('adminPassword');
+        loginScreen.hidden = false;
+        editorScreen.hidden = true;
+      }
+    }
+  } catch (error) {
+    console.error('Load error:', error);
+    setStatus('Connection error', 'error');
+  }
+}
+
+// Render table rows
+function renderTable() {
+  tableBody.innerHTML = '';
+
+  programData.forEach((row, index) => {
+    const tr = document.createElement('tr');
+    const isSection = row.program.startsWith('#SECTION:');
+
+    if (isSection) {
+      tr.className = 'section-row';
+    }
+
+    tr.innerHTML = `
+      <td>
+        <input type="text" value="${escapeHtml(row.program)}" data-index="${index}" data-field="program">
+      </td>
+      <td>
+        <textarea rows="2" data-index="${index}" data-field="details">${escapeHtml(row.details)}</textarea>
+      </td>
+      <td>
+        <input type="text" value="${escapeHtml(row.link)}" data-index="${index}" data-field="link" placeholder="https://...">
+      </td>
+      <td>
+        <input type="text" value="${escapeHtml(row.accent)}" data-index="${index}" data-field="accent" placeholder="#color">
+      </td>
+      <td>
+        <button class="btn-delete" data-index="${index}" title="Delete row">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
+          </svg>
+        </button>
+      </td>
+    `;
+
+    tableBody.appendChild(tr);
+  });
+
+  // Add event listeners
+  tableBody.querySelectorAll('input, textarea').forEach(el => {
+    el.addEventListener('input', handleInputChange);
+  });
+
+  tableBody.querySelectorAll('.btn-delete').forEach(el => {
+    el.addEventListener('click', handleDelete);
+  });
+}
+
+// Handle input changes
+function handleInputChange(e) {
+  const index = parseInt(e.target.dataset.index);
+  const field = e.target.dataset.field;
+  programData[index][field] = e.target.value;
+  markUnsaved();
+}
+
+// Handle delete
+function handleDelete(e) {
+  const index = parseInt(e.currentTarget.dataset.index);
+  if (confirm('Delete this row?')) {
+    programData.splice(index, 1);
+    renderTable();
+    markUnsaved();
+  }
+}
+
+// Add new row
+addRowBtn.addEventListener('click', () => {
+  programData.push({
+    rowIndex: programData.length,
+    program: '',
+    details: '',
+    link: '',
+    accent: ''
+  });
+  renderTable();
+  markUnsaved();
+
+  // Focus the new row
+  const inputs = tableBody.querySelectorAll('input[data-field="program"]');
+  inputs[inputs.length - 1].focus();
+});
+
+// Add section
+addSectionBtn.addEventListener('click', () => {
+  const sectionType = prompt('Section type (banner, announcements, or custom name):');
+  if (sectionType) {
+    programData.push({
+      rowIndex: programData.length,
+      program: '#SECTION:' + sectionType.toLowerCase(),
+      details: '',
+      link: '',
+      accent: ''
+    });
+    renderTable();
+    markUnsaved();
+  }
+});
+
+// Save changes
+async function saveChanges() {
+  setStatus('Saving...', 'saving');
+  saveBtn.disabled = true;
+  saveBtnBottom.disabled = true;
+
+  try {
+    const response = await callApi('save', {
+      password: sessionPassword,
+      data: JSON.stringify(programData)
+    });
+
+    if (response.success) {
+      hasUnsavedChanges = false;
+      setStatus(response.message, 'saved');
+    } else {
+      setStatus('Error: ' + response.error, 'error');
+    }
+  } catch (error) {
+    console.error('Save error:', error);
+    setStatus('Connection error', 'error');
+  }
+
+  saveBtn.disabled = false;
+  saveBtnBottom.disabled = false;
+}
+
+saveBtn.addEventListener('click', saveChanges);
+saveBtnBottom.addEventListener('click', saveChanges);
+
+// Mark as unsaved
+function markUnsaved() {
+  hasUnsavedChanges = true;
+  setStatus('Unsaved changes', '');
+}
+
+// Set status
+function setStatus(text, state) {
+  statusText.textContent = text;
+  statusText.className = 'status-text' + (state ? ' ' + state : '');
+}
+
+// API call helper
+async function callApi(action, params = {}) {
+  const url = new URL(SCRIPT_URL);
+  url.searchParams.set('action', action);
+
+  for (const [key, value] of Object.entries(params)) {
+    url.searchParams.set(key, value);
+  }
+
+  const response = await fetch(url.toString());
+  return response.json();
+}
+
+// Escape HTML
+function escapeHtml(str) {
+  if (!str) return '';
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+// Warn before leaving with unsaved changes
+window.addEventListener('beforeunload', (e) => {
+  if (hasUnsavedChanges) {
+    e.preventDefault();
+    e.returnValue = '';
+  }
+});
+</script>
+</body>
+</html>
