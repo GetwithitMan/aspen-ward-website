@@ -1504,6 +1504,18 @@ function getHymnUrl(hymnNumber) {
   return null;
 }
 
+function getHymnName(hymnNumber) {
+  const num = parseInt(hymnNumber);
+  if (!num) return null;
+  const slug = hymnSlugs[num];
+  if (!slug) return null;
+  // Convert slug to title case name (e.g., "come-come-ye-saints" -> "Come, Come, Ye Saints")
+  return slug.split('-').map((word, i) => {
+    // Capitalize first letter of each word
+    return word.charAt(0).toUpperCase() + word.slice(1);
+  }).join(' ');
+}
+
 // Helper to detect if text contains "hymn"
 function isHymnItem(text) {
   return /hymn/i.test(text);
@@ -1542,7 +1554,7 @@ function createProgramItemHTML(item, section) {
     <div class="hymn-row ${isHymn ? '' : 'hidden'}">
       <span class="hymn-label">Hymn #</span>
       <input type="text" class="hymn-number" placeholder="123" value="${hymnNumber}">
-      <span class="hymn-status">${hymnUrl ? '✓ Link ready' : (hymnNumber ? '? Unknown hymn' : '')}</span>
+      <span class="hymn-status">${hymnUrl ? '✓ ' + (getHymnName(hymnNumber) || 'Link ready') : (hymnNumber ? '? Unknown hymn' : '')}</span>
     </div>
     <button type="button" class="add-link-btn ${hasLink || isHymn ? 'hidden' : ''}">+ Add link</button>
     <div class="link-row ${hasLink && !isHymn ? '' : 'hidden'}">
@@ -1577,8 +1589,9 @@ function createProgramItemHTML(item, section) {
   hymnNumberInput.addEventListener('input', () => {
     const num = hymnNumberInput.value.trim();
     const url = getHymnUrl(num);
-    if (url) {
-      hymnStatus.textContent = '✓ Link ready';
+    const name = getHymnName(num);
+    if (url && name) {
+      hymnStatus.textContent = `✓ ${name}`;
       hymnStatus.style.color = 'var(--success)';
     } else if (num) {
       hymnStatus.textContent = '? Unknown hymn';
@@ -1598,8 +1611,9 @@ function createProgramItemHTML(item, section) {
       const num = extractHymnNumber(detailsInput.value);
       hymnNumberInput.value = num;
       const url = getHymnUrl(num);
-      if (url) {
-        hymnStatus.textContent = '✓ Link ready';
+      const name = getHymnName(num);
+      if (url && name) {
+        hymnStatus.textContent = `✓ ${name}`;
         hymnStatus.style.color = 'var(--success)';
       } else if (num) {
         hymnStatus.textContent = '? Unknown hymn';

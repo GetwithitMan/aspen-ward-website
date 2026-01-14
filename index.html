@@ -715,6 +715,8 @@ function renderProgram(rows) {
       }
       continue;
     }
+    // Skip items without details
+    if (!details.trim()) continue;
     const card = document.createElement('article');
     card.className = 'program-card';
     card.setAttribute('role', 'listitem');
