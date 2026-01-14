@@ -801,13 +801,22 @@ async function loadProgram() {
 
       // If testimony meeting, add testimony message as a special item
       if (data.isTestimonyMeeting && data.testimonyMessage) {
-        // Insert after sacrament section
-        const sacramentEndIndex = rows.findIndex((row, i) =>
-          i > rows.findIndex(r => r[0] === '#SECTION: Sacrament') &&
-          row[0].startsWith('#SECTION:')
-        );
-        if (sacramentEndIndex !== -1) {
-          rows.splice(sacramentEndIndex, 0, ['Testimony Meeting', data.testimonyMessage, '', '']);
+        // Find where to insert testimony message (after sacrament section)
+        let sacramentIndex = -1;
+        let insertIndex = -1;
+        for (let i = 0; i < rows.length; i++) {
+          if (rows[i][0] === '#SECTION: Sacrament') {
+            sacramentIndex = i;
+          } else if (sacramentIndex !== -1 && rows[i][0].startsWith('#SECTION:')) {
+            insertIndex = i;
+            break;
+          }
+        }
+        if (insertIndex !== -1) {
+          rows.splice(insertIndex, 0, ['Testimony Meeting', data.testimonyMessage, '', '']);
+        } else if (sacramentIndex !== -1) {
+          // If no section after sacrament, add at the end
+          rows.push(['Testimony Meeting', data.testimonyMessage, '', '']);
         }
       }
     }
