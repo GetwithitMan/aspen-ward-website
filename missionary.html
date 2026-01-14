@@ -8,117 +8,12 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/dist/output.css">
 
 <style>
+/* Page-specific overrides */
 :root {
-  color-scheme: light dark;
-  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  font-size: 14px;
-  --bg: #f9f5ef;
-  --bg-alt: #f2e9dd;
-  --surface: #ffffff;
-  --surface-muted: #fff8f0;
-  --surface-soft: rgba(255, 255, 255, 0.82);
-  --stroke: rgba(61, 41, 21, 0.12);
-  --stroke-strong: rgba(61, 41, 21, 0.18);
-  --ink: #2f1c11;
-  --ink-muted: rgba(47, 28, 17, 0.56);
-  --accent: #7c3aed;
-  --accent-strong: #5b21b6;
-  --accent-contrast: #ffffff;
-  --radius-md: 20px;
-  --radius-sm: 14px;
-  --transition: 180ms ease;
-  --header-height: 64px;
   --content-width: min(960px, 92vw);
-}
-
-/* General */
-body {
-  margin: 0;
-  min-height: 100vh;
-  background: linear-gradient(180deg, var(--bg) 0%, #fff 60%, var(--bg-alt) 100%);
-  color: var(--ink);
-  line-height: 1.6;
-  -webkit-font-smoothing: antialiased;
-}
-*, *::before, *::after { box-sizing: border-box; }
-
-/* ===== HEADER ===== */
-.site-header {
-  position: sticky; top: 0; z-index: 30;
-  backdrop-filter: blur(18px);
-  background: color-mix(in srgb, var(--surface-soft) 88%, transparent);
-  border-bottom: 1px solid var(--stroke);
-}
-.header-shell {
-  width: var(--content-width);
-  margin: 0 auto;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: .75rem;
-  padding: .5rem 0;
-}
-
-/* Brand */
-.brand {
-  display: flex;
-  align-items: center;
-  gap: .6rem;
-  text-decoration: none;
-  color: inherit;
-}
-.brand-icon {
-  width: 2.5rem; height: 2.5rem;
-  border-radius: 999px;
-  background: linear-gradient(140deg, var(--accent), var(--accent-strong));
-  color: var(--accent-contrast);
-  display: grid;
-  place-items: center;
-  font-family: 'Playfair Display', serif;
-  font-size: 1.1rem;
-}
-.brand-title { font-family: 'Playfair Display', serif; font-size: 1.2rem; }
-.brand-subtitle { font-size: .82rem; color: var(--ink-muted); }
-
-/* Nav Desktop */
-.primary-nav .nav-list {
-  display: flex;
-  gap: .6rem;
-  list-style: none;
-  margin: 0; padding: 0;
-}
-.nav-link {
-  display: inline-block;
-  padding: .45rem .75rem;
-  border-radius: 12px;
-  border: 1px solid var(--stroke);
-  background: var(--surface);
-  text-decoration: none;
-  color: inherit;
-  font-weight: 500;
-  transition: var(--transition);
-}
-.nav-link:hover { background: var(--surface-muted); }
-
-/* Mobile dropdown */
-.nav-select {
-  display: none;
-}
-@media (max-width: 640px) {
-  .primary-nav .nav-list { display: none; }
-  .nav-select {
-    display: block;
-    padding: .55rem .75rem;
-    border-radius: 12px;
-    border: 1px solid var(--stroke);
-    background: var(--surface);
-    font: inherit;
-  }
-  .brand-title { font-size: 1.05rem; }
-  .brand-subtitle { font-size: .78rem; }
-  .header-shell { gap: .5rem; }
 }
 
 /* ===== CALENDAR ===== */
