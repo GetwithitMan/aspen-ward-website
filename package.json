@@ -1,17 +1,15 @@
 {
   "name": "aspen-ward-website",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "Sunday worship services website for Aspen Ward",
-  "type": "module",
+  "private": true,
   "scripts": {
-    "dev": "npx http-server -p 8080 -c-1"
+    "dev": "npx serve -p 3000"
   },
-  "keywords": [
-    "church",
-    "ward",
-    "lds",
-    "worship"
-  ],
+  "keywords": ["church", "ward", "worship"],
   "author": "Aspen Ward Members",
-  "license": "MIT"
+  "license": "MIT",
+  "engines": {
+    "node": ">=18"
+  }
 }
