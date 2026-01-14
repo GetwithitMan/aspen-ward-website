@@ -14,7 +14,7 @@
  */
 
 const ADMIN_PASSWORD = '1Givethanks';
-const PROGRAM_SHEET_NAME = 'Program'; // Adjust if your sheet tab has a different name
+const PROGRAM_SHEET_NAME = 'Sunday Program'; // Your actual sheet tab name
 
 function doGet(e) {
   return handleRequest(e);
