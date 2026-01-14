@@ -629,13 +629,32 @@ function setStatus(text, state) {
 }
 
 async function callApi(action, params = {}) {
-  const url = new URL(SCRIPT_URL);
-  url.searchParams.set('action', action);
+  // Use POST with form data for better compatibility with Google Apps Script
+  const formData = new FormData();
+  formData.append('action', action);
   for (const [key, value] of Object.entries(params)) {
-    url.searchParams.set(key, value);
+    formData.append(key, value);
   }
-  const response = await fetch(url.toString());
-  return response.json();
+
+  try {
+    const response = await fetch(SCRIPT_URL, {
+      method: 'POST',
+      body: formData
+    });
+    return response.json();
+  } catch (err) {
+    // Fallback to GET for simple requests (login, read)
+    if (action === 'login' || action === 'read') {
+      const url = new URL(SCRIPT_URL);
+      url.searchParams.set('action', action);
+      for (const [key, value] of Object.entries(params)) {
+        url.searchParams.set(key, value);
+      }
+      const response = await fetch(url.toString());
+      return response.json();
+    }
+    throw err;
+  }
 }
 
 function escapeHtml(str) {

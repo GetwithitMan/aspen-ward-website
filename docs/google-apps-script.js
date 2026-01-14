@@ -17,20 +17,32 @@ const ADMIN_PASSWORD = '1Givethanks';
 const PROGRAM_SHEET_NAME = 'Sunday Program'; // Your actual sheet tab name
 
 function doGet(e) {
-  return handleRequest(e);
+  return handleRequest(e, 'GET');
 }
 
 function doPost(e) {
-  return handleRequest(e);
+  return handleRequest(e, 'POST');
 }
 
-function handleRequest(e) {
-  // Enable CORS
+function handleRequest(e, method) {
   const output = ContentService.createTextOutput();
   output.setMimeType(ContentService.MimeType.JSON);
 
   try {
-    const params = e.parameter;
+    // Get parameters from either GET or POST
+    let params = e.parameter || {};
+
+    // For POST, also check postData if available
+    if (method === 'POST' && e.postData) {
+      try {
+        // Try parsing as JSON first
+        const postParams = JSON.parse(e.postData.contents);
+        params = { ...params, ...postParams };
+      } catch (jsonErr) {
+        // Not JSON, use form parameters (already in e.parameter)
+      }
+    }
+
     const action = params.action;
 
     // Check password for all actions except 'ping'
