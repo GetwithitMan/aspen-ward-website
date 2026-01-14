@@ -4,10 +4,11 @@ package-lock.json
 yarn.lock
 
 # Build output
-dist/
 build/
 *.min.js
-*.min.css
+
+# Keep compiled Tailwind CSS
+!dist/output.css
 
 # Environment
 .env
