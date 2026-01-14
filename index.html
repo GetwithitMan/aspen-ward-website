@@ -837,7 +837,7 @@ async function loadProgram() {
     renderProgram(rows);
   } catch (error) {
     console.error('Program failed to load', error);
-    showInlineError(SELECTORS.programGrid, 'We couldn't load today's program. Please refresh or try again soon.');
+    showInlineError(SELECTORS.programGrid, 'We could not load the program. Please refresh or try again soon.');
     renderAnnouncements([]);
   }
 }
