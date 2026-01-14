@@ -1593,15 +1593,15 @@ function createProgramItemHTML(item, section) {
     if (url && name) {
       hymnStatus.textContent = `✓ ${name}`;
       hymnStatus.style.color = 'var(--success)';
+      // Update details field with hymn number and name
+      detailsInput.value = `#${num} - ${name}`;
     } else if (num) {
       hymnStatus.textContent = '? Unknown hymn';
       hymnStatus.style.color = 'var(--warning)';
+      detailsInput.value = `#${num}`;
     } else {
       hymnStatus.textContent = '';
-    }
-    // Also update details field
-    if (num) {
-      detailsInput.value = `#${num}`;
+      detailsInput.value = '';
     }
   });
 
