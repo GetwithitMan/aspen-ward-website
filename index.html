@@ -783,8 +783,8 @@ async function loadProgram() {
       }
 
       sectionOrder.forEach(sectionKey => {
-        const items = data.sections[sectionKey] || [];
-        if (items.length > 0 || sectionKey === 'banner' || sectionKey === 'announcements') {
+        const items = data.sections?.[sectionKey] || [];
+        if (items.length > 0) {
           // Add section header
           rows.push([`#SECTION: ${sectionLabels[sectionKey]}`, '', '', '']);
 
