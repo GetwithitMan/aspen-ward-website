@@ -3,671 +3,1845 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Aspen Ward – Admin</title>
+<title>Aspen Ward – Program Admin</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%234f7942' rx='20' width='100' height='100'/><text x='50' y='68' font-size='48' font-weight='bold' fill='white' text-anchor='middle' font-family='system-ui'>AW</text></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/dist/output.css">
 <style>
-.admin-content {
-  max-width: 700px;
-  margin: 0 auto;
-  padding: 2rem 1rem 6rem;
+:root {
+  color-scheme: light dark;
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 14px;
+  --bg: #f8faf5;
+  --bg-alt: #eef4e5;
+  --surface: #ffffff;
+  --surface-muted: #f5f9f0;
+  --surface-soft: rgba(255, 255, 255, 0.82);
+  --stroke: rgba(41, 61, 21, 0.12);
+  --stroke-strong: rgba(41, 61, 21, 0.18);
+  --ink: #1c2f11;
+  --ink-soft: rgba(28, 47, 17, 0.78);
+  --ink-muted: rgba(28, 47, 17, 0.56);
+  --accent: #4f7942;
+  --accent-strong: #3d5e32;
+  --accent-soft: rgba(79, 121, 66, 0.18);
+  --accent-contrast: #ffffff;
+  --success: #059669;
+  --success-soft: rgba(5, 150, 105, 0.15);
+  --warning: #d97706;
+  --warning-soft: rgba(217, 119, 6, 0.15);
+  --error: #dc2626;
+  --error-soft: rgba(220, 38, 38, 0.15);
+  --shadow-lg: 0 28px 60px rgba(41, 64, 32, 0.14);
+  --shadow-md: 0 18px 44px rgba(41, 64, 32, 0.12);
+  --shadow-sm: 0 10px 28px rgba(41, 64, 32, 0.08);
+  --radius-lg: 28px;
+  --radius-md: 20px;
+  --radius-sm: 14px;
+  --transition: 180ms ease;
+  --content-width: min(800px, 92vw);
 }
 
+[data-theme="dark"] {
+  --bg: #141e0f;
+  --bg-alt: #1a2814;
+  --surface: rgba(26, 40, 20, 0.92);
+  --surface-muted: rgba(34, 52, 26, 0.82);
+  --surface-soft: rgba(26, 40, 20, 0.86);
+  --stroke: rgba(200, 224, 180, 0.12);
+  --stroke-strong: rgba(200, 224, 180, 0.18);
+  --ink: #e8f4e0;
+  --ink-soft: rgba(232, 244, 224, 0.82);
+  --ink-muted: rgba(232, 244, 224, 0.6);
+  --accent: #8fb880;
+  --accent-strong: #a8d094;
+  --accent-soft: rgba(143, 184, 128, 0.22);
+  --accent-contrast: #0f1a0a;
+  --shadow-lg: 0 32px 70px rgba(10, 18, 6, 0.6);
+  --shadow-md: 0 22px 50px rgba(10, 18, 6, 0.48);
+  --shadow-sm: 0 14px 32px rgba(10, 18, 6, 0.38);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: radial-gradient(circle at top left, var(--bg-alt), transparent 55%),
+    linear-gradient(180deg, var(--bg) 0%, var(--surface) 60%, var(--bg-alt) 100%);
+  color: var(--ink);
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background-image: radial-gradient(rgba(79, 121, 66, 0.12) 1px, transparent 1px);
+  background-size: 28px 28px;
+  opacity: 0.35;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+a {
+  color: var(--accent-strong);
+  text-decoration: none;
+  transition: color var(--transition);
+}
+
+a:hover {
+  color: var(--accent);
+}
+
+/* Layout */
+.app-shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Header */
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  backdrop-filter: blur(18px);
+  background: color-mix(in srgb, var(--surface-soft) 88%, transparent);
+  border-bottom: 1px solid var(--stroke);
+}
+
+.header-shell {
+  width: var(--content-width);
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.85rem;
+  padding: 0.75rem 0;
+  min-height: 64px;
+}
+
+/* Brand */
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.55rem 0.85rem 0.55rem 0.55rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--stroke);
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+  text-decoration: none;
+  color: inherit;
+  transition: transform var(--transition), box-shadow var(--transition);
+}
+
+.brand:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+  color: inherit;
+}
+
+.brand-icon {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 999px;
+  background: linear-gradient(140deg, var(--accent), var(--accent-strong));
+  color: var(--accent-contrast);
+  display: grid;
+  place-items: center;
+  font-family: 'Playfair Display', 'Times New Roman', serif;
+  font-size: 1.1rem;
+  letter-spacing: 0.04em;
+}
+
+.brand-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.brand-title {
+  font-family: 'Playfair Display', 'Times New Roman', serif;
+  font-size: 1.2rem;
+  letter-spacing: 0.02em;
+}
+
+.brand-subtitle {
+  font-size: 0.82rem;
+  color: var(--ink-muted);
+}
+
+/* Theme Toggle */
+.theme-toggle {
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 999px;
+  border: 1px solid var(--stroke);
+  background: var(--surface);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: transform var(--transition), box-shadow var(--transition);
+  box-shadow: var(--shadow-sm);
+}
+
+.theme-toggle:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.theme-icon {
+  width: 1.25rem;
+  height: 1.25rem;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, var(--accent-contrast) 0%, var(--accent-contrast) 34%, transparent 60%),
+    linear-gradient(140deg, var(--accent), var(--accent-strong));
+  box-shadow: inset 0 -2px 4px rgba(0, 0, 0, 0.16);
+}
+
+[data-theme="dark"] .theme-icon {
+  background: radial-gradient(circle at 70% 30%, rgba(15, 26, 10, 0.35) 0%, rgba(15, 26, 10, 0.35) 34%, transparent 58%),
+    linear-gradient(140deg, var(--accent), var(--accent-strong));
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.25);
+}
+
+/* Main Content */
+main {
+  flex: 1;
+  padding: 2rem 0;
+}
+
+.container {
+  width: var(--content-width);
+  margin: 0 auto;
+}
+
+/* Login Screen */
 .login-card {
-  max-width: 360px;
+  max-width: 400px;
   margin: 4rem auto;
   padding: 2rem;
   background: var(--surface);
   border: 1px solid var(--stroke);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-lg);
-}
-
-.login-card h1 {
-  font-family: 'Playfair Display', serif;
-  font-size: 1.5rem;
-  margin: 0 0 1.5rem;
   text-align: center;
 }
 
-.form-group {
+.login-title {
+  font-family: 'Playfair Display', 'Times New Roman', serif;
+  font-size: 1.8rem;
+  margin: 0 0 0.5rem;
+}
+
+.login-subtitle {
+  color: var(--ink-muted);
+  margin: 0 0 1.5rem;
+}
+
+.login-input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--stroke-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface-muted);
+  color: var(--ink);
+  font-size: 1rem;
+  margin-bottom: 1rem;
+  transition: border-color var(--transition), box-shadow var(--transition);
+}
+
+.login-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.login-error {
+  color: var(--error);
+  font-size: 0.9rem;
   margin-bottom: 1rem;
 }
 
-.form-group label {
-  display: block;
-  font-weight: 600;
-  margin-bottom: 0.5rem;
-}
-
-.form-group input {
-  width: 100%;
-  padding: 0.75rem 1rem;
-  border: 1px solid var(--stroke);
-  border-radius: var(--radius-sm);
-  font: inherit;
-  background: var(--surface);
-  color: var(--ink);
-}
-
-.form-group input:focus {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
-}
-
-.error-message {
-  color: var(--warning);
-  font-size: 0.9rem;
-  margin-top: 0.5rem;
-  display: none;
-}
-
-.error-message.visible {
-  display: block;
-}
-
-/* Editor */
-.editor-header {
-  display: flex;
-  justify-content: space-between;
+/* Buttons */
+.btn {
+  display: inline-flex;
   align-items: center;
-  margin-bottom: 1.5rem;
-  flex-wrap: wrap;
-  gap: 1rem;
+  justify-content: center;
+  gap: 0.45rem;
+  padding: 0.75rem 1.5rem;
+  border-radius: 999px;
+  font-weight: 600;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: transform var(--transition), box-shadow var(--transition), background var(--transition);
+  background: linear-gradient(140deg, var(--accent), var(--accent-strong));
+  color: var(--accent-contrast);
+  box-shadow: var(--shadow-sm);
+  font-size: 1rem;
 }
 
-.editor-header h1 {
-  font-family: 'Playfair Display', serif;
-  font-size: 1.6rem;
+.btn:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.btn.ghost {
+  background: transparent;
+  color: var(--accent-strong);
+  border-color: color-mix(in srgb, var(--accent) 35%, transparent);
+}
+
+.btn.ghost:hover {
+  background: var(--accent-soft);
+}
+
+.btn.success {
+  background: linear-gradient(140deg, var(--success), #047857);
+}
+
+.btn.full {
+  width: 100%;
+}
+
+/* Admin Panel */
+.admin-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+}
+
+.admin-title {
+  font-family: 'Playfair Display', 'Times New Roman', serif;
+  font-size: 1.8rem;
   margin: 0;
 }
 
-/* Section cards */
+.admin-actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+/* Status Messages */
+.status-message {
+  padding: 1rem;
+  border-radius: var(--radius-sm);
+  margin-bottom: 1.5rem;
+  font-weight: 500;
+}
+
+.status-message.success {
+  background: var(--success-soft);
+  color: var(--success);
+  border: 1px solid var(--success);
+}
+
+.status-message.error {
+  background: var(--error-soft);
+  color: var(--error);
+  border: 1px solid var(--error);
+}
+
+.status-message.info {
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+  border: 1px solid var(--accent);
+}
+
+/* Section Cards */
 .section-card {
   background: var(--surface);
   border: 1px solid var(--stroke);
   border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
   margin-bottom: 1.5rem;
   overflow: hidden;
-  box-shadow: var(--shadow-sm);
 }
 
 .section-header {
-  background: linear-gradient(135deg, var(--accent), var(--accent-strong));
-  color: white;
-  padding: 0.75rem 1rem;
-  font-weight: 600;
-  font-size: 0.95rem;
   display: flex;
-  justify-content: space-between;
   align-items: center;
-}
-
-.section-header button {
-  background: rgba(255,255,255,0.2);
-  border: none;
-  color: white;
-  padding: 0.4rem 0.8rem;
-  border-radius: 6px;
-  font-size: 0.85rem;
-  cursor: pointer;
-  font-weight: 500;
-}
-
-.section-header button:hover {
-  background: rgba(255,255,255,0.3);
-}
-
-.section-body {
-  padding: 0.5rem;
-}
-
-/* Row items */
-.row-item {
-  display: grid;
-  grid-template-columns: 1fr 2fr auto;
-  gap: 0.5rem;
-  padding: 0.5rem;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+  background: var(--surface-muted);
   border-bottom: 1px solid var(--stroke);
-  align-items: start;
+  cursor: pointer;
+  transition: background var(--transition);
 }
 
-.row-item:last-child {
-  border-bottom: none;
+.section-header:hover {
+  background: var(--accent-soft);
 }
 
-.row-item input,
-.row-item textarea {
-  width: 100%;
-  padding: 0.5rem 0.75rem;
-  border: 1px solid var(--stroke);
-  border-radius: 8px;
-  font: inherit;
-  font-size: 0.9rem;
-  background: var(--surface);
-  color: var(--ink);
-}
-
-.row-item input:focus,
-.row-item textarea:focus {
-  outline: 2px solid var(--accent);
-  outline-offset: 1px;
-}
-
-.row-item textarea {
-  resize: vertical;
-  min-height: 60px;
-}
-
-.row-item .field-label {
-  font-size: 0.75rem;
-  color: var(--ink-muted);
-  margin-bottom: 0.25rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.row-item .field-group {
+.section-title {
+  font-family: 'Playfair Display', 'Times New Roman', serif;
+  font-size: 1.2rem;
+  margin: 0;
   display: flex;
-  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
 }
 
-.btn-delete-row {
-  background: none;
-  border: none;
-  color: var(--warning);
-  cursor: pointer;
-  padding: 0.5rem;
-  border-radius: 6px;
-  opacity: 0.6;
-  transition: opacity 0.2s;
-  align-self: center;
+.section-toggle {
+  font-size: 1.2rem;
+  transition: transform var(--transition);
 }
 
-.btn-delete-row:hover {
-  opacity: 1;
-  background: rgba(217, 119, 6, 0.1);
+.section-card.collapsed .section-toggle {
+  transform: rotate(-90deg);
 }
 
-/* Link toggle */
-.link-toggle {
-  font-size: 0.8rem;
-  color: var(--accent);
-  cursor: pointer;
-  margin-top: 0.25rem;
-}
-
-.link-toggle:hover {
-  text-decoration: underline;
-}
-
-.link-input {
-  margin-top: 0.5rem;
-}
-
-.link-input.hidden {
+.section-card.collapsed .section-content {
   display: none;
 }
 
-/* Status bar */
-.status-bar {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  padding: 1rem;
-  background: var(--surface);
-  border-top: 1px solid var(--stroke);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  box-shadow: 0 -4px 20px rgba(0,0,0,0.1);
-  z-index: 50;
+.section-content {
+  padding: 1.25rem;
 }
 
-.status-text {
-  font-size: 0.9rem;
+/* Form Elements */
+.form-group {
+  margin-bottom: 1rem;
+}
+
+.form-label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
   color: var(--ink-soft);
 }
 
-.status-text.saving { color: var(--accent); }
-.status-text.saved { color: #22c55e; }
-.status-text.error { color: var(--warning); }
-
-/* Empty section */
-.empty-section {
-  padding: 1.5rem;
-  text-align: center;
-  color: var(--ink-muted);
-  font-style: italic;
+.form-input,
+.form-textarea {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--stroke-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface-muted);
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 0.95rem;
+  transition: border-color var(--transition), box-shadow var(--transition);
 }
 
-@media (max-width: 600px) {
-  .row-item {
-    grid-template-columns: 1fr;
-    gap: 0.75rem;
+.form-input:focus,
+.form-textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.form-textarea {
+  min-height: 100px;
+  resize: vertical;
+}
+
+.form-hint {
+  font-size: 0.82rem;
+  color: var(--ink-muted);
+  margin-top: 0.35rem;
+}
+
+/* Program Items */
+.program-items {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.program-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  background: var(--surface-muted);
+  border: 1px solid var(--stroke);
+  border-radius: var(--radius-sm);
+}
+
+.program-item-row {
+  display: grid;
+  grid-template-columns: 1fr 2fr auto;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.program-item input {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--stroke-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 0.9rem;
+}
+
+.program-item input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.link-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.link-row.hidden {
+  display: none;
+}
+
+.link-row input {
+  flex: 1;
+  font-size: 0.82rem;
+  padding: 0.35rem 0.6rem;
+}
+
+.add-link-btn {
+  font-size: 0.75rem;
+  color: var(--accent-strong);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  border-radius: var(--radius-sm);
+  transition: background var(--transition);
+}
+
+.add-link-btn:hover {
+  background: var(--accent-soft);
+}
+
+.add-link-btn.hidden {
+  display: none;
+}
+
+.remove-link-btn {
+  font-size: 0.7rem;
+  color: var(--ink-muted);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.2rem 0.4rem;
+}
+
+.remove-link-btn:hover {
+  color: var(--error);
+}
+
+.remove-btn {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 999px;
+  border: 1px solid var(--stroke);
+  background: var(--surface);
+  color: var(--error);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  font-size: 1.2rem;
+  transition: background var(--transition), color var(--transition);
+}
+
+.remove-btn:hover {
+  background: var(--error-soft);
+}
+
+.add-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border: 1px dashed var(--stroke-strong);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--accent-strong);
+  cursor: pointer;
+  font-weight: 600;
+  transition: background var(--transition), border-color var(--transition);
+}
+
+.add-btn:hover {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+
+/* Section Actions */
+.section-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--stroke);
+}
+
+.section-actions .add-btn {
+  flex: 1;
+  min-width: 140px;
+}
+
+.section-actions .section-save-btn {
+  padding: 0.5rem 1rem;
+  font-size: 0.85rem;
+}
+
+/* Hymn row */
+.hymn-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0;
+  margin-top: 0.25rem;
+  background: var(--accent-soft);
+  border-radius: var(--radius-sm);
+  padding: 0.5rem 0.75rem;
+}
+
+.hymn-row.hidden {
+  display: none;
+}
+
+.hymn-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--accent);
+  white-space: nowrap;
+}
+
+.hymn-number {
+  width: 80px;
+  padding: 0.35rem 0.5rem;
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+.hymn-number:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-soft);
+}
+
+.hymn-status {
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+/* Meeting Type Toggle */
+.meeting-type-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 0.5rem;
+}
+
+.toggle-label {
+  font-weight: 600;
+  color: var(--ink-muted);
+  transition: color var(--transition);
+}
+
+.toggle-label.active {
+  color: var(--accent);
+}
+
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 60px;
+  height: 32px;
+}
+
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle-slider {
+  position: absolute;
+  cursor: pointer;
+  inset: 0;
+  background: var(--accent);
+  border-radius: 999px;
+  transition: background var(--transition);
+}
+
+.toggle-slider::before {
+  content: "";
+  position: absolute;
+  height: 24px;
+  width: 24px;
+  left: 4px;
+  bottom: 4px;
+  background: white;
+  border-radius: 50%;
+  transition: transform var(--transition);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.toggle-switch input:checked + .toggle-slider::before {
+  transform: translateX(28px);
+}
+
+/* Event Grid */
+.event-grid {
+  grid-template-columns: 100px 1fr 1.2fr 1fr auto !important;
+}
+
+.event-type-select {
+  padding: 0.4rem 0.6rem;
+  border: 1px solid var(--stroke-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.event-type-select:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.event-date-picker {
+  padding: 0.4rem 0.6rem;
+  border: 1px solid var(--stroke-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 0.85rem;
+  font-family: inherit;
+}
+
+.event-date-picker:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.date-field .hidden {
+  display: none !important;
+}
+
+/* Mobile labels */
+.mobile-label {
+  display: none;
+}
+
+.mobile-field {
+  display: contents;
+}
+
+/* Footer */
+.site-footer {
+  margin-top: auto;
+  padding: 2rem 1.5rem;
+  text-align: center;
+  color: var(--ink-muted);
+  font-size: 0.88rem;
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  :root {
+    --content-width: 95vw;
   }
 
-  .btn-delete-row {
-    justify-self: end;
+  .header-shell {
+    padding: 0.5rem 0;
+  }
+
+  .brand {
+    padding: 0.4rem 0.6rem 0.4rem 0.4rem;
+    gap: 0.5rem;
+  }
+
+  .brand-icon {
+    width: 2rem;
+    height: 2rem;
+    font-size: 0.9rem;
+  }
+
+  .brand-title {
+    font-size: 1rem;
+  }
+
+  .brand-subtitle {
+    font-size: 0.72rem;
+  }
+
+  .admin-header {
+    flex-direction: column;
+    align-items: stretch;
+    text-align: center;
+    gap: 0.75rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .admin-title {
+    font-size: 1.4rem;
+  }
+
+  .admin-actions {
+    justify-content: center;
+    gap: 0.5rem;
+  }
+
+  .admin-actions .btn {
+    padding: 0.5rem 0.9rem;
+    font-size: 0.85rem;
+  }
+
+  .section-card {
+    margin-bottom: 1rem;
+    border-radius: var(--radius-sm);
+  }
+
+  .section-header {
+    padding: 0.75rem 1rem;
+  }
+
+  .section-title {
+    font-size: 1rem;
+  }
+
+  .section-content {
+    padding: 1rem;
+  }
+
+  .program-items {
+    gap: 0.6rem;
+  }
+
+  .program-item {
+    padding: 0.6rem;
+    gap: 0.4rem;
+    border-radius: var(--radius-sm);
+    position: relative;
+  }
+
+  .program-item-row {
+    grid-template-columns: 1fr !important;
+    gap: 0.35rem;
+  }
+
+  .program-item-row input,
+  .program-item-row select {
+    width: 100%;
+    padding: 0.4rem 0.6rem;
+    font-size: 0.9rem;
+  }
+
+  .program-item-row .remove-btn {
+    position: absolute;
+    top: -0.4rem;
+    right: -0.4rem;
+    width: 1.5rem;
+    height: 1.5rem;
+    font-size: 0.9rem;
+    background: var(--surface);
+    box-shadow: var(--shadow-sm);
+    z-index: 1;
+  }
+
+  .mobile-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+  }
+
+  .mobile-label {
+    display: block;
+    font-size: 0.65rem;
+    font-weight: 600;
+    color: var(--ink-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .event-grid {
+    display: flex !important;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+
+  .hymn-row {
+    flex-wrap: wrap;
+  }
+
+  .link-row {
+    flex-direction: column;
+    gap: 0.35rem;
+  }
+
+  .link-row input {
+    width: 100%;
+    font-size: 0.85rem;
+    padding: 0.4rem 0.6rem;
+  }
+
+  .link-row .remove-link-btn {
+    align-self: flex-end;
+  }
+
+  .add-link-btn {
+    font-size: 0.82rem;
+    padding: 0.35rem 0.6rem;
+  }
+
+  .add-btn {
+    width: 100%;
+    justify-content: center;
+    padding: 0.75rem 1rem;
+  }
+
+  .form-textarea {
+    min-height: 80px;
+  }
+
+  .status-message {
+    font-size: 0.9rem;
+    padding: 0.75rem;
+  }
+
+  .login-card {
+    margin: 2rem auto;
+    padding: 1.5rem;
+  }
+
+  .login-title {
+    font-size: 1.5rem;
   }
 }
 </style>
 </head>
 <body>
-
-<!-- Login Screen -->
-<div id="login-screen">
-  <div class="login-card">
-    <h1>Admin Login</h1>
-    <form id="login-form">
-      <div class="form-group">
-        <label for="password">Password</label>
-        <input type="password" id="password" name="password" required autocomplete="current-password">
-        <p class="error-message" id="login-error">Invalid password</p>
-      </div>
-      <button type="submit" class="btn full">Sign In</button>
-    </form>
+<div class="app-shell">
+<header class="site-header">
+  <div class="header-shell">
+    <a class="brand" href="/">
+      <span class="brand-icon" aria-hidden="true">AW</span>
+      <span class="brand-copy">
+        <span class="brand-title">Aspen Ward</span>
+        <span class="brand-subtitle">Program Admin</span>
+      </span>
+    </a>
+    <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Switch theme">
+      <span class="theme-icon" aria-hidden="true"></span>
+    </button>
   </div>
-</div>
+</header>
 
-<!-- Editor Screen -->
-<div id="editor-screen" hidden>
-  <header class="site-header">
-    <div class="header-shell">
-      <a class="brand" href="/">
-        <span class="brand-icon">AW</span>
-        <span class="brand-copy">
-          <span class="brand-title">Aspen Ward</span>
-          <span class="brand-subtitle">Program Editor</span>
-        </span>
-      </a>
-      <div class="header-actions">
-        <button class="btn ghost" id="logout-btn">Logout</button>
+<main>
+  <div class="container">
+    <!-- Login Screen -->
+    <div id="login-screen">
+      <div class="login-card">
+        <h1 class="login-title">Admin Login</h1>
+        <p class="login-subtitle">Enter the password to edit the Sunday program</p>
+        <input type="password" id="password-input" class="login-input" placeholder="Password" autocomplete="off">
+        <p id="login-error" class="login-error" hidden></p>
+        <button id="login-btn" class="btn full">Sign In</button>
       </div>
     </div>
-  </header>
 
-  <main class="admin-content">
-    <div class="editor-header">
-      <h1>Sunday Program</h1>
-      <button class="btn" id="save-btn">Save Changes</button>
+    <!-- Admin Panel -->
+    <div id="admin-panel" hidden>
+      <div class="admin-header">
+        <h1 class="admin-title">Sunday Program Editor</h1>
+        <div class="admin-actions">
+          <button id="save-btn" class="btn success">Save Changes</button>
+          <a href="/" class="btn ghost">View Site</a>
+          <button id="logout-btn" class="btn ghost">Logout</button>
+        </div>
+      </div>
+
+      <div id="status-message" class="status-message" hidden></div>
+
+      <!-- Banner Section -->
+      <div class="section-card collapsed" data-section="banner">
+        <div class="section-header">
+          <h2 class="section-title">Banner Announcements</h2>
+          <span class="section-toggle">▼</span>
+        </div>
+        <div class="section-content">
+          <p class="form-hint" style="margin-bottom: 1rem;">These appear in the scrolling banner when visitors first arrive.</p>
+          <div id="banner-items" class="program-items"></div>
+          <div class="section-actions">
+            <button type="button" class="add-btn" data-add="banner">+ Add Banner Item</button>
+            <button type="button" class="btn success section-save-btn">Save Changes</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Introduction Section -->
+      <div class="section-card collapsed" data-section="introduction">
+        <div class="section-header">
+          <h2 class="section-title">Introduction</h2>
+          <span class="section-toggle">▼</span>
+        </div>
+        <div class="section-content">
+          <div class="form-group">
+            <label class="form-label">Welcome Message</label>
+            <textarea id="intro-message" class="form-textarea" placeholder="Welcome message for the program..."></textarea>
+          </div>
+          <div class="section-actions">
+            <button type="button" class="btn success section-save-btn">Save Changes</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Opening Section -->
+      <div class="section-card collapsed" data-section="opening">
+        <div class="section-header">
+          <h2 class="section-title">Opening</h2>
+          <span class="section-toggle">▼</span>
+        </div>
+        <div class="section-content">
+          <div id="opening-items" class="program-items"></div>
+          <div class="section-actions">
+            <button type="button" class="add-btn" data-add="opening">+ Add Opening Item</button>
+            <button type="button" class="btn success section-save-btn">Save Changes</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sacrament Section -->
+      <div class="section-card collapsed" data-section="sacrament">
+        <div class="section-header">
+          <h2 class="section-title">Sacrament</h2>
+          <span class="section-toggle">▼</span>
+        </div>
+        <div class="section-content">
+          <div id="sacrament-items" class="program-items"></div>
+          <div class="section-actions">
+            <button type="button" class="add-btn" data-add="sacrament">+ Add Sacrament Item</button>
+            <button type="button" class="btn success section-save-btn">Save Changes</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Meeting Type Toggle -->
+      <div class="section-card collapsed" data-section="meeting-type">
+        <div class="section-header">
+          <h2 class="section-title">Meeting Type</h2>
+          <span class="section-toggle">▼</span>
+        </div>
+        <div class="section-content">
+          <div class="meeting-type-toggle">
+            <span class="toggle-label" data-for="speakers">Speakers</span>
+            <label class="toggle-switch">
+              <input type="checkbox" id="testimony-toggle">
+              <span class="toggle-slider"></span>
+            </label>
+            <span class="toggle-label" data-for="testimony">Testimony Meeting</span>
+          </div>
+          <p class="form-hint" style="margin-top: 0.75rem; text-align: center;">Toggle to switch between regular speakers and fast & testimony meeting.</p>
+        </div>
+      </div>
+
+      <!-- Testimony Section (hidden by default) -->
+      <div class="section-card collapsed" data-section="testimony" id="testimony-section" hidden>
+        <div class="section-header">
+          <h2 class="section-title">Testimony Meeting</h2>
+          <span class="section-toggle">▼</span>
+        </div>
+        <div class="section-content">
+          <div class="form-group">
+            <label class="form-label">Testimony Meeting Message</label>
+            <textarea id="testimony-message" class="form-textarea" placeholder="Members of the congregation are invited to share their testimonies..."></textarea>
+          </div>
+          <div class="section-actions">
+            <button type="button" class="btn success section-save-btn">Save Changes</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Speakers Section -->
+      <div class="section-card collapsed" data-section="speakers" id="speakers-section">
+        <div class="section-header">
+          <h2 class="section-title">Speakers</h2>
+          <span class="section-toggle">▼</span>
+        </div>
+        <div class="section-content">
+          <div id="speakers-items" class="program-items"></div>
+          <div class="section-actions">
+            <button type="button" class="add-btn" data-add="speakers">+ Add Speaker</button>
+            <button type="button" class="btn success section-save-btn">Save Changes</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Closing Section -->
+      <div class="section-card collapsed" data-section="closing">
+        <div class="section-header">
+          <h2 class="section-title">Closing</h2>
+          <span class="section-toggle">▼</span>
+        </div>
+        <div class="section-content">
+          <div id="closing-items" class="program-items"></div>
+          <div class="section-actions">
+            <button type="button" class="add-btn" data-add="closing">+ Add Closing Item</button>
+            <button type="button" class="btn success section-save-btn">Save Changes</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Announcements Section -->
+      <div class="section-card collapsed" data-section="announcements">
+        <div class="section-header">
+          <h2 class="section-title">Ward Announcements</h2>
+          <span class="section-toggle">▼</span>
+        </div>
+        <div class="section-content">
+          <p class="form-hint" style="margin-bottom: 1rem;">These appear in the announcements section on the main page.</p>
+          <div id="announcements-items" class="program-items"></div>
+          <div class="section-actions">
+            <button type="button" class="add-btn" data-add="announcements">+ Add Announcement</button>
+            <button type="button" class="btn success section-save-btn">Save Changes</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Events Section -->
+      <div class="section-card collapsed" data-section="events">
+        <div class="section-header">
+          <h2 class="section-title">Upcoming Events</h2>
+          <span class="section-toggle">▼</span>
+        </div>
+        <div class="section-content">
+          <p class="form-hint" style="margin-bottom: 1rem;">Ward activities, service opportunities, and upcoming events.</p>
+          <div id="events-items" class="program-items"></div>
+          <div class="section-actions">
+            <button type="button" class="add-btn" data-add="events">+ Add Event</button>
+            <button type="button" class="btn success section-save-btn">Save Changes</button>
+          </div>
+        </div>
+      </div>
+
     </div>
-
-    <div id="sections-container">
-      <!-- Sections rendered by JS -->
-    </div>
-  </main>
-
-  <div class="status-bar">
-    <span class="status-text" id="status-text">Ready</span>
-    <button class="btn" id="save-btn-bottom">Save Changes</button>
   </div>
+</main>
+
+<footer class="site-footer">
+  <p>Aspen Ward Program Admin</p>
+</footer>
 </div>
 
 <script type="module">
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwYlUNAg2BLeAzGaZF6WkKHYHbRsJLzTUvCY4-IA-pB61VNpaZRxe5wV5Ic9Uukh3I7/exec';
+// Firebase SDK imports
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.7.3/firebase-app.js';
+import { getDatabase, ref, get, set } from 'https://www.gstatic.com/firebasejs/11.7.3/firebase-database.js';
 
-// State
-let programData = [];
-let hasUnsavedChanges = false;
-let sessionPassword = '';
+// Firebase Configuration (Aspen Ward)
+const firebaseConfig = {
+  apiKey: "AIzaSyBbwlTuMoSMl2vfXA5aHkQM0RC2PUrKDXk",
+  authDomain: "aspen-ward-missionary-dinner.firebaseapp.com",
+  databaseURL: "https://aspen-ward-missionary-dinner-default-rtdb.firebaseio.com",
+  projectId: "aspen-ward-missionary-dinner",
+  storageBucket: "aspen-ward-missionary-dinner.firebasestorage.app",
+  messagingSenderId: "350865820261",
+  appId: "1:350865820261:web:26912e9b753852ae7ed48c"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+// Simple password
+const ADMIN_PASSWORD = '1Givethanks';
 
 // DOM Elements
 const loginScreen = document.getElementById('login-screen');
-const editorScreen = document.getElementById('editor-screen');
-const loginForm = document.getElementById('login-form');
+const adminPanel = document.getElementById('admin-panel');
+const passwordInput = document.getElementById('password-input');
+const loginBtn = document.getElementById('login-btn');
 const loginError = document.getElementById('login-error');
-const sectionsContainer = document.getElementById('sections-container');
-const statusText = document.getElementById('status-text');
-const saveBtn = document.getElementById('save-btn');
-const saveBtnBottom = document.getElementById('save-btn-bottom');
 const logoutBtn = document.getElementById('logout-btn');
+const saveBtn = document.getElementById('save-btn');
+const statusMessage = document.getElementById('status-message');
+const themeToggle = document.getElementById('theme-toggle');
 
-// Section display names
-const SECTION_NAMES = {
-  'banner': 'Banner / Welcome',
-  'introduction': 'Introduction',
-  'opening': 'Opening',
-  'sacrament': 'Sacrament',
-  'speakers': 'Speakers',
-  'closing': 'Closing',
-  'announcements': 'Announcements'
+// Section containers
+const sections = {
+  banner: document.getElementById('banner-items'),
+  opening: document.getElementById('opening-items'),
+  sacrament: document.getElementById('sacrament-items'),
+  speakers: document.getElementById('speakers-items'),
+  closing: document.getElementById('closing-items'),
+  announcements: document.getElementById('announcements-items'),
+  events: document.getElementById('events-items')
 };
 
-// Check for saved session
-const savedPassword = sessionStorage.getItem('adminPassword');
-if (savedPassword) {
-  sessionPassword = savedPassword;
-  showEditor();
+// Current program data
+let programData = [];
+let eventsData = [];
+let isTestimonyMeeting = false;
+
+// Testimony toggle elements
+const testimonyToggle = document.getElementById('testimony-toggle');
+const testimonySection = document.getElementById('testimony-section');
+const speakersSection = document.getElementById('speakers-section');
+const testimonyMessage = document.getElementById('testimony-message');
+
+// === Theme Functions ===
+function applyTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme);
 }
 
-// Login
-loginForm.addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const password = document.getElementById('password').value;
-  setStatus('Logging in...', 'saving');
+function initTheme() {
+  const stored = localStorage.getItem('theme');
+  const prefersLight = window.matchMedia?.('(prefers-color-scheme: light)').matches;
+  const initial = stored === 'light' || stored === 'dark' ? stored : (prefersLight ? 'light' : 'dark');
+  applyTheme(initial);
 
-  try {
-    const response = await callApi('login', { password });
-    if (response.success) {
-      sessionPassword = password;
-      sessionStorage.setItem('adminPassword', password);
-      loginError.classList.remove('visible');
-      showEditor();
-    } else {
-      loginError.classList.add('visible');
-      setStatus('Login failed', 'error');
-    }
-  } catch (error) {
-    loginError.textContent = 'Connection error';
-    loginError.classList.add('visible');
-    setStatus('Connection error', 'error');
+  themeToggle?.addEventListener('click', () => {
+    const current = document.documentElement.getAttribute('data-theme') || 'dark';
+    const next = current === 'light' ? 'dark' : 'light';
+    applyTheme(next);
+    localStorage.setItem('theme', next);
+  });
+}
+
+// === Authentication ===
+function checkAuth() {
+  return sessionStorage.getItem('admin-auth') === 'true';
+}
+
+function login() {
+  const password = passwordInput.value;
+  if (password === ADMIN_PASSWORD) {
+    sessionStorage.setItem('admin-auth', 'true');
+    loginScreen.hidden = true;
+    adminPanel.hidden = false;
+    loadProgram();
+  } else {
+    loginError.textContent = 'Incorrect password';
+    loginError.hidden = false;
+    passwordInput.value = '';
+    passwordInput.focus();
   }
-});
-
-// Logout
-logoutBtn.addEventListener('click', () => {
-  if (hasUnsavedChanges && !confirm('You have unsaved changes. Logout anyway?')) return;
-  sessionPassword = '';
-  sessionStorage.removeItem('adminPassword');
-  loginScreen.hidden = false;
-  editorScreen.hidden = true;
-});
-
-async function showEditor() {
-  loginScreen.hidden = true;
-  editorScreen.hidden = false;
-  await loadProgram();
 }
 
-// Load data
-async function loadProgram() {
-  setStatus('Loading...', 'saving');
+function logout() {
+  sessionStorage.removeItem('admin-auth');
+  adminPanel.hidden = true;
+  loginScreen.hidden = false;
+  passwordInput.value = '';
+}
 
-  try {
-    const response = await callApi('read', { password: sessionPassword });
+// === Status Messages ===
+function showStatus(message, type = 'info') {
+  statusMessage.textContent = message;
+  statusMessage.className = `status-message ${type}`;
+  statusMessage.hidden = false;
 
-    if (response.success) {
-      programData = response.data;
-      renderSections();
-      setStatus('Loaded successfully', 'saved');
+  if (type === 'success') {
+    setTimeout(() => {
+      statusMessage.hidden = true;
+    }, 3000);
+  }
+}
+
+function hideStatus() {
+  statusMessage.hidden = true;
+}
+
+// === Section Toggle ===
+function initSectionToggles() {
+  document.querySelectorAll('.section-header').forEach(header => {
+    header.addEventListener('click', () => {
+      header.closest('.section-card').classList.toggle('collapsed');
+    });
+  });
+}
+
+// === Hymn number to URL slug mapping ===
+const hymnSlugs = {
+  1: "the-morning-breaks", 2: "the-spirit-of-god", 3: "now-let-us-rejoice", 4: "truth-eternal",
+  5: "high-on-the-mountain-top", 6: "redeemer-of-israel", 7: "israel-israel-god-is-calling",
+  19: "we-thank-thee-o-god-for-a-prophet", 26: "joseph-smiths-first-prayer", 27: "praise-to-the-man",
+  29: "a-poor-wayfaring-man-of-grief", 30: "come-come-ye-saints", 85: "how-firm-a-foundation",
+  86: "how-great-thou-art", 89: "the-lord-is-my-light", 92: "for-the-beauty-of-the-earth",
+  98: "i-need-thee-every-hour", 100: "nearer-my-god-to-thee", 116: "come-follow-me",
+  124: "be-still-my-soul", 129: "where-can-i-turn-for-peace", 131: "more-holiness-give-me",
+  134: "i-believe-in-christ", 136: "i-know-that-my-redeemer-lives", 145: "prayer-is-the-souls-sincere-desire",
+  152: "god-be-with-you-till-we-meet-again", 169: "as-now-we-take-the-sacrament",
+  175: "o-god-the-eternal-father", 185: "reverently-and-meekly-now", 187: "god-loved-us-so-he-sent-his-son",
+  193: "i-stand-all-amazed", 194: "there-is-a-green-hill-far-away", 195: "how-great-the-wisdom-and-the-love",
+  196: "jesus-once-of-humble-birth", 200: "christ-the-lord-is-risen-today", 201: "joy-to-the-world",
+  202: "oh-come-all-ye-faithful", 204: "silent-night", 219: "because-i-have-been-given-much",
+  223: "have-i-done-any-good", 239: "choose-the-right", 241: "count-your-blessings",
+  243: "let-us-all-press-on", 249: "called-to-serve", 252: "put-your-shoulder-to-the-wheel",
+  270: "ill-go-where-you-want-me-to-go", 292: "o-my-father", 301: "i-am-a-child-of-god"
+};
+
+function getHymnUrl(hymnNumber) {
+  const num = parseInt(hymnNumber);
+  if (!num) return null;
+  const slug = hymnSlugs[num];
+  if (slug) {
+    return `https://www.churchofjesuschrist.org/music/library/hymns/${slug}?lang=eng`;
+  }
+  return null;
+}
+
+// Helper to detect if text contains "hymn"
+function isHymnItem(text) {
+  return /hymn/i.test(text);
+}
+
+// Helper to extract hymn number from details like "#123" or "123"
+function extractHymnNumber(details) {
+  const match = details.match(/#?(\d+)/);
+  return match ? match[1] : '';
+}
+
+// === Program Item Templates ===
+function createProgramItemHTML(item, section) {
+  const { label = '', details = '', link = '' } = item;
+  const hasLink = link && link.trim() !== '';
+  const isHymn = isHymnItem(label);
+  const hymnNumber = isHymn ? extractHymnNumber(details) : '';
+  const hymnUrl = hymnNumber ? getHymnUrl(hymnNumber) : null;
+
+  const div = document.createElement('div');
+  div.className = 'program-item';
+  div.dataset.section = section;
+
+  div.innerHTML = `
+    <div class="program-item-row">
+      <div class="mobile-field">
+        <label class="mobile-label">Label</label>
+        <input type="text" class="item-label" placeholder="e.g., Opening Hymn" value="${escapeHtml(label)}">
+      </div>
+      <div class="mobile-field">
+        <label class="mobile-label">Details</label>
+        <input type="text" class="item-details" placeholder="e.g., #123 or John Smith" value="${escapeHtml(details)}">
+      </div>
+      <button type="button" class="remove-btn" title="Remove">&times;</button>
+    </div>
+    <div class="hymn-row ${isHymn ? '' : 'hidden'}">
+      <span class="hymn-label">Hymn #</span>
+      <input type="text" class="hymn-number" placeholder="123" value="${hymnNumber}">
+      <span class="hymn-status">${hymnUrl ? '✓ Link ready' : (hymnNumber ? '? Unknown hymn' : '')}</span>
+    </div>
+    <button type="button" class="add-link-btn ${hasLink || isHymn ? 'hidden' : ''}">+ Add link</button>
+    <div class="link-row ${hasLink && !isHymn ? '' : 'hidden'}">
+      <input type="text" class="item-link" placeholder="https://..." value="${escapeHtml(link)}">
+      <button type="button" class="remove-link-btn" title="Remove link">&times;</button>
+    </div>
+  `;
+
+  // Event listeners
+  const labelInput = div.querySelector('.item-label');
+  const detailsInput = div.querySelector('.item-details');
+  const hymnRow = div.querySelector('.hymn-row');
+  const hymnNumberInput = div.querySelector('.hymn-number');
+  const hymnStatus = div.querySelector('.hymn-status');
+  const addLinkBtn = div.querySelector('.add-link-btn');
+  const linkRow = div.querySelector('.link-row');
+  const linkInput = div.querySelector('.item-link');
+
+  // Check if label becomes a hymn
+  labelInput.addEventListener('input', () => {
+    const isNowHymn = isHymnItem(labelInput.value);
+    hymnRow.classList.toggle('hidden', !isNowHymn);
+    if (isNowHymn) {
+      addLinkBtn.classList.add('hidden');
+      linkRow.classList.add('hidden');
     } else {
-      setStatus('Error: ' + response.error, 'error');
-      if (response.error.includes('password')) {
-        sessionStorage.removeItem('adminPassword');
-        loginScreen.hidden = false;
-        editorScreen.hidden = true;
+      addLinkBtn.classList.remove('hidden');
+    }
+  });
+
+  // Update hymn status when number changes
+  hymnNumberInput.addEventListener('input', () => {
+    const num = hymnNumberInput.value.trim();
+    const url = getHymnUrl(num);
+    if (url) {
+      hymnStatus.textContent = '✓ Link ready';
+      hymnStatus.style.color = 'var(--success)';
+    } else if (num) {
+      hymnStatus.textContent = '? Unknown hymn';
+      hymnStatus.style.color = 'var(--warning)';
+    } else {
+      hymnStatus.textContent = '';
+    }
+    // Also update details field
+    if (num) {
+      detailsInput.value = `#${num}`;
+    }
+  });
+
+  // Sync details to hymn number if it's a hymn
+  detailsInput.addEventListener('input', () => {
+    if (isHymnItem(labelInput.value)) {
+      const num = extractHymnNumber(detailsInput.value);
+      hymnNumberInput.value = num;
+      const url = getHymnUrl(num);
+      if (url) {
+        hymnStatus.textContent = '✓ Link ready';
+        hymnStatus.style.color = 'var(--success)';
+      } else if (num) {
+        hymnStatus.textContent = '? Unknown hymn';
+        hymnStatus.style.color = 'var(--warning)';
+      } else {
+        hymnStatus.textContent = '';
       }
     }
+  });
+
+  // Remove item button with confirmation
+  div.querySelector('.remove-btn').addEventListener('click', () => {
+    if (confirm('Are you sure you want to delete this item?')) {
+      div.remove();
+    }
+  });
+
+  // Add link button
+  addLinkBtn.addEventListener('click', () => {
+    addLinkBtn.classList.add('hidden');
+    linkRow.classList.remove('hidden');
+    linkInput.focus();
+  });
+
+  // Remove link button
+  div.querySelector('.remove-link-btn').addEventListener('click', () => {
+    linkInput.value = '';
+    linkRow.classList.add('hidden');
+    addLinkBtn.classList.remove('hidden');
+  });
+
+  return div;
+}
+
+// === Event Item Template ===
+function createEventItemHTML(item) {
+  const { type = 'recurring', date = '', title = '', info = '', link = '' } = item;
+  const hasLink = link && link.trim() !== '';
+  const isOneTime = type === 'one-time';
+
+  let datePickerValue = '';
+  if (isOneTime && date) {
+    const parsed = new Date(date);
+    if (!isNaN(parsed.getTime())) {
+      datePickerValue = parsed.toISOString().split('T')[0];
+    }
+  }
+
+  const div = document.createElement('div');
+  div.className = 'program-item event-item';
+
+  div.innerHTML = `
+    <div class="program-item-row event-grid">
+      <div class="mobile-field">
+        <label class="mobile-label">Type</label>
+        <select class="event-type event-type-select">
+          <option value="recurring" ${type === 'recurring' ? 'selected' : ''}>Recurring</option>
+          <option value="one-time" ${type === 'one-time' ? 'selected' : ''}>One-time</option>
+        </select>
+      </div>
+      <div class="mobile-field date-field">
+        <label class="mobile-label">Date</label>
+        <input type="text" class="event-date event-date-text ${isOneTime ? 'hidden' : ''}" placeholder="Every Wednesday" value="${escapeHtml(isOneTime ? '' : date)}">
+        <input type="date" class="event-date event-date-picker ${isOneTime ? '' : 'hidden'}" value="${datePickerValue}">
+      </div>
+      <div class="mobile-field">
+        <label class="mobile-label">Event Title</label>
+        <input type="text" class="event-title" placeholder="Youth Activities" value="${escapeHtml(title)}">
+      </div>
+      <div class="mobile-field">
+        <label class="mobile-label">Time/Details</label>
+        <input type="text" class="event-info" placeholder="7:00 PM" value="${escapeHtml(info)}">
+      </div>
+      <button type="button" class="remove-btn" title="Remove">&times;</button>
+    </div>
+    <button type="button" class="add-link-btn ${hasLink ? 'hidden' : ''}">+ Add link</button>
+    <div class="link-row ${hasLink ? '' : 'hidden'}">
+      <input type="text" class="event-link" placeholder="https://..." value="${escapeHtml(link)}">
+      <button type="button" class="remove-link-btn" title="Remove link">&times;</button>
+    </div>
+  `;
+
+  // Toggle between text input and date picker based on type
+  const typeSelect = div.querySelector('.event-type');
+  const dateText = div.querySelector('.event-date-text');
+  const datePicker = div.querySelector('.event-date-picker');
+
+  typeSelect.addEventListener('change', () => {
+    const isOneTimeNow = typeSelect.value === 'one-time';
+    dateText.classList.toggle('hidden', isOneTimeNow);
+    datePicker.classList.toggle('hidden', !isOneTimeNow);
+  });
+
+  // Remove item button with confirmation
+  div.querySelector('.remove-btn').addEventListener('click', () => {
+    if (confirm('Are you sure you want to delete this item?')) {
+      div.remove();
+    }
+  });
+
+  // Add link button
+  const addLinkBtn = div.querySelector('.add-link-btn');
+  const linkRow = div.querySelector('.link-row');
+  const linkInput = div.querySelector('.event-link');
+
+  addLinkBtn.addEventListener('click', () => {
+    addLinkBtn.classList.add('hidden');
+    linkRow.classList.remove('hidden');
+    linkInput.focus();
+  });
+
+  // Remove link button
+  div.querySelector('.remove-link-btn').addEventListener('click', () => {
+    linkInput.value = '';
+    linkRow.classList.add('hidden');
+    addLinkBtn.classList.remove('hidden');
+  });
+
+  return div;
+}
+
+// === Load Program from Firebase ===
+async function loadProgram() {
+  showStatus('Loading program data...', 'info');
+
+  try {
+    const snapshot = await get(ref(db, 'sundayProgram'));
+    const data = snapshot.val();
+
+    if (data) {
+      // Handle new structured format
+      if (data.sections) {
+        renderStructuredData(data);
+      } else if (Array.isArray(data)) {
+        // Handle legacy array format - convert to new structure
+        convertLegacyData(data);
+      }
+    } else {
+      // Initialize with default structure
+      initializeDefaultData();
+    }
+
+    // Load events
+    const eventsSnapshot = await get(ref(db, 'events'));
+    eventsData = eventsSnapshot.val() || [];
+    renderEvents();
+
+    showStatus('Program loaded successfully!', 'success');
   } catch (error) {
-    setStatus('Connection error', 'error');
+    console.error('Load error:', error);
+    showStatus('Error loading program: ' + error.message, 'error');
   }
 }
 
-// Parse data into sections
-function parseIntoSections() {
-  const sections = [];
-  let currentSection = null;
+function renderStructuredData(data) {
+  // Set intro message
+  document.getElementById('intro-message').value = data.introduction || '';
 
-  programData.forEach((row, index) => {
+  // Set testimony meeting state
+  isTestimonyMeeting = data.isTestimonyMeeting || false;
+  testimonyToggle.checked = isTestimonyMeeting;
+  updateMeetingTypeUI();
+
+  // Set testimony message
+  testimonyMessage.value = data.testimonyMessage || '';
+
+  // Render each section
+  const sectionData = data.sections || {};
+
+  ['banner', 'opening', 'sacrament', 'speakers', 'closing', 'announcements'].forEach(sectionKey => {
+    const container = sections[sectionKey];
+    if (!container) return;
+    container.innerHTML = '';
+
+    const items = sectionData[sectionKey] || [];
+    items.forEach(item => {
+      container.appendChild(createProgramItemHTML(item, sectionKey));
+    });
+  });
+}
+
+function convertLegacyData(data) {
+  // Convert old array format to new structured format
+  const sectionData = {
+    banner: [],
+    opening: [],
+    sacrament: [],
+    speakers: [],
+    closing: [],
+    announcements: []
+  };
+
+  let currentSection = null;
+  let introMessage = '';
+
+  data.forEach(row => {
     const program = (row.program || '').trim();
 
     if (program.toLowerCase().startsWith('#section:')) {
-      // Start new section
       const sectionKey = program.replace(/#section:\s*/i, '').toLowerCase().trim();
-      currentSection = {
-        key: sectionKey,
-        name: SECTION_NAMES[sectionKey] || sectionKey.charAt(0).toUpperCase() + sectionKey.slice(1),
-        headerIndex: index,
-        headerDetails: row.details || '',
-        rows: []
-      };
-      sections.push(currentSection);
-    } else if (currentSection && program) {
-      // Add row to current section
-      currentSection.rows.push({
-        dataIndex: index,
-        program: program,
+      currentSection = sectionKey;
+      if (sectionKey === 'introduction' && row.details) {
+        introMessage = row.details;
+      }
+    } else if (currentSection && program && sectionData[currentSection]) {
+      sectionData[currentSection].push({
+        label: program,
         details: row.details || '',
         link: row.link || ''
       });
     }
   });
 
-  return sections;
-}
+  // Render the converted data
+  document.getElementById('intro-message').value = introMessage;
 
-// Render sections
-function renderSections() {
-  const sections = parseIntoSections();
-  sectionsContainer.innerHTML = '';
+  Object.keys(sectionData).forEach(sectionKey => {
+    const container = sections[sectionKey];
+    if (!container) return;
+    container.innerHTML = '';
 
-  sections.forEach(section => {
-    const card = document.createElement('div');
-    card.className = 'section-card';
-    card.dataset.sectionKey = section.key;
-
-    card.innerHTML = `
-      <div class="section-header">
-        <span>${section.name}</span>
-        <button onclick="addRowToSection('${section.key}')">+ Add</button>
-      </div>
-      <div class="section-body" id="section-${section.key}">
-        ${section.rows.length === 0
-          ? '<div class="empty-section">No items yet</div>'
-          : section.rows.map(row => renderRowItem(row)).join('')
-        }
-      </div>
-    `;
-
-    sectionsContainer.appendChild(card);
-  });
-
-  // Add event listeners
-  document.querySelectorAll('.row-item input, .row-item textarea').forEach(el => {
-    el.addEventListener('input', handleInputChange);
+    sectionData[sectionKey].forEach(item => {
+      container.appendChild(createProgramItemHTML(item, sectionKey));
+    });
   });
 }
 
-function renderRowItem(row) {
-  const hasLink = row.link && row.link.trim();
-  return `
-    <div class="row-item" data-index="${row.dataIndex}">
-      <div class="field-group">
-        <span class="field-label">Label</span>
-        <input type="text" value="${escapeHtml(row.program)}" data-field="program" placeholder="e.g., Speaker">
-      </div>
-      <div class="field-group">
-        <span class="field-label">Details</span>
-        <textarea data-field="details" placeholder="e.g., John Smith">${escapeHtml(row.details)}</textarea>
-        <span class="link-toggle" onclick="toggleLink(this)">${hasLink ? '− Hide link' : '+ Add link'}</span>
-        <input type="text" class="link-input ${hasLink ? '' : 'hidden'}" value="${escapeHtml(row.link)}" data-field="link" placeholder="https://...">
-      </div>
-      <button class="btn-delete-row" onclick="deleteRow(${row.dataIndex})" title="Delete">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
-        </svg>
-      </button>
-    </div>
-  `;
-}
-
-// Handle input changes
-function handleInputChange(e) {
-  const rowEl = e.target.closest('.row-item');
-  const index = parseInt(rowEl.dataset.index);
-  const field = e.target.dataset.field;
-
-  if (programData[index]) {
-    programData[index][field] = e.target.value;
-    markUnsaved();
-  }
-}
-
-// Toggle link visibility
-window.toggleLink = function(el) {
-  const linkInput = el.nextElementSibling;
-  const isHidden = linkInput.classList.contains('hidden');
-
-  if (isHidden) {
-    linkInput.classList.remove('hidden');
-    el.textContent = '− Hide link';
-  } else {
-    linkInput.classList.add('hidden');
-    linkInput.value = '';
-    // Update data
-    const rowEl = el.closest('.row-item');
-    const index = parseInt(rowEl.dataset.index);
-    if (programData[index]) {
-      programData[index].link = '';
-      markUnsaved();
-    }
-    el.textContent = '+ Add link';
-  }
-};
-
-// Add row to section
-window.addRowToSection = function(sectionKey) {
-  // Find the section header and last row of that section
-  let insertIndex = -1;
-  let inSection = false;
-
-  for (let i = 0; i < programData.length; i++) {
-    const program = (programData[i].program || '').trim().toLowerCase();
-
-    if (program === `#section: ${sectionKey}` || program === `#section:${sectionKey}`) {
-      inSection = true;
-      insertIndex = i + 1;
-    } else if (inSection && program.startsWith('#section:')) {
-      // Hit next section, insert before it
-      break;
-    } else if (inSection) {
-      insertIndex = i + 1;
-    }
-  }
-
-  if (insertIndex === -1) {
-    insertIndex = programData.length;
-  }
-
-  // Insert new row
-  const newRow = {
-    rowIndex: insertIndex,
-    program: '',
-    details: '',
-    link: ''
+function initializeDefaultData() {
+  // Set up default items
+  const defaults = {
+    opening: [
+      { label: 'Presiding', details: '', link: '' },
+      { label: 'Conducting', details: '', link: '' },
+      { label: 'Opening Hymn', details: '', link: '' },
+      { label: 'Invocation', details: '', link: '' }
+    ],
+    sacrament: [
+      { label: 'Sacrament Hymn', details: '', link: '' }
+    ],
+    speakers: [
+      { label: 'Speaker', details: '', link: '' }
+    ],
+    closing: [
+      { label: 'Closing Hymn', details: '', link: '' },
+      { label: 'Benediction', details: '', link: '' }
+    ]
   };
 
-  programData.splice(insertIndex, 0, newRow);
+  Object.keys(defaults).forEach(sectionKey => {
+    const container = sections[sectionKey];
+    if (!container) return;
+    container.innerHTML = '';
 
-  // Re-index all rows
-  programData.forEach((row, i) => row.rowIndex = i);
+    defaults[sectionKey].forEach(item => {
+      container.appendChild(createProgramItemHTML(item, sectionKey));
+    });
+  });
+}
 
-  renderSections();
-  markUnsaved();
+function renderEvents() {
+  const container = sections.events;
+  if (!container) return;
+  container.innerHTML = '';
 
-  // Focus the new input
-  const sectionBody = document.getElementById(`section-${sectionKey}`);
-  if (sectionBody) {
-    const inputs = sectionBody.querySelectorAll('input[data-field="program"]');
-    const lastInput = inputs[inputs.length - 1];
-    if (lastInput) lastInput.focus();
+  if (Array.isArray(eventsData)) {
+    eventsData.forEach(event => {
+      container.appendChild(createEventItemHTML(event));
+    });
   }
-};
+}
 
-// Delete row
-window.deleteRow = function(index) {
-  if (!confirm('Delete this row?')) return;
+// === Meeting Type Toggle ===
+function updateMeetingTypeUI() {
+  const speakersLabel = document.querySelector('.toggle-label[data-for="speakers"]');
+  const testimonyLabel = document.querySelector('.toggle-label[data-for="testimony"]');
 
-  programData.splice(index, 1);
-  programData.forEach((row, i) => row.rowIndex = i);
+  if (isTestimonyMeeting) {
+    speakersSection.hidden = true;
+    testimonySection.hidden = false;
+    speakersLabel?.classList.remove('active');
+    testimonyLabel?.classList.add('active');
+  } else {
+    speakersSection.hidden = false;
+    testimonySection.hidden = true;
+    speakersLabel?.classList.add('active');
+    testimonyLabel?.classList.remove('active');
+  }
+}
 
-  renderSections();
-  markUnsaved();
-};
+testimonyToggle?.addEventListener('change', () => {
+  isTestimonyMeeting = testimonyToggle.checked;
+  updateMeetingTypeUI();
+});
 
-// Save
-async function saveChanges() {
-  setStatus('Saving...', 'saving');
+// === Collect Form Data ===
+function collectFormData() {
+  const sectionData = {};
+
+  ['banner', 'opening', 'sacrament', 'speakers', 'closing', 'announcements'].forEach(sectionKey => {
+    const container = sections[sectionKey];
+    if (!container) return;
+
+    sectionData[sectionKey] = [];
+    container.querySelectorAll('.program-item').forEach(item => {
+      const label = item.querySelector('.item-label')?.value?.trim() || '';
+      const details = item.querySelector('.item-details')?.value?.trim() || '';
+      let link = item.querySelector('.item-link')?.value?.trim() || '';
+
+      // Auto-generate hymn link if applicable
+      if (isHymnItem(label)) {
+        const hymnNum = extractHymnNumber(details);
+        const hymnUrl = getHymnUrl(hymnNum);
+        if (hymnUrl) {
+          link = hymnUrl;
+        }
+      }
+
+      if (label || details) {
+        sectionData[sectionKey].push({ label, details, link });
+      }
+    });
+  });
+
+  // Collect events data
+  const eventsContainer = sections.events;
+  const collectedEvents = [];
+  if (eventsContainer) {
+    eventsContainer.querySelectorAll('.event-item').forEach(item => {
+      const type = item.querySelector('.event-type')?.value || 'recurring';
+      const dateText = item.querySelector('.event-date-text')?.value?.trim() || '';
+      const datePicker = item.querySelector('.event-date-picker')?.value || '';
+      const title = item.querySelector('.event-title')?.value?.trim() || '';
+      const info = item.querySelector('.event-info')?.value?.trim() || '';
+      const link = item.querySelector('.event-link')?.value?.trim() || '';
+
+      let date = type === 'one-time' ? datePicker : dateText;
+
+      if (title) {
+        collectedEvents.push({ type, date, title, info, link });
+      }
+    });
+  }
+
+  return {
+    introduction: document.getElementById('intro-message')?.value?.trim() || '',
+    isTestimonyMeeting,
+    testimonyMessage: testimonyMessage?.value?.trim() || '',
+    sections: sectionData,
+    events: collectedEvents
+  };
+}
+
+// === Save Program to Firebase ===
+async function saveProgram() {
+  showStatus('Saving...', 'info');
   saveBtn.disabled = true;
-  saveBtnBottom.disabled = true;
 
   try {
-    const response = await callApi('save', {
-      password: sessionPassword,
-      data: JSON.stringify(programData)
+    const data = collectFormData();
+
+    // Save program data
+    await set(ref(db, 'sundayProgram'), {
+      introduction: data.introduction,
+      isTestimonyMeeting: data.isTestimonyMeeting,
+      testimonyMessage: data.testimonyMessage,
+      sections: data.sections,
+      lastUpdated: new Date().toISOString()
     });
 
-    if (response.success) {
-      hasUnsavedChanges = false;
-      setStatus('Saved!', 'saved');
-    } else {
-      setStatus('Error: ' + response.error, 'error');
-    }
+    // Save events data
+    await set(ref(db, 'events'), data.events);
+
+    showStatus('Changes saved successfully!', 'success');
   } catch (error) {
-    setStatus('Connection error', 'error');
+    console.error('Save error:', error);
+    showStatus('Error saving: ' + error.message, 'error');
   }
 
   saveBtn.disabled = false;
-  saveBtnBottom.disabled = false;
 }
 
-saveBtn.addEventListener('click', saveChanges);
-saveBtnBottom.addEventListener('click', saveChanges);
+// === Add Item Buttons ===
+function initAddButtons() {
+  document.querySelectorAll('.add-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const sectionKey = btn.dataset.add;
 
-function markUnsaved() {
-  hasUnsavedChanges = true;
-  setStatus('Unsaved changes', '');
-}
-
-function setStatus(text, state) {
-  statusText.textContent = text;
-  statusText.className = 'status-text' + (state ? ' ' + state : '');
-}
-
-async function callApi(action, params = {}) {
-  // Use POST with form data for better compatibility with Google Apps Script
-  const formData = new FormData();
-  formData.append('action', action);
-  for (const [key, value] of Object.entries(params)) {
-    formData.append(key, value);
-  }
-
-  try {
-    const response = await fetch(SCRIPT_URL, {
-      method: 'POST',
-      body: formData
-    });
-    return response.json();
-  } catch (err) {
-    // Fallback to GET for simple requests (login, read)
-    if (action === 'login' || action === 'read') {
-      const url = new URL(SCRIPT_URL);
-      url.searchParams.set('action', action);
-      for (const [key, value] of Object.entries(params)) {
-        url.searchParams.set(key, value);
+      if (sectionKey === 'events') {
+        sections.events?.appendChild(createEventItemHTML({}));
+      } else if (sections[sectionKey]) {
+        sections[sectionKey].appendChild(createProgramItemHTML({}, sectionKey));
       }
-      const response = await fetch(url.toString());
-      return response.json();
-    }
-    throw err;
-  }
+    });
+  });
 }
 
+// === Section Save Buttons ===
+function initSectionSaveButtons() {
+  document.querySelectorAll('.section-save-btn').forEach(btn => {
+    btn.addEventListener('click', saveProgram);
+  });
+}
+
+// === Utility ===
 function escapeHtml(str) {
   if (!str) return '';
   return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
-window.addEventListener('beforeunload', (e) => {
-  if (hasUnsavedChanges) {
-    e.preventDefault();
-    e.returnValue = '';
-  }
+// === Event Listeners ===
+loginBtn.addEventListener('click', login);
+passwordInput.addEventListener('keypress', (e) => {
+  if (e.key === 'Enter') login();
 });
+logoutBtn.addEventListener('click', logout);
+saveBtn.addEventListener('click', saveProgram);
+
+// === Initialize ===
+initTheme();
+initSectionToggles();
+initAddButtons();
+initSectionSaveButtons();
+
+// Check if already logged in
+if (checkAuth()) {
+  loginScreen.hidden = true;
+  adminPanel.hidden = false;
+  loadProgram();
+}
 </script>
 </body>
 </html>

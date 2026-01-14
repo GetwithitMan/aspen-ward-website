@@ -107,9 +107,25 @@
 </div>
 </div>
 <script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.7.3/firebase-app.js";
+import { getDatabase, ref, onValue, get } from "https://www.gstatic.com/firebasejs/11.7.3/firebase-database.js";
+
+// Firebase config (same as admin and missionary pages)
+const firebaseConfig = {
+  apiKey: "AIzaSyBbwlTuMoSMl2vfXA5aHkQM0RC2PUrKDXk",
+  authDomain: "aspen-ward-missionary-dinner.firebaseapp.com",
+  databaseURL: "https://aspen-ward-missionary-dinner-default-rtdb.firebaseio.com",
+  projectId: "aspen-ward-missionary-dinner",
+  storageBucket: "aspen-ward-missionary-dinner.firebasestorage.app",
+  messagingSenderId: "350865820261",
+  appId: "1:350865820261:web:26912e9b753852ae7ed48c"
+};
+
+const firebaseApp = initializeApp(firebaseConfig);
+const db = getDatabase(firebaseApp);
+
 const CONFIG = {
   WARD_INFO_URL: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSv7a_sC6S7ytGdHJSEZMHqCPsKhOY-C7hp6K1d-rpUsAUj8LV3Ss3lE89p-IAfEdtFcpOhrOng3LWw/pub?gid=981144620&single=true&output=csv',
-  PROGRAM_URL: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSv7a_sC6S7ytGdHJSEZMHqCPsKhOY-C7hp6K1d-rpUsAUj8LV3Ss3lE89p-IAfEdtFcpOhrOng3LWw/pub?gid=349175455&single=true&output=csv',
   EVENTS_URL: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSv7a_sC6S7ytGdHJSEZMHqCPsKhOY-C7hp6K1d-rpUsAUj8LV3Ss3lE89p-IAfEdtFcpOhrOng3LWw/pub?gid=321660920&single=true&output=csv',
   CORS_PROXY: 'https://api.allorigins.win/raw?url='
 };
@@ -733,18 +749,87 @@ function renderProgram(rows) {
 }
 async function loadProgram() {
   try {
-    const response = await fetchWithFallback(CONFIG.PROGRAM_URL);
-    const rows = parseCSV(await response.text());
+    const snapshot = await get(ref(db, 'sundayProgram'));
+    const data = snapshot.val();
+
+    if (!data) {
+      throw new Error('Program data is empty');
+    }
+
+    let rows = [];
+
+    // Handle new structured format (from updated admin page)
+    if (data.sections) {
+      // Set introduction if available
+      if (data.introduction && SELECTORS.programIntro) {
+        SELECTORS.programIntro.textContent = data.introduction;
+      }
+
+      // Convert structured sections to rows format for renderProgram
+      const sectionOrder = ['banner', 'opening', 'sacrament', 'speakers', 'closing', 'announcements'];
+      const sectionLabels = {
+        banner: 'Banner',
+        opening: 'Opening',
+        sacrament: 'Sacrament',
+        speakers: 'Speakers',
+        closing: 'Closing',
+        announcements: 'Announcements'
+      };
+
+      // Handle testimony meeting
+      if (data.isTestimonyMeeting) {
+        // Replace speakers section with testimony message
+        sectionOrder.splice(sectionOrder.indexOf('speakers'), 1);
+      }
+
+      sectionOrder.forEach(sectionKey => {
+        const items = data.sections[sectionKey] || [];
+        if (items.length > 0 || sectionKey === 'banner' || sectionKey === 'announcements') {
+          // Add section header
+          rows.push([`#SECTION: ${sectionLabels[sectionKey]}`, '', '', '']);
+
+          // Add items
+          items.forEach(item => {
+            rows.push([
+              item.label || '',
+              item.details || '',
+              item.link || '',
+              item.accent || ''
+            ]);
+          });
+        }
+      });
+
+      // If testimony meeting, add testimony message as a special item
+      if (data.isTestimonyMeeting && data.testimonyMessage) {
+        // Insert after sacrament section
+        const sacramentEndIndex = rows.findIndex((row, i) =>
+          i > rows.findIndex(r => r[0] === '#SECTION: Sacrament') &&
+          row[0].startsWith('#SECTION:')
+        );
+        if (sacramentEndIndex !== -1) {
+          rows.splice(sacramentEndIndex, 0, ['Testimony Meeting', data.testimonyMessage, '', '']);
+        }
+      }
+    }
+    // Handle legacy array format
+    else if (Array.isArray(data)) {
+      rows = data.map(row => [
+        row.program || '',
+        row.details || '',
+        row.link || '',
+        row.accent || ''
+      ]);
+    }
+
     if (!rows.length) {
-      throw new Error('Program sheet is empty');
+      throw new Error('No program data available');
     }
-    if (rows[0][0]?.toLowerCase().includes('program')) {
-      rows.shift();
-    }
+
     renderProgram(rows);
   } catch (error) {
     console.error('Program failed to load', error);
-    showInlineError(SELECTORS.programGrid, 'We couldn’t load today’s program. Please refresh or try again soon.');
+    showInlineError(SELECTORS.programGrid, 'We couldn't load today's program. Please refresh or try again soon.');
     renderAnnouncements([]);
   }
 }
@@ -801,12 +886,30 @@ function renderEvents(rows) {
 async function loadEvents() {
   if (SELECTORS.eventsSection?.hasAttribute('hidden')) return;
   try {
-    const response = await fetchWithFallback(CONFIG.EVENTS_URL);
-    const rows = parseCSV(await response.text());
-    if (rows[0]?.[0]?.toLowerCase().includes('date')) {
-      rows.shift();
+    // Try Firebase first (new admin page stores events here)
+    const snapshot = await get(ref(db, 'events'));
+    const data = snapshot.val();
+
+    if (data && Array.isArray(data) && data.length > 0) {
+      // Convert Firebase format to rows format expected by renderEvents
+      // Firebase stores: [{type, date, title, info, link}, ...]
+      // renderEvents expects: [[date, title, info, link], ...]
+      const rows = data.map(event => [
+        event.date || '',
+        event.title || '',
+        event.info || '',
+        event.link || ''
+      ]);
+      renderEvents(rows);
+    } else {
+      // Fallback to Google Sheets if no Firebase data
+      const response = await fetchWithFallback(CONFIG.EVENTS_URL);
+      const rows = parseCSV(await response.text());
+      if (rows[0]?.[0]?.toLowerCase().includes('date')) {
+        rows.shift();
+      }
+      renderEvents(rows);
     }
-    renderEvents(rows);
   } catch (error) {
     console.error('Events failed to load', error);
     showInlineError(SELECTORS.eventsTimeline, 'Upcoming events are unavailable right now.');
