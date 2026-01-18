@@ -267,30 +267,30 @@
 
   .program-header {
     font-family: "Playfair Display", serif;
-    font-size: 20pt;
+    font-size: 22pt;
     font-weight: 600;
     text-align: center;
     color: #2c5530;
-    margin-bottom: 0.2in;
-    padding-bottom: 8px;
+    margin-bottom: 0.18in;
+    padding-bottom: 6px;
     border-bottom: 2px solid #2c5530;
   }
 
   /* === SECTION STYLING === */
   .section-block {
-    margin-bottom: 0.15in;
+    margin-bottom: 0.12in;
   }
 
   .section-header {
     font-family: "Playfair Display", serif;
-    font-size: 13pt;
+    font-size: 15pt;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 1.5px;
     color: #2c5530;
     border-bottom: 1px solid #2c5530;
-    padding-bottom: 3px;
-    margin-bottom: 5px;
+    padding-bottom: 2px;
+    margin-bottom: 4px;
   }
 
   /* === PROGRAM ROWS === */
@@ -298,20 +298,20 @@
     display: flex;
     justify-content: space-between;
     align-items: baseline;
-    margin-bottom: 4px;
-    line-height: 1.4;
+    margin-bottom: 5px;
+    line-height: 1.35;
   }
 
   .row-label {
-    font-size: 12pt;
-    color: #666;
+    font-size: 14pt;
+    color: #444;
     flex-shrink: 0;
     margin-right: 8px;
-    min-width: 1.2in;
+    min-width: 1.3in;
   }
 
   .row-name {
-    font-size: 12pt;
+    font-size: 14pt;
     color: #222;
     text-align: right;
     white-space: nowrap;
@@ -498,8 +498,8 @@ async function loadProgram() {
     // Apply fitty for auto-text-sizing
     setTimeout(() => {
       fitty('.row-name', {
-        minSize: 10,
-        maxSize: 12,
+        minSize: 11,
+        maxSize: 14,
         multiLine: false
       });
     }, 100);
