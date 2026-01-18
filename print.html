@@ -114,18 +114,18 @@
 
   .events-header {
     font-family: "Playfair Display", serif;
-    font-size: 18pt;
+    font-size: 20pt;
     font-weight: 600;
     text-align: center;
     color: #2c5530;
-    margin-bottom: 0.3in;
+    margin-bottom: 0.25in;
     padding-bottom: 8px;
     border-bottom: 2px solid #2c5530;
   }
 
   .event-item {
-    margin-bottom: 0.2in;
-    padding-bottom: 0.15in;
+    margin-bottom: 0.18in;
+    padding-bottom: 0.12in;
     border-bottom: 1px solid #eee;
   }
 
@@ -134,7 +134,7 @@
   }
 
   .event-date {
-    font-size: 9pt;
+    font-size: 11pt;
     color: #2c5530;
     font-weight: 600;
     text-transform: uppercase;
@@ -142,14 +142,14 @@
   }
 
   .event-title {
-    font-size: 12pt;
+    font-size: 14pt;
     font-weight: 600;
     color: #222;
     margin: 2px 0;
   }
 
   .event-info {
-    font-size: 10pt;
+    font-size: 12pt;
     color: #555;
     line-height: 1.4;
   }
@@ -164,11 +164,11 @@
   }
 
   .cover-logo {
-    width: 2.5in;
+    width: 3.5in;
     height: auto;
-    max-height: 2in;
+    max-height: 2.5in;
     object-fit: contain;
-    margin-bottom: 0.3in;
+    margin-bottom: 0.25in;
   }
 
   .cover-logo-placeholder {
@@ -185,29 +185,29 @@
   }
 
   .cover-badge {
-    font-size: 9pt;
+    font-size: 11pt;
     text-transform: uppercase;
     letter-spacing: 2px;
     color: #2c5530;
-    margin-bottom: 0.2in;
+    margin-bottom: 0.15in;
   }
 
   .cover-title {
     font-family: "Playfair Display", serif;
-    font-size: 36pt;
+    font-size: 42pt;
     font-weight: 600;
     margin: 0 0 0.1in 0;
     color: #1a1a1a;
   }
 
   .cover-subtitle {
-    font-size: 13pt;
+    font-size: 16pt;
     color: #555;
-    margin: 0 0 0.2in 0;
+    margin: 0 0 0.15in 0;
   }
 
   .cover-date {
-    font-size: 12pt;
+    font-size: 14pt;
     color: #2c5530;
     font-weight: 500;
   }
@@ -228,18 +228,18 @@
 
   .announcements-header {
     font-family: "Playfair Display", serif;
-    font-size: 18pt;
+    font-size: 20pt;
     font-weight: 600;
     text-align: center;
     color: #2c5530;
-    margin-bottom: 0.3in;
+    margin-bottom: 0.25in;
     padding-bottom: 8px;
     border-bottom: 2px solid #2c5530;
   }
 
   .announcement-item {
-    margin-bottom: 0.2in;
-    padding-bottom: 0.15in;
+    margin-bottom: 0.18in;
+    padding-bottom: 0.12in;
     border-bottom: 1px solid #eee;
   }
 
@@ -248,14 +248,14 @@
   }
 
   .announcement-title {
-    font-size: 11pt;
+    font-size: 14pt;
     font-weight: 600;
     color: #222;
     margin-bottom: 2px;
   }
 
   .announcement-description {
-    font-size: 10pt;
+    font-size: 12pt;
     color: #555;
     line-height: 1.4;
   }
@@ -267,30 +267,30 @@
 
   .program-header {
     font-family: "Playfair Display", serif;
-    font-size: 18pt;
+    font-size: 20pt;
     font-weight: 600;
     text-align: center;
     color: #2c5530;
-    margin-bottom: 0.25in;
+    margin-bottom: 0.2in;
     padding-bottom: 8px;
     border-bottom: 2px solid #2c5530;
   }
 
   /* === SECTION STYLING === */
   .section-block {
-    margin-bottom: 0.18in;
+    margin-bottom: 0.15in;
   }
 
   .section-header {
     font-family: "Playfair Display", serif;
-    font-size: 11pt;
+    font-size: 13pt;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 1.5px;
     color: #2c5530;
     border-bottom: 1px solid #2c5530;
     padding-bottom: 3px;
-    margin-bottom: 6px;
+    margin-bottom: 5px;
   }
 
   /* === PROGRAM ROWS === */
@@ -298,20 +298,20 @@
     display: flex;
     justify-content: space-between;
     align-items: baseline;
-    margin-bottom: 3px;
-    line-height: 1.35;
+    margin-bottom: 4px;
+    line-height: 1.4;
   }
 
   .row-label {
-    font-size: 10pt;
+    font-size: 12pt;
     color: #666;
     flex-shrink: 0;
     margin-right: 8px;
-    min-width: 1.1in;
+    min-width: 1.2in;
   }
 
   .row-name {
-    font-size: 10pt;
+    font-size: 12pt;
     color: #222;
     text-align: right;
     white-space: nowrap;
@@ -498,8 +498,8 @@ async function loadProgram() {
     // Apply fitty for auto-text-sizing
     setTimeout(() => {
       fitty('.row-name', {
-        minSize: 8,
-        maxSize: 10,
+        minSize: 10,
+        maxSize: 12,
         multiLine: false
       });
     }, 100);
