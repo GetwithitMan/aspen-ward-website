@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Aspen Ward - Printable Program</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Crimson+Pro:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/fitty/2.3.6/fitty.min.js"></script>
+
+<style>
+  /* === BASE PRINT SETTINGS === */
+  @page {
+    size: 11in 8.5in; /* Landscape */
+    margin: 0;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  body {
+    margin: 0;
+    padding: 0;
+    font-family: "Crimson Pro", "Georgia", serif;
+    background: #e8e8e8;
+    color: #333;
+  }
+
+  /* === SCREEN-ONLY CONTROLS === */
+  .print-controls {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1000;
+    display: flex;
+    gap: 10px;
+  }
+
+  .print-btn {
+    background: #2c5530;
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    font-size: 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: inherit;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  }
+
+  .print-btn:hover {
+    background: #1e3d22;
+  }
+
+  .reload-btn {
+    background: #555;
+  }
+
+  .reload-btn:hover {
+    background: #333;
+  }
+
+  @media print {
+    .print-controls { display: none; }
+  }
+
+  /* === THE PHYSICAL SHEET === */
+  .sheet {
+    background: white;
+    width: 11in;
+    height: 8.5in;
+    display: flex;
+    overflow: hidden;
+    page-break-after: always;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    margin: 30px auto;
+  }
+
+  @media print {
+    body { background: none; }
+    .sheet {
+      box-shadow: none;
+      margin: 0;
+    }
+  }
+
+  /* === LEFT & RIGHT HALVES === */
+  .half-page {
+    width: 50%;
+    height: 100%;
+    padding: 0.5in;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .left-side {
+    border-right: 1px dashed #ccc;
+  }
+
+  @media print {
+    .left-side { border-right: none; }
+  }
+
+  /* === PAGE 1: COVER === */
+  .back-cover {
+    justify-content: space-between;
+    text-align: center;
+    padding: 0.75in;
+  }
+
+  .back-cover-top {
+    margin-top: 1in;
+  }
+
+  .back-cover-bottom {
+    color: #666;
+    font-size: 10pt;
+    line-height: 1.6;
+  }
+
+  .front-cover {
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    background: linear-gradient(180deg, #f9f9f9 0%, #fff 100%);
+  }
+
+  .cover-badge {
+    font-size: 11pt;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    color: #2c5530;
+    margin-bottom: 0.5in;
+  }
+
+  .cover-title {
+    font-family: "Playfair Display", serif;
+    font-size: 42pt;
+    font-weight: 600;
+    margin: 0 0 0.2in 0;
+    color: #1a1a1a;
+  }
+
+  .cover-subtitle {
+    font-size: 14pt;
+    color: #555;
+    margin: 0 0 0.3in 0;
+  }
+
+  .cover-date {
+    font-size: 13pt;
+    color: #2c5530;
+    font-weight: 500;
+  }
+
+  .cover-divider {
+    width: 2in;
+    height: 2px;
+    background: #2c5530;
+    margin: 0.4in auto;
+  }
+
+  /* === PAGE 2: INSIDE SPREAD === */
+  .inside-left {
+    padding: 0.4in 0.5in;
+  }
+
+  .inside-right {
+    padding: 0;
+  }
+
+  /* Logo container - top 5/8 of right side */
+  .logo-container {
+    height: 62.5%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 0.5in;
+    background: linear-gradient(180deg, #fafafa 0%, #fff 100%);
+  }
+
+  .logo-container img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+  }
+
+  .logo-placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: #999;
+    font-size: 14pt;
+    border: 2px dashed #ddd;
+    border-radius: 8px;
+  }
+
+  /* Content area - bottom 3/8 of right side */
+  .right-content-area {
+    height: 37.5%;
+    padding: 0.3in 0.5in 0.4in;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* === SECTION STYLING === */
+  .section-block {
+    margin-bottom: 0.2in;
+  }
+
+  .section-header {
+    font-family: "Playfair Display", serif;
+    font-size: 12pt;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: #2c5530;
+    border-bottom: 1px solid #2c5530;
+    padding-bottom: 4px;
+    margin-bottom: 8px;
+  }
+
+  /* === PROGRAM ROWS === */
+  .program-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 4px;
+    line-height: 1.4;
+  }
+
+  .row-label {
+    font-size: 10pt;
+    color: #666;
+    flex-shrink: 0;
+    margin-right: 10px;
+    min-width: 1.2in;
+  }
+
+  .row-name {
+    font-size: 11pt;
+    color: #222;
+    text-align: right;
+    white-space: nowrap;
+    flex: 1;
+    max-width: 2.5in;
+  }
+
+  /* === LOADING STATE === */
+  .loading {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    color: #999;
+    font-size: 12pt;
+  }
+
+  /* === TESTIMONY MEETING SPECIAL === */
+  .testimony-message {
+    font-style: italic;
+    text-align: center;
+    padding: 0.15in 0.2in;
+    color: #444;
+    font-size: 10pt;
+    line-height: 1.5;
+    background: #f9f9f9;
+    border-radius: 4px;
+    margin: 0.1in 0;
+  }
+</style>
+</head>
+<body>
+
+<!-- Screen-only print button -->
+<div class="print-controls">
+  <button class="print-btn reload-btn" onclick="location.reload()">Refresh Data</button>
+  <button class="print-btn" onclick="window.print()">Print Program</button>
+</div>
+
+<!-- PAGE 1: OUTSIDE (Back Cover on Left, Front Cover on Right) -->
+<div class="sheet" id="page-1">
+  <!-- Back Cover (when folded, this is the back) -->
+  <div class="half-page left-side back-cover">
+    <div class="back-cover-top">
+      <!-- Can add ward logo or artwork here -->
+    </div>
+    <div class="back-cover-bottom">
+      <p><strong>Aspen Ward</strong></p>
+      <p>The Church of Jesus Christ<br>of Latter-day Saints</p>
+      <p style="margin-top: 0.3in;">www.aspenward.com</p>
+    </div>
+  </div>
+
+  <!-- Front Cover (when folded, this is the front) -->
+  <div class="half-page right-side front-cover">
+    <div>
+      <div class="cover-badge">The Church of Jesus Christ of Latter-day Saints</div>
+      <h1 class="cover-title">Aspen Ward</h1>
+      <p class="cover-subtitle">Sacrament Meeting</p>
+      <div class="cover-divider"></div>
+      <p class="cover-date" id="program-date">Loading...</p>
+    </div>
+  </div>
+</div>
+
+<!-- PAGE 2: INSIDE SPREAD -->
+<div class="sheet" id="page-2">
+  <!-- Inside Left (Opening, Sacrament sections) -->
+  <div class="half-page left-side inside-left" id="inside-left">
+    <div class="loading">Loading program...</div>
+  </div>
+
+  <!-- Inside Right (Logo + Speakers/Closing) -->
+  <div class="half-page right-side inside-right">
+    <!-- Logo area - top 5/8 -->
+    <div class="logo-container">
+      <!-- Replace with your actual logo -->
+      <div class="logo-placeholder">
+        Ward Logo or Artwork<br>(Replace in code)
+      </div>
+      <!-- Example with actual image:
+      <img src="/images/ward-logo.png" alt="Aspen Ward">
+      -->
+    </div>
+
+    <!-- Content area - bottom 3/8 -->
+    <div class="right-content-area" id="inside-right">
+      <div class="loading">Loading...</div>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.7.3/firebase-app.js";
+import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/11.7.3/firebase-database.js";
+
+// Firebase config (same as main site)
+const firebaseConfig = {
+  apiKey: "AIzaSyBbwlTuMoSMl2vfXA5aHkQM0RC2PUrKDXk",
+  authDomain: "aspen-ward-missionary-dinner.firebaseapp.com",
+  databaseURL: "https://aspen-ward-missionary-dinner-default-rtdb.firebaseio.com",
+  projectId: "aspen-ward-missionary-dinner",
+  storageBucket: "aspen-ward-missionary-dinner.firebasestorage.app",
+  messagingSenderId: "350865820261",
+  appId: "1:350865820261:web:26912e9b753852ae7ed48c"
+};
+
+const firebaseApp = initializeApp(firebaseConfig);
+const db = getDatabase(firebaseApp);
+
+// Get current Sunday's date
+function getCurrentSunday() {
+  const today = new Date();
+  const sunday = new Date(today);
+  sunday.setDate(today.getDate() - today.getDay());
+  return sunday.toLocaleDateString('en-US', {
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric'
+  });
+}
+
+// Render a section block
+function createSectionHTML(title, items) {
+  if (!items || items.length === 0) return '';
+
+  let html = `<div class="section-block">
+    <div class="section-header">${title}</div>`;
+
+  items.forEach(item => {
+    if (!item.details || !item.details.trim()) return; // Skip empty items
+    html += `
+      <div class="program-row">
+        <span class="row-label">${item.label || ''}</span>
+        <span class="row-name">${item.details || ''}</span>
+      </div>`;
+  });
+
+  html += '</div>';
+  return html;
+}
+
+// Load and render the program
+async function loadProgram() {
+  try {
+    const snapshot = await get(ref(db, 'sundayProgram'));
+    const data = snapshot.val();
+
+    if (!data || !data.sections) {
+      throw new Error('No program data');
+    }
+
+    // Set the date
+    document.getElementById('program-date').textContent = getCurrentSunday();
+
+    // Build LEFT side (Opening + Sacrament)
+    const leftContainer = document.getElementById('inside-left');
+    let leftHTML = '';
+
+    // Opening section
+    leftHTML += createSectionHTML('Opening', data.sections.opening);
+
+    // Sacrament section
+    leftHTML += createSectionHTML('Sacrament', data.sections.sacrament);
+
+    // If testimony meeting, add special message
+    if (data.isTestimonyMeeting && data.testimonyMessage) {
+      leftHTML += `<div class="testimony-message">${data.testimonyMessage}</div>`;
+    }
+
+    leftContainer.innerHTML = leftHTML || '<p>No program data available.</p>';
+
+    // Build RIGHT side (Speakers/Program + Closing)
+    const rightContainer = document.getElementById('inside-right');
+    let rightHTML = '';
+
+    // Only show speakers section if NOT testimony meeting
+    if (!data.isTestimonyMeeting && data.sections.speakers) {
+      rightHTML += createSectionHTML('Program', data.sections.speakers);
+    }
+
+    // Closing section
+    rightHTML += createSectionHTML('Closing', data.sections.closing);
+
+    rightContainer.innerHTML = rightHTML || '<p>No program data available.</p>';
+
+    // Apply fitty for auto-text-sizing after a short delay
+    setTimeout(() => {
+      fitty('.row-name', {
+        minSize: 8,
+        maxSize: 11,
+        multiLine: false
+      });
+    }, 100);
+
+  } catch (error) {
+    console.error('Failed to load program:', error);
+    document.getElementById('inside-left').innerHTML = '<p>Unable to load program. Please refresh.</p>';
+    document.getElementById('inside-right').innerHTML = '';
+    document.getElementById('program-date').textContent = getCurrentSunday();
+  }
+}
+
+// Initialize
+document.addEventListener('DOMContentLoaded', loadProgram);
+</script>
+
+</body>
+</html>
