@@ -105,126 +105,192 @@
     .left-side { border-right: none; }
   }
 
-  /* === PAGE 1: COVER === */
-  .back-cover {
-    justify-content: space-between;
+  /* === PAGE 1: EVENTS (Left) + FRONT COVER (Right) === */
+
+  /* Events section on back cover */
+  .events-page {
+    padding: 0.5in;
+  }
+
+  .events-header {
+    font-family: "Playfair Display", serif;
+    font-size: 18pt;
+    font-weight: 600;
     text-align: center;
-    padding: 0.75in;
+    color: #2c5530;
+    margin-bottom: 0.3in;
+    padding-bottom: 8px;
+    border-bottom: 2px solid #2c5530;
   }
 
-  .back-cover-top {
-    margin-top: 1in;
+  .event-item {
+    margin-bottom: 0.2in;
+    padding-bottom: 0.15in;
+    border-bottom: 1px solid #eee;
   }
 
-  .back-cover-bottom {
-    color: #666;
+  .event-item:last-child {
+    border-bottom: none;
+  }
+
+  .event-date {
+    font-size: 9pt;
+    color: #2c5530;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  .event-title {
+    font-size: 12pt;
+    font-weight: 600;
+    color: #222;
+    margin: 2px 0;
+  }
+
+  .event-info {
     font-size: 10pt;
-    line-height: 1.6;
+    color: #555;
+    line-height: 1.4;
   }
 
+  /* Front cover with logo */
   .front-cover {
     justify-content: center;
     align-items: center;
     text-align: center;
     background: linear-gradient(180deg, #f9f9f9 0%, #fff 100%);
+    padding: 0.4in;
+  }
+
+  .cover-logo {
+    width: 2.5in;
+    height: auto;
+    max-height: 2in;
+    object-fit: contain;
+    margin-bottom: 0.3in;
+  }
+
+  .cover-logo-placeholder {
+    width: 2.5in;
+    height: 1.5in;
+    border: 2px dashed #ccc;
+    border-radius: 8px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: #999;
+    font-size: 10pt;
+    margin: 0 auto 0.3in auto;
   }
 
   .cover-badge {
-    font-size: 11pt;
+    font-size: 9pt;
     text-transform: uppercase;
-    letter-spacing: 3px;
+    letter-spacing: 2px;
     color: #2c5530;
-    margin-bottom: 0.5in;
+    margin-bottom: 0.2in;
   }
 
   .cover-title {
     font-family: "Playfair Display", serif;
-    font-size: 42pt;
+    font-size: 36pt;
     font-weight: 600;
-    margin: 0 0 0.2in 0;
+    margin: 0 0 0.1in 0;
     color: #1a1a1a;
   }
 
   .cover-subtitle {
-    font-size: 14pt;
+    font-size: 13pt;
     color: #555;
-    margin: 0 0 0.3in 0;
+    margin: 0 0 0.2in 0;
   }
 
   .cover-date {
-    font-size: 13pt;
+    font-size: 12pt;
     color: #2c5530;
     font-weight: 500;
   }
 
   .cover-divider {
-    width: 2in;
+    width: 1.5in;
     height: 2px;
     background: #2c5530;
-    margin: 0.4in auto;
+    margin: 0.25in auto;
   }
 
-  /* === PAGE 2: INSIDE SPREAD === */
-  .inside-left {
+  /* === PAGE 2: ANNOUNCEMENTS (Left) + PROGRAM (Right) === */
+
+  /* Announcements section */
+  .announcements-page {
+    padding: 0.5in;
+  }
+
+  .announcements-header {
+    font-family: "Playfair Display", serif;
+    font-size: 18pt;
+    font-weight: 600;
+    text-align: center;
+    color: #2c5530;
+    margin-bottom: 0.3in;
+    padding-bottom: 8px;
+    border-bottom: 2px solid #2c5530;
+  }
+
+  .announcement-item {
+    margin-bottom: 0.2in;
+    padding-bottom: 0.15in;
+    border-bottom: 1px solid #eee;
+  }
+
+  .announcement-item:last-child {
+    border-bottom: none;
+  }
+
+  .announcement-title {
+    font-size: 11pt;
+    font-weight: 600;
+    color: #222;
+    margin-bottom: 2px;
+  }
+
+  .announcement-description {
+    font-size: 10pt;
+    color: #555;
+    line-height: 1.4;
+  }
+
+  /* Program section (full right side) */
+  .program-page {
     padding: 0.4in 0.5in;
   }
 
-  .inside-right {
-    padding: 0;
-  }
-
-  /* Logo container - top 5/8 of right side */
-  .logo-container {
-    height: 62.5%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    padding: 0.5in;
-    background: linear-gradient(180deg, #fafafa 0%, #fff 100%);
-  }
-
-  .logo-container img {
-    max-width: 100%;
-    max-height: 100%;
-    object-fit: contain;
-  }
-
-  .logo-placeholder {
-    width: 100%;
-    height: 100%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    color: #999;
-    font-size: 14pt;
-    border: 2px dashed #ddd;
-    border-radius: 8px;
-  }
-
-  /* Content area - bottom 3/8 of right side */
-  .right-content-area {
-    height: 37.5%;
-    padding: 0.3in 0.5in 0.4in;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
+  .program-header {
+    font-family: "Playfair Display", serif;
+    font-size: 18pt;
+    font-weight: 600;
+    text-align: center;
+    color: #2c5530;
+    margin-bottom: 0.25in;
+    padding-bottom: 8px;
+    border-bottom: 2px solid #2c5530;
   }
 
   /* === SECTION STYLING === */
   .section-block {
-    margin-bottom: 0.2in;
+    margin-bottom: 0.18in;
   }
 
   .section-header {
     font-family: "Playfair Display", serif;
-    font-size: 12pt;
+    font-size: 11pt;
     font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 2px;
+    letter-spacing: 1.5px;
     color: #2c5530;
     border-bottom: 1px solid #2c5530;
-    padding-bottom: 4px;
-    margin-bottom: 8px;
+    padding-bottom: 3px;
+    margin-bottom: 6px;
   }
 
   /* === PROGRAM ROWS === */
@@ -232,25 +298,25 @@
     display: flex;
     justify-content: space-between;
     align-items: baseline;
-    margin-bottom: 4px;
-    line-height: 1.4;
+    margin-bottom: 3px;
+    line-height: 1.35;
   }
 
   .row-label {
     font-size: 10pt;
     color: #666;
     flex-shrink: 0;
-    margin-right: 10px;
-    min-width: 1.2in;
+    margin-right: 8px;
+    min-width: 1.1in;
   }
 
   .row-name {
-    font-size: 11pt;
+    font-size: 10pt;
     color: #222;
     text-align: right;
     white-space: nowrap;
     flex: 1;
-    max-width: 2.5in;
+    max-width: 2.8in;
   }
 
   /* === LOADING STATE === */
@@ -267,13 +333,21 @@
   .testimony-message {
     font-style: italic;
     text-align: center;
-    padding: 0.15in 0.2in;
+    padding: 0.12in 0.15in;
     color: #444;
     font-size: 10pt;
-    line-height: 1.5;
+    line-height: 1.4;
     background: #f9f9f9;
     border-radius: 4px;
     margin: 0.1in 0;
+  }
+
+  /* === EMPTY STATE === */
+  .empty-state {
+    text-align: center;
+    color: #999;
+    font-style: italic;
+    padding: 1in 0;
   }
 </style>
 </head>
@@ -285,23 +359,25 @@
   <button class="print-btn" onclick="window.print()">Print Program</button>
 </div>
 
-<!-- PAGE 1: OUTSIDE (Back Cover on Left, Front Cover on Right) -->
+<!-- PAGE 1: EVENTS (Left) + FRONT COVER (Right) -->
 <div class="sheet" id="page-1">
-  <!-- Back Cover (when folded, this is the back) -->
-  <div class="half-page left-side back-cover">
-    <div class="back-cover-top">
-      <!-- Can add ward logo or artwork here -->
-    </div>
-    <div class="back-cover-bottom">
-      <p><strong>Aspen Ward</strong></p>
-      <p>The Church of Jesus Christ<br>of Latter-day Saints</p>
-      <p style="margin-top: 0.3in;">www.aspenward.com</p>
-    </div>
+  <!-- Events (when folded, this is the back) -->
+  <div class="half-page left-side events-page" id="events-section">
+    <div class="events-header">Upcoming Events</div>
+    <div class="loading" id="events-loading">Loading events...</div>
+    <div id="events-list"></div>
   </div>
 
-  <!-- Front Cover (when folded, this is the front) -->
+  <!-- Front Cover with Logo (when folded, this is the front) -->
   <div class="half-page right-side front-cover">
     <div>
+      <!-- Logo placeholder - replace with actual image -->
+      <div class="cover-logo-placeholder" id="logo-placeholder">
+        Ward Logo
+      </div>
+      <!-- Uncomment and use your actual logo:
+      <img src="/images/ward-logo.png" alt="Aspen Ward" class="cover-logo">
+      -->
       <div class="cover-badge">The Church of Jesus Christ of Latter-day Saints</div>
       <h1 class="cover-title">Aspen Ward</h1>
       <p class="cover-subtitle">Sacrament Meeting</p>
@@ -311,30 +387,20 @@
   </div>
 </div>
 
-<!-- PAGE 2: INSIDE SPREAD -->
+<!-- PAGE 2: ANNOUNCEMENTS (Left) + PROGRAM (Right) -->
 <div class="sheet" id="page-2">
-  <!-- Inside Left (Opening, Sacrament sections) -->
-  <div class="half-page left-side inside-left" id="inside-left">
-    <div class="loading">Loading program...</div>
+  <!-- Announcements -->
+  <div class="half-page left-side announcements-page" id="announcements-section">
+    <div class="announcements-header">Ward Announcements</div>
+    <div class="loading" id="announcements-loading">Loading announcements...</div>
+    <div id="announcements-list"></div>
   </div>
 
-  <!-- Inside Right (Logo + Speakers/Closing) -->
-  <div class="half-page right-side inside-right">
-    <!-- Logo area - top 5/8 -->
-    <div class="logo-container">
-      <!-- Replace with your actual logo -->
-      <div class="logo-placeholder">
-        Ward Logo or Artwork<br>(Replace in code)
-      </div>
-      <!-- Example with actual image:
-      <img src="/images/ward-logo.png" alt="Aspen Ward">
-      -->
-    </div>
-
-    <!-- Content area - bottom 3/8 -->
-    <div class="right-content-area" id="inside-right">
-      <div class="loading">Loading...</div>
-    </div>
+  <!-- Full Program -->
+  <div class="half-page right-side program-page" id="program-section">
+    <div class="program-header">Sacrament Meeting Program</div>
+    <div class="loading" id="program-loading">Loading program...</div>
+    <div id="program-content"></div>
   </div>
 </div>
 
@@ -369,15 +435,18 @@ function getCurrentSunday() {
   });
 }
 
-// Render a section block
+// Render a section block for the program
 function createSectionHTML(title, items) {
   if (!items || items.length === 0) return '';
+
+  // Filter out items without details
+  const validItems = items.filter(item => item.details && item.details.trim());
+  if (validItems.length === 0) return '';
 
   let html = `<div class="section-block">
     <div class="section-header">${title}</div>`;
 
-  items.forEach(item => {
-    if (!item.details || !item.details.trim()) return; // Skip empty items
+  validItems.forEach(item => {
     html += `
       <div class="program-row">
         <span class="row-label">${item.label || ''}</span>
@@ -395,63 +464,146 @@ async function loadProgram() {
     const snapshot = await get(ref(db, 'sundayProgram'));
     const data = snapshot.val();
 
-    if (!data || !data.sections) {
-      throw new Error('No program data');
-    }
-
     // Set the date
     document.getElementById('program-date').textContent = getCurrentSunday();
 
-    // Build LEFT side (Opening + Sacrament)
-    const leftContainer = document.getElementById('inside-left');
-    let leftHTML = '';
-
-    // Opening section
-    leftHTML += createSectionHTML('Opening', data.sections.opening);
-
-    // Sacrament section
-    leftHTML += createSectionHTML('Sacrament', data.sections.sacrament);
-
-    // If testimony meeting, add special message
-    if (data.isTestimonyMeeting && data.testimonyMessage) {
-      leftHTML += `<div class="testimony-message">${data.testimonyMessage}</div>`;
+    if (!data || !data.sections) {
+      document.getElementById('program-loading').style.display = 'none';
+      document.getElementById('program-content').innerHTML = '<p class="empty-state">No program data available.</p>';
+      return;
     }
 
-    leftContainer.innerHTML = leftHTML || '<p>No program data available.</p>';
+    // Build the full program
+    let programHTML = '';
 
-    // Build RIGHT side (Speakers/Program + Closing)
-    const rightContainer = document.getElementById('inside-right');
-    let rightHTML = '';
+    // Opening section
+    programHTML += createSectionHTML('Opening', data.sections.opening);
 
-    // Only show speakers section if NOT testimony meeting
-    if (!data.isTestimonyMeeting && data.sections.speakers) {
-      rightHTML += createSectionHTML('Program', data.sections.speakers);
+    // Sacrament section
+    programHTML += createSectionHTML('Sacrament', data.sections.sacrament);
+
+    // If testimony meeting, add special message instead of speakers
+    if (data.isTestimonyMeeting) {
+      if (data.testimonyMessage) {
+        programHTML += `<div class="testimony-message">${data.testimonyMessage}</div>`;
+      }
+    } else {
+      // Speakers/Program section
+      programHTML += createSectionHTML('Program', data.sections.speakers);
     }
 
     // Closing section
-    rightHTML += createSectionHTML('Closing', data.sections.closing);
+    programHTML += createSectionHTML('Closing', data.sections.closing);
 
-    rightContainer.innerHTML = rightHTML || '<p>No program data available.</p>';
+    document.getElementById('program-loading').style.display = 'none';
+    document.getElementById('program-content').innerHTML = programHTML || '<p class="empty-state">No program data available.</p>';
 
-    // Apply fitty for auto-text-sizing after a short delay
+    // Load announcements from the program data
+    loadAnnouncements(data.sections.announcements);
+
+    // Apply fitty for auto-text-sizing
     setTimeout(() => {
       fitty('.row-name', {
         minSize: 8,
-        maxSize: 11,
+        maxSize: 10,
         multiLine: false
       });
     }, 100);
 
   } catch (error) {
     console.error('Failed to load program:', error);
-    document.getElementById('inside-left').innerHTML = '<p>Unable to load program. Please refresh.</p>';
-    document.getElementById('inside-right').innerHTML = '';
+    document.getElementById('program-loading').style.display = 'none';
+    document.getElementById('program-content').innerHTML = '<p class="empty-state">Unable to load program.</p>';
     document.getElementById('program-date').textContent = getCurrentSunday();
   }
 }
 
+// Load announcements
+function loadAnnouncements(announcements) {
+  const container = document.getElementById('announcements-list');
+  const loading = document.getElementById('announcements-loading');
+
+  loading.style.display = 'none';
+
+  if (!announcements || announcements.length === 0) {
+    container.innerHTML = '<p class="empty-state">No announcements this week.</p>';
+    return;
+  }
+
+  // Filter out empty announcements
+  const validAnnouncements = announcements.filter(a =>
+    (a.label && a.label.trim()) || (a.details && a.details.trim())
+  );
+
+  if (validAnnouncements.length === 0) {
+    container.innerHTML = '<p class="empty-state">No announcements this week.</p>';
+    return;
+  }
+
+  let html = '';
+  validAnnouncements.forEach(item => {
+    html += `
+      <div class="announcement-item">
+        <div class="announcement-title">${item.label || 'Announcement'}</div>
+        <div class="announcement-description">${item.details || ''}</div>
+      </div>`;
+  });
+
+  container.innerHTML = html;
+}
+
+// Load events from Firebase
+async function loadEvents() {
+  const container = document.getElementById('events-list');
+  const loading = document.getElementById('events-loading');
+
+  try {
+    const snapshot = await get(ref(db, 'events'));
+    const data = snapshot.val();
+
+    loading.style.display = 'none';
+
+    if (!data || !Array.isArray(data) || data.length === 0) {
+      container.innerHTML = '<p class="empty-state">No upcoming events.</p>';
+      return;
+    }
+
+    // Filter out empty events
+    const validEvents = data.filter(e => e.title || e.info);
+
+    if (validEvents.length === 0) {
+      container.innerHTML = '<p class="empty-state">No upcoming events.</p>';
+      return;
+    }
+
+    let html = '';
+    validEvents.forEach(event => {
+      html += `
+        <div class="event-item">
+          <div class="event-date">${event.date || 'Date TBD'}</div>
+          <div class="event-title">${event.title || 'Ward Event'}</div>
+          <div class="event-info">${event.info || ''}</div>
+        </div>`;
+    });
+
+    container.innerHTML = html;
+
+  } catch (error) {
+    console.error('Failed to load events:', error);
+    loading.style.display = 'none';
+    container.innerHTML = '<p class="empty-state">Unable to load events.</p>';
+  }
+}
+
 // Initialize
-document.addEventListener('DOMContentLoaded', loadProgram);
+async function init() {
+  await Promise.all([
+    loadProgram(),
+    loadEvents()
+  ]);
+}
+
+document.addEventListener('DOMContentLoaded', init);
 </script>
 
 </body>
