@@ -303,16 +303,16 @@
   }
 
   .row-label {
-    font-size: 14pt;
-    color: #444;
+    font-size: 16pt;
+    color: #333;
     flex-shrink: 0;
     margin-right: 8px;
-    min-width: 1.3in;
+    min-width: 1.4in;
   }
 
   .row-name {
-    font-size: 14pt;
-    color: #222;
+    font-size: 16pt;
+    color: #111;
     text-align: right;
     white-space: nowrap;
     flex: 1;
@@ -498,8 +498,8 @@ async function loadProgram() {
     // Apply fitty for auto-text-sizing
     setTimeout(() => {
       fitty('.row-name', {
-        minSize: 11,
-        maxSize: 14,
+        minSize: 12,
+        maxSize: 16,
         multiLine: false
       });
     }, 100);
