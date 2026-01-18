@@ -212,6 +212,19 @@
     font-weight: 500;
   }
 
+  .cover-welcome {
+    font-size: 12pt;
+    color: #444;
+    margin: 0.2in 0 0 0;
+    line-height: 1.5;
+    font-style: italic;
+    max-width: 4in;
+  }
+
+  .cover-welcome:empty {
+    display: none;
+  }
+
   .cover-divider {
     width: 1.5in;
     height: 2px;
@@ -377,6 +390,7 @@
       <p class="cover-subtitle">Sacrament Meeting</p>
       <div class="cover-divider"></div>
       <p class="cover-date" id="program-date">Loading...</p>
+      <p class="cover-welcome" id="cover-welcome"></p>
     </div>
   </div>
 </div>
@@ -460,6 +474,11 @@ async function loadProgram() {
 
     // Set the date
     document.getElementById('program-date').textContent = getCurrentSunday();
+
+    // Set the welcome/introduction message on front cover
+    if (data && data.introduction) {
+      document.getElementById('cover-welcome').textContent = data.introduction;
+    }
 
     if (!data || !data.sections) {
       document.getElementById('program-loading').style.display = 'none';
