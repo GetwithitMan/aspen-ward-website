@@ -362,6 +362,67 @@
     font-style: italic;
     padding: 1in 0;
   }
+
+  /* === MISSIONARIES & MILITARY SECTION === */
+  .missionaries-section {
+    margin-top: 0.3in;
+    padding-top: 0.2in;
+    border-top: 1px solid #ddd;
+  }
+
+  .missionaries-header {
+    font-family: "Playfair Display", serif;
+    font-size: 16pt;
+    font-weight: 600;
+    text-align: center;
+    color: #2c5530;
+    margin-bottom: 0.15in;
+    padding-bottom: 6px;
+    border-bottom: 1px solid #2c5530;
+  }
+
+  .missionary-item {
+    margin-bottom: 0.12in;
+    padding-bottom: 0.08in;
+    border-bottom: 1px solid #eee;
+  }
+
+  .missionary-item:last-child {
+    border-bottom: none;
+  }
+
+  .missionary-type {
+    font-size: 9pt;
+    color: #2c5530;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  .missionary-name {
+    font-size: 13pt;
+    font-weight: 600;
+    color: #222;
+    margin: 1px 0;
+  }
+
+  .missionary-location {
+    font-size: 11pt;
+    color: #555;
+    font-style: italic;
+  }
+
+  .missionary-contact {
+    font-size: 10pt;
+    color: #666;
+    margin-top: 2px;
+    line-height: 1.3;
+  }
+
+  .missionary-contact a {
+    color: #2c5530;
+    text-decoration: none;
+  }
 </style>
 </head>
 <body>
@@ -379,6 +440,12 @@
     <div class="events-header">Upcoming Events</div>
     <div class="loading" id="events-loading">Loading events...</div>
     <div id="events-list"></div>
+
+    <!-- Missionaries & Military Section -->
+    <div id="missionaries-section" class="missionaries-section" style="display: none;">
+      <div class="missionaries-header">Missionaries &amp; Military</div>
+      <div id="missionaries-list"></div>
+    </div>
   </div>
 
   <!-- Front Cover with Logo (when folded, this is the front) -->
@@ -608,11 +675,58 @@ async function loadEvents() {
   }
 }
 
+// Load missionaries/military from Firebase
+async function loadMissionaries() {
+  const section = document.getElementById('missionaries-section');
+  const container = document.getElementById('missionaries-list');
+
+  try {
+    const snapshot = await get(ref(db, 'missionaries'));
+    const data = snapshot.val();
+
+    if (!data || !Array.isArray(data) || data.length === 0) {
+      section.style.display = 'none';
+      return;
+    }
+
+    // Filter out empty entries
+    const validMissionaries = data.filter(m => m.name && m.name.trim());
+
+    if (validMissionaries.length === 0) {
+      section.style.display = 'none';
+      return;
+    }
+
+    let html = '';
+    validMissionaries.forEach(person => {
+      const typeLabel = person.type === 'military' ? 'Military' : 'Missionary';
+      html += `
+        <div class="missionary-item">
+          <div class="missionary-type">${typeLabel}</div>
+          <div class="missionary-name">${person.name || ''}</div>
+          ${person.location ? `<div class="missionary-location">${person.location}</div>` : ''}
+          <div class="missionary-contact">
+            ${person.email ? `<div>Email: <a href="mailto:${person.email}">${person.email}</a></div>` : ''}
+            ${person.address ? `<div>${person.address.replace(/\n/g, ', ')}</div>` : ''}
+          </div>
+        </div>`;
+    });
+
+    container.innerHTML = html;
+    section.style.display = 'block';
+
+  } catch (error) {
+    console.error('Failed to load missionaries:', error);
+    section.style.display = 'none';
+  }
+}
+
 // Initialize
 async function init() {
   await Promise.all([
     loadProgram(),
-    loadEvents()
+    loadEvents(),
+    loadMissionaries()
   ]);
 }
 

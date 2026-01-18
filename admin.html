@@ -720,6 +720,58 @@ main {
   grid-template-columns: 100px 1fr 1.2fr 1fr auto !important;
 }
 
+/* Missionary Grid */
+.missionary-grid {
+  display: grid !important;
+  grid-template-columns: 100px 1fr 1fr auto !important;
+  gap: 0.5rem;
+  align-items: start;
+}
+
+.missionary-contact {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin-top: 0.5rem;
+  padding: 0.5rem;
+  background: var(--surface-muted);
+  border-radius: var(--radius-sm);
+}
+
+.missionary-contact-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.missionary-contact-label {
+  font-size: 0.8rem;
+  color: var(--ink-muted);
+  min-width: 50px;
+}
+
+.missionary-contact input {
+  flex: 1;
+  padding: 0.35rem 0.5rem;
+  border: 1px solid var(--stroke);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 0.85rem;
+}
+
+.missionary-contact textarea {
+  flex: 1;
+  padding: 0.35rem 0.5rem;
+  border: 1px solid var(--stroke);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 0.85rem;
+  resize: vertical;
+  min-height: 50px;
+}
+
 .event-type-select {
   padding: 0.4rem 0.6rem;
   border: 1px solid var(--stroke-strong);
@@ -891,6 +943,12 @@ main {
   }
 
   .event-grid {
+    display: flex !important;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+
+  .missionary-grid {
     display: flex !important;
     flex-direction: column;
     gap: 0.4rem;
@@ -1151,6 +1209,22 @@ main {
         </div>
       </div>
 
+      <!-- Missionaries and Military Section -->
+      <div class="section-card collapsed" data-section="missionaries">
+        <div class="section-header">
+          <h2 class="section-title">Missionaries &amp; Military</h2>
+          <span class="section-toggle">▼</span>
+        </div>
+        <div class="section-content">
+          <p class="form-hint" style="margin-bottom: 1rem;">Ward members currently serving missions or in the military.</p>
+          <div id="missionaries-items" class="program-items"></div>
+          <div class="section-actions">
+            <button type="button" class="add-btn" data-add="missionaries">+ Add Person</button>
+            <button type="button" class="btn success section-save-btn">Save Changes</button>
+          </div>
+        </div>
+      </div>
+
     </div>
   </div>
 </main>
@@ -1202,12 +1276,14 @@ const sections = {
   speakers: document.getElementById('speakers-items'),
   closing: document.getElementById('closing-items'),
   announcements: document.getElementById('announcements-items'),
-  events: document.getElementById('events-items')
+  events: document.getElementById('events-items'),
+  missionaries: document.getElementById('missionaries-items')
 };
 
 // Current program data
 let programData = [];
 let eventsData = [];
+let missionariesData = [];
 let isTestimonyMeeting = false;
 
 // Testimony toggle elements
@@ -1736,6 +1812,54 @@ function createEventItemHTML(item) {
   return div;
 }
 
+// === Missionary/Military Item Template ===
+function createMissionaryItemHTML(item) {
+  const { type = 'missionary', name = '', location = '', email = '', address = '' } = item;
+
+  const div = document.createElement('div');
+  div.className = 'program-item missionary-item';
+
+  div.innerHTML = `
+    <div class="program-item-row missionary-grid">
+      <div class="mobile-field">
+        <label class="mobile-label">Type</label>
+        <select class="missionary-type">
+          <option value="missionary" ${type === 'missionary' ? 'selected' : ''}>Missionary</option>
+          <option value="military" ${type === 'military' ? 'selected' : ''}>Military</option>
+        </select>
+      </div>
+      <div class="mobile-field">
+        <label class="mobile-label">Name</label>
+        <input type="text" class="missionary-name" placeholder="Elder/Sister Name" value="${escapeHtml(name)}">
+      </div>
+      <div class="mobile-field">
+        <label class="mobile-label">Serving Location</label>
+        <input type="text" class="missionary-location" placeholder="Texas Houston Mission" value="${escapeHtml(location)}">
+      </div>
+      <button type="button" class="remove-btn" title="Remove">&times;</button>
+    </div>
+    <div class="missionary-contact">
+      <div class="missionary-contact-row">
+        <span class="missionary-contact-label">Email</span>
+        <input type="email" class="missionary-email" placeholder="email@missionary.church" value="${escapeHtml(email)}">
+      </div>
+      <div class="missionary-contact-row">
+        <span class="missionary-contact-label">Address</span>
+        <textarea class="missionary-address" placeholder="Mailing address...">${escapeHtml(address)}</textarea>
+      </div>
+    </div>
+  `;
+
+  // Remove item button with confirmation
+  div.querySelector('.remove-btn').addEventListener('click', () => {
+    if (confirm('Are you sure you want to delete this person?')) {
+      div.remove();
+    }
+  });
+
+  return div;
+}
+
 // === Load Program from Firebase ===
 async function loadProgram() {
   showStatus('Loading program data...', 'info');
@@ -1761,6 +1885,11 @@ async function loadProgram() {
     const eventsSnapshot = await get(ref(db, 'events'));
     eventsData = eventsSnapshot.val() || [];
     renderEvents();
+
+    // Load missionaries
+    const missionariesSnapshot = await get(ref(db, 'missionaries'));
+    missionariesData = missionariesSnapshot.val() || [];
+    renderMissionaries();
 
     showStatus('Program loaded successfully!', 'success');
   } catch (error) {
@@ -1886,6 +2015,18 @@ function renderEvents() {
   }
 }
 
+function renderMissionaries() {
+  const container = sections.missionaries;
+  if (!container) return;
+  container.innerHTML = '';
+
+  if (Array.isArray(missionariesData)) {
+    missionariesData.forEach(person => {
+      container.appendChild(createMissionaryItemHTML(person));
+    });
+  }
+}
+
 // === Meeting Type Toggle ===
 function updateMeetingTypeUI() {
   const speakersLabel = document.querySelector('.toggle-label[data-for="speakers"]');
@@ -1958,12 +2099,30 @@ function collectFormData() {
     });
   }
 
+  // Collect missionaries/military data
+  const missionariesContainer = sections.missionaries;
+  const collectedMissionaries = [];
+  if (missionariesContainer) {
+    missionariesContainer.querySelectorAll('.missionary-item').forEach(item => {
+      const type = item.querySelector('.missionary-type')?.value || 'missionary';
+      const name = item.querySelector('.missionary-name')?.value?.trim() || '';
+      const location = item.querySelector('.missionary-location')?.value?.trim() || '';
+      const email = item.querySelector('.missionary-email')?.value?.trim() || '';
+      const address = item.querySelector('.missionary-address')?.value?.trim() || '';
+
+      if (name) {
+        collectedMissionaries.push({ type, name, location, email, address });
+      }
+    });
+  }
+
   return {
     introduction: document.getElementById('intro-message')?.value?.trim() || '',
     isTestimonyMeeting,
     testimonyMessage: testimonyMessage?.value?.trim() || '',
     sections: sectionData,
-    events: collectedEvents
+    events: collectedEvents,
+    missionaries: collectedMissionaries
   };
 }
 
@@ -1987,6 +2146,9 @@ async function saveProgram() {
     // Save events data
     await set(ref(db, 'events'), data.events);
 
+    // Save missionaries data
+    await set(ref(db, 'missionaries'), data.missionaries);
+
     showStatus('Changes saved successfully!', 'success');
   } catch (error) {
     console.error('Save error:', error);
@@ -2004,6 +2166,8 @@ function initAddButtons() {
 
       if (sectionKey === 'events') {
         sections.events?.appendChild(createEventItemHTML({}));
+      } else if (sectionKey === 'missionaries') {
+        sections.missionaries?.appendChild(createMissionaryItemHTML({}));
       } else if (sections[sectionKey]) {
         sections[sectionKey].appendChild(createProgramItemHTML({}, sectionKey));
       }
