@@ -8,12 +8,36 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="icon" href="data:,">
 <link rel="stylesheet" href="/dist/output.css">
 
 <style>
 /* Page-specific overrides */
 :root {
   --content-width: min(960px, 92vw);
+  --bg: #f8faf5;
+  --bg-alt: #eef4e5;
+  --surface: #ffffff;
+  --surface-muted: #f5f9f0;
+  --surface-soft: rgba(255, 255, 255, 0.82);
+  --stroke: rgba(41, 61, 21, 0.12);
+  --stroke-strong: rgba(41, 61, 21, 0.18);
+  --ink: #1c2f11;
+  --ink-soft: rgba(28, 47, 17, 0.78);
+  --ink-muted: rgba(28, 47, 17, 0.56);
+  --accent: #4f7942;
+  --accent-strong: #3d5e32;
+  --accent-soft: rgba(79, 121, 66, 0.18);
+  --accent-contrast: #ffffff;
+  --error: #dc2626;
+  --shadow-lg: 0 28px 60px rgba(41, 64, 32, 0.14);
+  --shadow-md: 0 18px 44px rgba(41, 64, 32, 0.12);
+  --shadow-sm: 0 10px 28px rgba(41, 64, 32, 0.08);
+}
+
+body {
+  background: var(--bg);
+  color: var(--ink);
 }
 
 /* ===== CALENDAR ===== */
@@ -134,6 +158,7 @@ document.getElementById('nav-select')?.addEventListener('change', e => {
 /* ===== Firebase + Calendar ===== */
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.7.3/firebase-app.js";
 import { getDatabase, ref, onValue, set, remove } from "https://www.gstatic.com/firebasejs/11.7.3/firebase-database.js";
+import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.7.3/firebase-auth.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBbwlTuMoSMl2vfXA5aHkQM0RC2PUrKDXk",
@@ -147,12 +172,33 @@ const firebaseConfig = {
 };
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
+const auth = getAuth(app);
 
 let currentMonth = new Date().getMonth();
 let currentYear  = new Date().getFullYear();
 let signups = {};
 
-/* ===== FUNCTION DEFINITIONS ===== */
+// Render calendar immediately on page load (before Firebase loads)
+renderCalendar();
+
+// Add event listeners for navigation buttons
+document.getElementById('prev-month').addEventListener('click', prevMonth);
+document.getElementById('next-month').addEventListener('click', nextMonth);
+
+// Sign in anonymously first, then set up Firebase listener
+signInAnonymously(auth).then(() => {
+  console.log('Signed in anonymously');
+  // Now set up the Firebase listener after authentication
+  onValue(ref(db, 'signups'), snap => {
+    signups = snap.val() || {};
+    renderCalendar();
+  }, (error) => {
+    console.error('Firebase error:', error);
+  });
+}).catch((error) => {
+  console.error("Authentication failed:", error);
+  // Calendar already rendered, just won't have signup data
+});
 
 function clearPastSignups() {
   const now = new Date();
@@ -167,7 +213,6 @@ function clearPastSignups() {
 function renderCalendar() {
   clearPastSignups();
   const cal = document.getElementById('calendar');
-  if (!cal) { console.error('Calendar element not found'); return; }
   cal.innerHTML = '';
   const title = document.getElementById('month-year');
   const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
@@ -217,7 +262,6 @@ function renderCalendar() {
 }
 
 function validatePhone(p){ return /^\(?([0-9]{3})\)?[-. ]?([0-9]{3})[-. ]?([0-9]{4})$/.test(p); }
-
 function signup(day){
   const key=`${currentYear}-${currentMonth}-${day}`;
   if(signups[key]){ alert(`Already taken by ${signups[key].firstName} ${signups[key].lastName}`); return; }
@@ -227,7 +271,6 @@ function signup(day){
   if(!ph||!validatePhone(ph)){ alert('Invalid phone'); return; }
   set(ref(db,'signups/'+key),{firstName:fn.trim(),lastName:ln.trim(),phone:ph});
 }
-
 function editSignup(day){
   const key=`${currentYear}-${currentMonth}-${day}`;
   const cur=signups[key];
@@ -246,23 +289,6 @@ function editSignup(day){
 
 function prevMonth(){ currentMonth--; if(currentMonth<0){currentMonth=11;currentYear--;} renderCalendar(); }
 function nextMonth(){ currentMonth++; if(currentMonth>11){currentMonth=0;currentYear++;} renderCalendar(); }
-
-/* ===== INITIALIZE ===== */
-
-// Add event listeners for navigation buttons
-document.getElementById('prev-month').addEventListener('click', prevMonth);
-document.getElementById('next-month').addEventListener('click', nextMonth);
-
-// Render calendar immediately on page load (don't wait for Firebase)
-renderCalendar();
-
-// Then update when Firebase data arrives
-onValue(ref(db, 'signups'), snap => {
-  signups = snap.val() || {};
-  renderCalendar();
-}, (error) => {
-  console.error('Firebase error:', error);
-})
 </script>
 </body>
 </html>
