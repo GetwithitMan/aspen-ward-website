@@ -110,6 +110,30 @@
   /* Events section on back cover */
   .events-page {
     padding: 0.5in;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Events container gets 2/3 of the space */
+  .events-container {
+    flex: 2;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .events-content {
+    flex: 1;
+    overflow: hidden;
+  }
+
+  /* Missionaries section gets 1/3 of the space */
+  .missionaries-section {
+    flex: 1;
+    overflow: hidden;
+    margin-top: 0;
+    padding-top: 0.2in;
+    border-top: 1px solid #ddd;
   }
 
   .events-header {
@@ -364,12 +388,6 @@
   }
 
   /* === MISSIONARIES & MILITARY SECTION === */
-  .missionaries-section {
-    margin-top: 0.3in;
-    padding-top: 0.2in;
-    border-top: 1px solid #ddd;
-  }
-
   .missionaries-header {
     font-family: "Playfair Display", serif;
     font-size: 16pt;
@@ -437,11 +455,16 @@
 <div class="sheet" id="page-1">
   <!-- Events (when folded, this is the back) -->
   <div class="half-page left-side events-page" id="events-section">
-    <div class="events-header">Upcoming Events</div>
-    <div class="loading" id="events-loading">Loading events...</div>
-    <div id="events-list"></div>
+    <!-- Events container: 2/3 of the page -->
+    <div class="events-container">
+      <div class="events-header">Upcoming Events</div>
+      <div class="events-content" id="events-content">
+        <div class="loading" id="events-loading">Loading events...</div>
+        <div id="events-list"></div>
+      </div>
+    </div>
 
-    <!-- Missionaries & Military Section -->
+    <!-- Missionaries & Military Section: 1/3 of the page -->
     <div id="missionaries-section" class="missionaries-section" style="display: none;">
       <div class="missionaries-header">Missionaries &amp; Military</div>
       <div id="missionaries-list"></div>
@@ -721,6 +744,39 @@ async function loadMissionaries() {
   }
 }
 
+// Auto-scale events text to fit container
+function fitEventsToContainer() {
+  const container = document.getElementById('events-content');
+  const eventsList = document.getElementById('events-list');
+
+  if (!container || !eventsList || !eventsList.children.length) return;
+
+  // Start with default font sizes
+  let baseFontSize = 14; // event-title base
+  const minFontSize = 9; // Don't go smaller than this
+
+  // Check if content overflows and shrink if needed
+  while (eventsList.scrollHeight > container.clientHeight && baseFontSize > minFontSize) {
+    baseFontSize -= 0.5;
+
+    // Scale all event text proportionally
+    const eventItems = eventsList.querySelectorAll('.event-item');
+    eventItems.forEach(item => {
+      const date = item.querySelector('.event-date');
+      const title = item.querySelector('.event-title');
+      const info = item.querySelector('.event-info');
+
+      if (date) date.style.fontSize = (baseFontSize - 3) + 'pt';
+      if (title) title.style.fontSize = baseFontSize + 'pt';
+      if (info) info.style.fontSize = (baseFontSize - 2) + 'pt';
+
+      // Also reduce margins/padding
+      item.style.marginBottom = Math.max(0.08, 0.18 - (14 - baseFontSize) * 0.02) + 'in';
+      item.style.paddingBottom = Math.max(0.06, 0.12 - (14 - baseFontSize) * 0.01) + 'in';
+    });
+  }
+}
+
 // Initialize
 async function init() {
   await Promise.all([
@@ -728,6 +784,9 @@ async function init() {
     loadEvents(),
     loadMissionaries()
   ]);
+
+  // After all content loads, fit events to container
+  setTimeout(fitEventsToContainer, 150);
 }
 
 document.addEventListener('DOMContentLoaded', init);
