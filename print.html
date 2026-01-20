@@ -714,15 +714,27 @@ async function loadMissionaries() {
 
   try {
     const snapshot = await get(ref(db, 'missionaries'));
-    const data = snapshot.val();
+    let data = snapshot.val();
 
-    if (!data || !Array.isArray(data) || data.length === 0) {
+    console.log('Missionaries data from Firebase:', data);
+
+    if (!data) {
+      section.style.display = 'none';
+      return;
+    }
+
+    // Handle both array and object formats from Firebase
+    if (!Array.isArray(data)) {
+      data = Object.values(data);
+    }
+
+    if (data.length === 0) {
       section.style.display = 'none';
       return;
     }
 
     // Filter out empty entries
-    const validMissionaries = data.filter(m => m.name && m.name.trim());
+    const validMissionaries = data.filter(m => m && m.name && m.name.trim());
 
     if (validMissionaries.length === 0) {
       section.style.display = 'none';
