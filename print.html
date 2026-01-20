@@ -155,8 +155,6 @@
   }
 
   #events-list {
-    column-count: 2;
-    column-gap: 0.25in;
   }
 
   .event-item {
@@ -694,6 +692,14 @@ async function loadEvents() {
     if (validEvents.length === 0) {
       container.innerHTML = '<p class="empty-state">No upcoming events.</p>';
       return;
+    }
+
+    // Conditional columns: 1 column for < 5 events, 2 columns for 5+
+    if (validEvents.length >= 5) {
+      container.style.columnCount = '2';
+      container.style.columnGap = '0.25in';
+    } else {
+      container.style.columnCount = '1';
     }
 
     let html = '';
