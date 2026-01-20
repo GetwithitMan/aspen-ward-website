@@ -154,10 +154,17 @@
     border-bottom: 2px solid #2c5530;
   }
 
+  #events-list {
+    column-count: 2;
+    column-gap: 0.25in;
+  }
+
   .event-item {
     margin-bottom: 0.18in;
     padding-bottom: 0.12in;
     border-bottom: 1px solid #eee;
+    break-inside: avoid;
+    page-break-inside: avoid;
   }
 
   .event-item:last-child {
