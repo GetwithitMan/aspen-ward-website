@@ -286,6 +286,11 @@
     border-bottom: 2px solid #2c5530;
   }
 
+  #announcements-list {
+    flex: 1;
+    overflow: hidden;
+  }
+
   .announcement-item {
     margin-bottom: 0.18in;
     padding-bottom: 0.12in;
@@ -871,6 +876,36 @@ function fitMissionariesToContainer() {
   }
 }
 
+// Auto-scale announcements text to fit container
+function fitAnnouncementsToContainer() {
+  const container = document.getElementById('announcements-list');
+
+  if (!container || !container.children.length) return;
+
+  // Start with default font sizes
+  let baseFontSize = 14; // announcement-title base
+  const minFontSize = 9; // Don't go smaller than this
+
+  // Check if content overflows and shrink if needed
+  while (container.scrollHeight > container.clientHeight && baseFontSize > minFontSize) {
+    baseFontSize -= 0.5;
+
+    // Scale all announcement text proportionally
+    const items = container.querySelectorAll('.announcement-item');
+    items.forEach(item => {
+      const title = item.querySelector('.announcement-title');
+      const description = item.querySelector('.announcement-description');
+
+      if (title) title.style.fontSize = baseFontSize + 'pt';
+      if (description) description.style.fontSize = (baseFontSize - 2) + 'pt';
+
+      // Also reduce margins/padding
+      item.style.marginBottom = Math.max(0.08, 0.18 - (14 - baseFontSize) * 0.02) + 'in';
+      item.style.paddingBottom = Math.max(0.06, 0.12 - (14 - baseFontSize) * 0.01) + 'in';
+    });
+  }
+}
+
 // Initialize
 async function init() {
   await Promise.all([
@@ -883,6 +918,7 @@ async function init() {
   setTimeout(() => {
     fitEventsToContainer();
     fitMissionariesToContainer();
+    fitAnnouncementsToContainer();
   }, 500);
 }
 
