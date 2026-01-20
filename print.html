@@ -803,15 +803,28 @@ function fitMissionariesToContainer() {
   const container = document.getElementById('missionaries-content');
   const missionariesList = document.getElementById('missionaries-list');
   const section = document.getElementById('missionaries-section');
+  const header = section ? section.querySelector('.missionaries-header') : null;
 
   if (!container || !missionariesList || !missionariesList.children.length) return;
 
   // Start with default font sizes
   let baseFontSize = 13; // missionary-name base
-  const minFontSize = 7; // Allow smaller font to fit more people
+  const minFontSize = 6; // Allow smaller font to fit more people
+
+  // Helper to check overflow
+  const isOverflowing = () => missionariesList.scrollHeight > container.clientHeight;
+
+  // If initially overflowing, try to gain space from header/padding first
+  if (isOverflowing()) {
+    if (section) section.style.paddingTop = '0.05in';
+    if (header) {
+      header.style.fontSize = '12pt';
+      header.style.marginBottom = '0.05in';
+    }
+  }
 
   // Check if content overflows and shrink if needed
-  while (missionariesList.scrollHeight > container.clientHeight && baseFontSize > minFontSize) {
+  while (isOverflowing() && baseFontSize > minFontSize) {
     baseFontSize -= 0.5;
 
     // Scale all missionary text proportionally
@@ -827,18 +840,13 @@ function fitMissionariesToContainer() {
       if (location) location.style.fontSize = Math.max(6, baseFontSize - 2) + 'pt';
       if (contact) {
         contact.style.fontSize = Math.max(6, baseFontSize - 3) + 'pt';
-        contact.style.lineHeight = (1.3 - (13 - baseFontSize) * 0.04);
+        contact.style.lineHeight = Math.max(1.05, 1.3 - (13 - baseFontSize) * 0.04);
       }
 
       // Also reduce margins/padding
-      item.style.marginBottom = Math.max(0.02, 0.12 - (13 - baseFontSize) * 0.02) + 'in';
-      item.style.paddingBottom = Math.max(0.02, 0.08 - (13 - baseFontSize) * 0.015) + 'in';
+      item.style.marginBottom = Math.max(0.01, 0.10 - (13 - baseFontSize) * 0.025) + 'in';
+      item.style.paddingBottom = Math.max(0.01, 0.06 - (13 - baseFontSize) * 0.02) + 'in';
     });
-  }
-
-  // If still overflowing, try reducing the section padding to buy more space
-  if (missionariesList.scrollHeight > container.clientHeight && section) {
-    section.style.paddingTop = '0.05in';
   }
 }
 
