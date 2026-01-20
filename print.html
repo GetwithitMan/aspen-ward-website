@@ -442,6 +442,7 @@
     color: #666;
     margin-top: 2px;
     line-height: 1.3;
+    overflow-wrap: break-word;
   }
 
   .missionary-contact a {
@@ -820,6 +821,7 @@ function fitMissionariesToContainer() {
     if (header) {
       header.style.fontSize = '12pt';
       header.style.marginBottom = '0.05in';
+      header.style.paddingBottom = '2px';
     }
   }
 
@@ -840,13 +842,19 @@ function fitMissionariesToContainer() {
       if (location) location.style.fontSize = Math.max(6, baseFontSize - 2) + 'pt';
       if (contact) {
         contact.style.fontSize = Math.max(6, baseFontSize - 3) + 'pt';
-        contact.style.lineHeight = Math.max(1.05, 1.3 - (13 - baseFontSize) * 0.04);
+        contact.style.lineHeight = Math.max(1.0, 1.2 - (13 - baseFontSize) * 0.05);
       }
 
       // Also reduce margins/padding
-      item.style.marginBottom = Math.max(0.01, 0.10 - (13 - baseFontSize) * 0.025) + 'in';
+      item.style.marginBottom = Math.max(0.01, 0.10 - (13 - baseFontSize) * 0.03) + 'in';
       item.style.paddingBottom = Math.max(0.01, 0.06 - (13 - baseFontSize) * 0.02) + 'in';
     });
+
+    // If we are getting very small, shrink the header further
+    if (baseFontSize < 10 && header) {
+      header.style.fontSize = '11pt';
+      header.style.marginBottom = '0.02in';
+    }
   }
 }
 
@@ -862,7 +870,7 @@ async function init() {
   setTimeout(() => {
     fitEventsToContainer();
     fitMissionariesToContainer();
-  }, 150);
+  }, 500);
 }
 
 document.addEventListener('DOMContentLoaded', init);
