@@ -152,13 +152,7 @@ let currentMonth = new Date().getMonth();
 let currentYear  = new Date().getFullYear();
 let signups = {};
 
-onValue(ref(db, 'signups'), snap => {
-  signups = snap.val() || {};
-  renderCalendar();
-});
-
-document.getElementById('prev-month').addEventListener('click', prevMonth);
-document.getElementById('next-month').addEventListener('click', nextMonth);
+/* ===== FUNCTION DEFINITIONS ===== */
 
 function clearPastSignups() {
   const now = new Date();
@@ -173,6 +167,7 @@ function clearPastSignups() {
 function renderCalendar() {
   clearPastSignups();
   const cal = document.getElementById('calendar');
+  if (!cal) { console.error('Calendar element not found'); return; }
   cal.innerHTML = '';
   const title = document.getElementById('month-year');
   const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
@@ -222,6 +217,7 @@ function renderCalendar() {
 }
 
 function validatePhone(p){ return /^\(?([0-9]{3})\)?[-. ]?([0-9]{3})[-. ]?([0-9]{4})$/.test(p); }
+
 function signup(day){
   const key=`${currentYear}-${currentMonth}-${day}`;
   if(signups[key]){ alert(`Already taken by ${signups[key].firstName} ${signups[key].lastName}`); return; }
@@ -231,6 +227,7 @@ function signup(day){
   if(!ph||!validatePhone(ph)){ alert('Invalid phone'); return; }
   set(ref(db,'signups/'+key),{firstName:fn.trim(),lastName:ln.trim(),phone:ph});
 }
+
 function editSignup(day){
   const key=`${currentYear}-${currentMonth}-${day}`;
   const cur=signups[key];
@@ -249,6 +246,23 @@ function editSignup(day){
 
 function prevMonth(){ currentMonth--; if(currentMonth<0){currentMonth=11;currentYear--;} renderCalendar(); }
 function nextMonth(){ currentMonth++; if(currentMonth>11){currentMonth=0;currentYear++;} renderCalendar(); }
+
+/* ===== INITIALIZE ===== */
+
+// Add event listeners for navigation buttons
+document.getElementById('prev-month').addEventListener('click', prevMonth);
+document.getElementById('next-month').addEventListener('click', nextMonth);
+
+// Render calendar immediately on page load (don't wait for Firebase)
+renderCalendar();
+
+// Then update when Firebase data arrives
+onValue(ref(db, 'signups'), snap => {
+  signups = snap.val() || {};
+  renderCalendar();
+}, (error) => {
+  console.error('Firebase error:', error);
+})
 </script>
 </body>
 </html>
