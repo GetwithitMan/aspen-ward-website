@@ -134,6 +134,13 @@
     margin-top: 0;
     padding-top: 0.2in;
     border-top: 1px solid #ddd;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .missionaries-content {
+    flex: 1;
+    overflow: hidden;
   }
 
   .events-header {
@@ -467,7 +474,9 @@
     <!-- Missionaries & Military Section: 1/3 of the page -->
     <div id="missionaries-section" class="missionaries-section" style="display: none;">
       <div class="missionaries-header">Missionaries &amp; Military</div>
-      <div id="missionaries-list"></div>
+      <div class="missionaries-content" id="missionaries-content">
+        <div id="missionaries-list"></div>
+      </div>
     </div>
   </div>
 
@@ -777,6 +786,41 @@ function fitEventsToContainer() {
   }
 }
 
+// Auto-scale missionaries/military text to fit container
+function fitMissionariesToContainer() {
+  const container = document.getElementById('missionaries-content');
+  const missionariesList = document.getElementById('missionaries-list');
+
+  if (!container || !missionariesList || !missionariesList.children.length) return;
+
+  // Start with default font sizes
+  let baseFontSize = 13; // missionary-name base
+  const minFontSize = 8; // Don't go smaller than this
+
+  // Check if content overflows and shrink if needed
+  while (missionariesList.scrollHeight > container.clientHeight && baseFontSize > minFontSize) {
+    baseFontSize -= 0.5;
+
+    // Scale all missionary text proportionally
+    const missionaryItems = missionariesList.querySelectorAll('.missionary-item');
+    missionaryItems.forEach(item => {
+      const type = item.querySelector('.missionary-type');
+      const name = item.querySelector('.missionary-name');
+      const location = item.querySelector('.missionary-location');
+      const contact = item.querySelector('.missionary-contact');
+
+      if (type) type.style.fontSize = (baseFontSize - 4) + 'pt';
+      if (name) name.style.fontSize = baseFontSize + 'pt';
+      if (location) location.style.fontSize = (baseFontSize - 2) + 'pt';
+      if (contact) contact.style.fontSize = (baseFontSize - 3) + 'pt';
+
+      // Also reduce margins/padding
+      item.style.marginBottom = Math.max(0.04, 0.12 - (13 - baseFontSize) * 0.015) + 'in';
+      item.style.paddingBottom = Math.max(0.03, 0.08 - (13 - baseFontSize) * 0.01) + 'in';
+    });
+  }
+}
+
 // Initialize
 async function init() {
   await Promise.all([
@@ -785,8 +829,11 @@ async function init() {
     loadMissionaries()
   ]);
 
-  // After all content loads, fit events to container
-  setTimeout(fitEventsToContainer, 150);
+  // After all content loads, fit content to containers
+  setTimeout(() => {
+    fitEventsToContainer();
+    fitMissionariesToContainer();
+  }, 150);
 }
 
 document.addEventListener('DOMContentLoaded', init);
