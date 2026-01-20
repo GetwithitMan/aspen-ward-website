@@ -605,12 +605,19 @@ async function loadProgram() {
     // Sacrament section
     programHTML += createSectionHTML('Sacrament', data.sections.sacrament);
 
-    // If testimony meeting, add special message instead of speakers
+    // If testimony meeting, add special header and message instead of speakers
     if (data.isTestimonyMeeting) {
-      if (data.testimonyMessage) {
-        programHTML += `<div class="testimony-message">${data.testimonyMessage}</div>`;
-      }
+      // Update main header title
+      const progHeader = document.querySelector('.program-header');
+      if (progHeader) progHeader.textContent = "Fast & Testimony Meeting";
+
+      programHTML += `<div class="section-block">
+        <div class="section-header">Testimonies</div>
+        <div class="testimony-message">${data.testimonyMessage || 'Members of the congregation are invited to share their testimonies.'}</div>
+      </div>`;
     } else {
+      const progHeader = document.querySelector('.program-header');
+      if (progHeader) progHeader.textContent = "Sacrament Meeting Program";
       // Speakers/Program section
       programHTML += createSectionHTML('Program', data.sections.speakers);
     }
