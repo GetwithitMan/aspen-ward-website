@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Crimson+Pro:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="icon" href="data:,">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/fitty/2.3.6/fitty.min.js"></script>
 
 <style>
@@ -581,6 +582,7 @@ async function loadProgram() {
   try {
     const snapshot = await get(ref(db, 'sundayProgram'));
     const data = snapshot.val();
+    console.log('Program data from Firebase:', data);
 
     // Set the date
     document.getElementById('program-date').textContent = getCurrentSunday();
@@ -606,7 +608,7 @@ async function loadProgram() {
     programHTML += createSectionHTML('Sacrament', data.sections.sacrament);
 
     // If testimony meeting, add special header and message instead of speakers
-    if (data.isTestimonyMeeting) {
+    if (data.isTestimonyMeeting || data.meetingType === 'Testimony Meeting' || data.meetingType === 'testimony') {
       // Update main header title
       const progHeader = document.querySelector('.program-header');
       if (progHeader) progHeader.textContent = "Fast & Testimony Meeting";
