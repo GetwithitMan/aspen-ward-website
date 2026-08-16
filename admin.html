@@ -325,6 +325,30 @@ main {
   background: linear-gradient(140deg, var(--success), #047857);
 }
 
+/* Save buttons turn amber with a nudging arrow while edits are unsaved, so the
+   state is obvious from whichever section you happen to be looking at. Every
+   save button writes the whole form, so they all light up together. */
+.btn.success.needs-save {
+  background: linear-gradient(140deg, var(--warning), #b45309);
+}
+
+.btn.success.needs-save::before {
+  content: '➜';
+  display: inline-block;
+  margin-right: 0.4rem;
+  animation: save-arrow 1.1s ease-in-out infinite;
+}
+
+@keyframes save-arrow {
+  0%, 100% { opacity: 0.35; transform: translateX(-3px); }
+  50%      { opacity: 1;    transform: translateX(3px); }
+}
+
+/* Keep the colour and the arrow, drop the motion. */
+@media (prefers-reduced-motion: reduce) {
+  .btn.success.needs-save::before { animation: none; opacity: 1; }
+}
+
 .btn.full {
   width: 100%;
 }
@@ -526,6 +550,7 @@ main {
 .program-item-row {
   align-items: start;
 }
+
 
 .link-row {
   display: flex;
@@ -1372,6 +1397,13 @@ function login() {
 }
 
 function logout() {
+  // Logging out throws away anything not yet written to Firebase, and the
+  // beforeunload guard does not fire because the page never navigates.
+  if (hasUnsavedChanges &&
+      !confirm('You have unsaved changes. Log out and discard them?')) {
+    return;
+  }
+  markFormClean();
   sessionStorage.removeItem('admin-auth');
   adminPanel.hidden = true;
   loginScreen.hidden = false;
@@ -1399,14 +1431,32 @@ function normalizeMultiline(value = '') {
 }
 
 // === Unsaved Changes Guard ===
+//
+// Nothing here saves on its own. Every "Save Changes" button runs saveProgram(),
+// which writes the whole form at once — they are not per-section saves — so they
+// all reflect the same state and light up together.
 let hasUnsavedChanges = false;
+
+function setSaveButtonsDirty(dirty) {
+  document.querySelectorAll('.section-save-btn, #save-btn').forEach(btn => {
+    btn.classList.toggle('needs-save', dirty);
+    // Colour alone is not a signal for everyone; give the button a text hint too.
+    if (dirty) {
+      btn.setAttribute('title', 'You have unsaved changes');
+    } else {
+      btn.removeAttribute('title');
+    }
+  });
+}
 
 function markFormDirty() {
   hasUnsavedChanges = true;
+  setSaveButtonsDirty(true);
 }
 
 function markFormClean() {
   hasUnsavedChanges = false;
+  setSaveButtonsDirty(false);
 }
 
 function initUnsavedChangesGuard() {

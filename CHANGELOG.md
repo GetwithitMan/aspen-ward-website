@@ -1,5 +1,26 @@
 # Changelog
 
+## August 16, 2026 (part 3)
+
+### Unsaved Changes Are Now Visible in the Admin Panel
+
+The admin panel does not auto-save, and there was nothing on screen indicating
+that edits were still only in the browser.
+
+- **Save buttons turn amber with a nudging arrow** the moment anything is
+  edited, and return to green once saved. All twelve light up together, because
+  every one of them runs `saveProgram()` and writes the entire form — they are
+  not per-section saves, which was the source of the impression that each
+  section had to be saved separately.
+
+- **Logging out with unsaved edits now asks first.** It previously discarded
+  them silently: the browser's unload warning never fired because logging out
+  does not navigate away, it just swaps which panel is visible.
+
+- Colour is not the only signal — the buttons also carry a
+  "You have unsaved changes" tooltip, and the arrow stays visible (just still)
+  under `prefers-reduced-motion`.
+
 ## August 16, 2026 (part 2)
 
 ### Printable Program Now Fits Its Two Pages
