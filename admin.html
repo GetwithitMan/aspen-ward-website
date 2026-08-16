@@ -4,6 +4,8 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Aspen Ward – Program Admin</title>
+<meta name="robots" content="noindex" />
+<link rel="icon" href="/public/assets/favicon.svg" type="image/svg+xml" />
 <meta name="robots" content="noindex, nofollow">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%234f7942' rx='20' width='100' height='100'/><text x='50' y='68' font-size='48' font-weight='bold' fill='white' text-anchor='middle' font-family='system-ui'>AW</text></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -493,18 +495,36 @@ main {
   align-items: center;
 }
 
-.program-item input {
+.program-item input,
+.program-item textarea {
   padding: 0.5rem 0.75rem;
   border: 1px solid var(--stroke-strong);
   border-radius: var(--radius-sm);
   background: var(--surface);
   color: var(--ink);
   font-size: 0.9rem;
+  font-family: inherit;
+  width: 100%;
 }
 
-.program-item input:focus {
+.program-item input:focus,
+.program-item textarea:focus {
   outline: none;
   border-color: var(--accent);
+}
+
+/* Details fields accept multiple lines so the printed program can be laid out
+   exactly as typed. They start one row tall and grow as you press Enter. */
+.program-item textarea.autogrow {
+  resize: vertical;
+  overflow: hidden;
+  min-height: 2.4rem;
+  line-height: 1.4;
+  white-space: pre-wrap;
+}
+
+.program-item-row {
+  align-items: start;
 }
 
 .link-row {
@@ -909,6 +929,7 @@ main {
   }
 
   .program-item-row input,
+  .program-item-row textarea,
   .program-item-row select {
     width: 100%;
     padding: 0.4rem 0.6rem;
@@ -1225,6 +1246,38 @@ main {
         </div>
       </div>
 
+      <!-- Site Settings Section -->
+      <div class="section-card collapsed" data-section="site-settings">
+        <div class="section-header">
+          <h2 class="section-title">Site Settings</h2>
+          <span class="section-toggle">▼</span>
+        </div>
+        <div class="section-content">
+          <p class="form-hint" style="margin-bottom: 1rem;">Control visibility of navigation links and other site-wide settings.</p>
+
+          <div class="form-group" style="display: flex; align-items: center; gap: 1rem; padding: 0.75rem; background: var(--surface-muted); border-radius: var(--radius-sm);">
+            <label class="toggle-switch" style="flex-shrink: 0;">
+              <input type="checkbox" id="show-classrooms-toggle">
+              <span class="toggle-slider"></span>
+            </label>
+            <div>
+              <span style="font-weight: 600; color: var(--ink);">Show Classrooms in Navigation</span>
+              <p class="form-hint" style="margin: 0.25rem 0 0;">When enabled, a "Classrooms" link appears in the main site navigation.</p>
+            </div>
+          </div>
+
+          <div class="form-group" style="margin-top: 1rem; padding: 0.75rem; background: var(--surface-muted); border-radius: var(--radius-sm);">
+            <span style="font-weight: 600; color: var(--ink);">Manage Classroom Assignments</span>
+            <p class="form-hint" style="margin: 0.25rem 0 0.75rem;">Configure which rooms are assigned to each class for Sunday School and Priesthood/RS weeks.</p>
+            <a href="/classrooms-admin" class="btn ghost" style="display: inline-flex;">Open Classroom Admin</a>
+          </div>
+
+          <div class="section-actions">
+            <button type="button" class="btn success section-save-btn">Save Changes</button>
+          </div>
+        </div>
+      </div>
+
     </div>
   </div>
 </main>
@@ -1236,23 +1289,10 @@ main {
 
 <script type="module">
 // Firebase SDK imports
-import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.7.3/firebase-app.js';
-import { getDatabase, ref, get, set } from 'https://www.gstatic.com/firebasejs/11.7.3/firebase-database.js';
-
-// Firebase Configuration (Aspen Ward)
-const firebaseConfig = {
-  apiKey: "AIzaSyBbwlTuMoSMl2vfXA5aHkQM0RC2PUrKDXk",
-  authDomain: "aspen-ward-missionary-dinner.firebaseapp.com",
-  databaseURL: "https://aspen-ward-missionary-dinner-default-rtdb.firebaseio.com",
-  projectId: "aspen-ward-missionary-dinner",
-  storageBucket: "aspen-ward-missionary-dinner.firebasestorage.app",
-  messagingSenderId: "350865820261",
-  appId: "1:350865820261:web:26912e9b753852ae7ed48c"
-};
+import { ref, get, update } from "https://www.gstatic.com/firebasejs/11.7.3/firebase-database.js";
+import { db } from "/js/firebase.js";
 
 // Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const db = getDatabase(app);
 
 // Simple password
 const ADMIN_PASSWORD = '1Givethanks';
@@ -1336,6 +1376,58 @@ function logout() {
   adminPanel.hidden = true;
   loginScreen.hidden = false;
   passwordInput.value = '';
+}
+
+// === Multi-line Details Fields ===
+// Details are stored and printed exactly as typed, so the textarea has to grow
+// with its content rather than scroll.
+function autosize(el) {
+  if (!el || !el.classList.contains('autogrow')) return;
+  el.style.height = 'auto';
+  el.style.height = el.scrollHeight + 'px';
+}
+
+function autosizeAll(root = document) {
+  root.querySelectorAll('textarea.autogrow').forEach(autosize);
+}
+
+// Preserve what was typed: spaces and line breaks are meaningful because they
+// carry through to the printed program. Only strip leading blank lines and
+// trailing whitespace, which are always accidental.
+function normalizeMultiline(value = '') {
+  return String(value).replace(/^\s*\n/, '').replace(/\s+$/, '');
+}
+
+// === Unsaved Changes Guard ===
+let hasUnsavedChanges = false;
+
+function markFormDirty() {
+  hasUnsavedChanges = true;
+}
+
+function markFormClean() {
+  hasUnsavedChanges = false;
+}
+
+function initUnsavedChangesGuard() {
+  // Any edit inside the panel counts. The panel is rebuilt from Firebase on
+  // load, so listening on the container covers items added later too.
+  adminPanel.addEventListener('input', (event) => {
+    markFormDirty();
+    autosize(event.target);
+  });
+  adminPanel.addEventListener('change', markFormDirty);
+  adminPanel.addEventListener('click', (event) => {
+    if (event.target.closest('.add-btn, .remove-btn, .remove-link-btn')) {
+      markFormDirty();
+    }
+  });
+
+  window.addEventListener('beforeunload', (event) => {
+    if (!hasUnsavedChanges) return;
+    event.preventDefault();
+    event.returnValue = '';
+  });
 }
 
 // === Status Messages ===
@@ -1624,7 +1716,7 @@ function createProgramItemHTML(item, section) {
       </div>
       <div class="mobile-field">
         <label class="mobile-label">Details</label>
-        <input type="text" class="item-details" placeholder="e.g., #123 or John Smith" value="${escapeHtml(details)}">
+        <textarea class="item-details autogrow" rows="1" placeholder="e.g., #123 or John Smith&#10;Press Enter for a new line">${escapeHtml(details)}</textarea>
       </div>
       <button type="button" class="remove-btn" title="Remove">&times;</button>
     </div>
@@ -1680,6 +1772,7 @@ function createProgramItemHTML(item, section) {
       hymnStatus.textContent = '';
       detailsInput.value = '';
     }
+    autosize(detailsInput);
   });
 
   // Sync details to hymn number if it's a hymn
@@ -1727,7 +1820,7 @@ function createProgramItemHTML(item, section) {
 
 // === Event Item Template ===
 function createEventItemHTML(item) {
-  const { type = 'recurring', date = '', title = '', info = '', link = '' } = item;
+  const { type = 'recurring', date = '', title = '', info = '', link = '', icon = '' } = item;
   const hasLink = link && link.trim() !== '';
   const isOneTime = type === 'one-time';
 
@@ -1741,6 +1834,9 @@ function createEventItemHTML(item) {
 
   const div = document.createElement('div');
   div.className = 'program-item event-item';
+  // There is no icon field in this form, but the public page renders one if the
+  // record has it. Carry it through so saving here does not discard it.
+  div.dataset.icon = icon;
 
   div.innerHTML = `
     <div class="program-item-row event-grid">
@@ -1762,7 +1858,7 @@ function createEventItemHTML(item) {
       </div>
       <div class="mobile-field">
         <label class="mobile-label">Time/Details</label>
-        <input type="text" class="event-info" placeholder="7:00 PM" value="${escapeHtml(info)}">
+        <textarea class="event-info autogrow" rows="1" placeholder="7:00 PM">${escapeHtml(info)}</textarea>
       </div>
       <button type="button" class="remove-btn" title="Remove">&times;</button>
     </div>
@@ -1860,6 +1956,15 @@ function createMissionaryItemHTML(item) {
   return div;
 }
 
+// Firebase hands back an object rather than an array when keys are sparse or
+// non-sequential. Without this the form renders empty and the next save writes
+// that emptiness back over the real data.
+function toArray(value) {
+  if (Array.isArray(value)) return value.filter(Boolean);
+  if (value && typeof value === 'object') return Object.values(value).filter(Boolean);
+  return [];
+}
+
 // === Load Program from Firebase ===
 async function loadProgram() {
   showStatus('Loading program data...', 'info');
@@ -1883,14 +1988,24 @@ async function loadProgram() {
 
     // Load events
     const eventsSnapshot = await get(ref(db, 'events'));
-    eventsData = eventsSnapshot.val() || [];
+    eventsData = toArray(eventsSnapshot.val());
     renderEvents();
 
     // Load missionaries
     const missionariesSnapshot = await get(ref(db, 'missionaries'));
-    missionariesData = missionariesSnapshot.val() || [];
+    missionariesData = toArray(missionariesSnapshot.val());
     renderMissionaries();
 
+    // Load site settings
+    const siteSettingsSnapshot = await get(ref(db, 'siteSettings'));
+    const siteSettings = siteSettingsSnapshot.val() || {};
+    const showClassroomsToggle = document.getElementById('show-classrooms-toggle');
+    if (showClassroomsToggle) {
+      showClassroomsToggle.checked = siteSettings.showClassroomsNav || false;
+    }
+
+    autosizeAll();
+    markFormClean();
     showStatus('Program loaded successfully!', 'success');
   } catch (error) {
     console.error('Load error:', error);
@@ -2061,7 +2176,7 @@ function collectFormData() {
     sectionData[sectionKey] = [];
     container.querySelectorAll('.program-item').forEach(item => {
       const label = item.querySelector('.item-label')?.value?.trim() || '';
-      const details = item.querySelector('.item-details')?.value?.trim() || '';
+      const details = normalizeMultiline(item.querySelector('.item-details')?.value);
       let link = item.querySelector('.item-link')?.value?.trim() || '';
 
       // Auto-generate hymn link if applicable
@@ -2088,13 +2203,14 @@ function collectFormData() {
       const dateText = item.querySelector('.event-date-text')?.value?.trim() || '';
       const datePicker = item.querySelector('.event-date-picker')?.value || '';
       const title = item.querySelector('.event-title')?.value?.trim() || '';
-      const info = item.querySelector('.event-info')?.value?.trim() || '';
+      const info = normalizeMultiline(item.querySelector('.event-info')?.value);
       const link = item.querySelector('.event-link')?.value?.trim() || '';
+      const icon = item.dataset.icon || '';
 
       let date = type === 'one-time' ? datePicker : dateText;
 
       if (title) {
-        collectedEvents.push({ type, date, title, info, link });
+        collectedEvents.push({ type, date, title, info, link, icon });
       }
     });
   }
@@ -2133,22 +2249,24 @@ async function saveProgram() {
 
   try {
     const data = collectFormData();
+    const showClassroomsToggle = document.getElementById('show-classrooms-toggle');
 
-    // Save program data
-    await set(ref(db, 'sundayProgram'), {
-      introduction: data.introduction,
-      isTestimonyMeeting: data.isTestimonyMeeting,
-      testimonyMessage: data.testimonyMessage,
-      sections: data.sections,
-      lastUpdated: new Date().toISOString()
+    // One multi-path update so the four sections land together. Writing them as
+    // separate set() calls left the database half-updated when one failed.
+    await update(ref(db), {
+      sundayProgram: {
+        introduction: data.introduction,
+        isTestimonyMeeting: data.isTestimonyMeeting,
+        testimonyMessage: data.testimonyMessage,
+        sections: data.sections,
+        lastUpdated: new Date().toISOString()
+      },
+      events: data.events,
+      missionaries: data.missionaries,
+      'siteSettings/showClassroomsNav': showClassroomsToggle?.checked || false
     });
 
-    // Save events data
-    await set(ref(db, 'events'), data.events);
-
-    // Save missionaries data
-    await set(ref(db, 'missionaries'), data.missionaries);
-
+    markFormClean();
     showStatus('Changes saved successfully!', 'success');
   } catch (error) {
     console.error('Save error:', error);
@@ -2164,13 +2282,15 @@ function initAddButtons() {
     btn.addEventListener('click', () => {
       const sectionKey = btn.dataset.add;
 
+      let added = null;
       if (sectionKey === 'events') {
-        sections.events?.appendChild(createEventItemHTML({}));
+        added = sections.events?.appendChild(createEventItemHTML({}));
       } else if (sectionKey === 'missionaries') {
-        sections.missionaries?.appendChild(createMissionaryItemHTML({}));
+        added = sections.missionaries?.appendChild(createMissionaryItemHTML({}));
       } else if (sections[sectionKey]) {
-        sections[sectionKey].appendChild(createProgramItemHTML({}, sectionKey));
+        added = sections[sectionKey].appendChild(createProgramItemHTML({}, sectionKey));
       }
+      if (added) autosizeAll(added);
     });
   });
 }
@@ -2201,6 +2321,7 @@ initTheme();
 initSectionToggles();
 initAddButtons();
 initSectionSaveButtons();
+initUnsavedChangesGuard();
 
 // Check if already logged in
 if (checkAuth()) {

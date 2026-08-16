@@ -7,8 +7,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Crimson+Pro:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="icon" href="data:,">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/fitty/2.3.6/fitty.min.js"></script>
+<link rel="icon" href="/public/assets/favicon.svg" type="image/svg+xml">
+<meta name="robots" content="noindex">
 
 <style>
   /* === BASE PRINT SETTINGS === */
@@ -67,6 +67,26 @@
     .print-controls { display: none; }
   }
 
+  /* Shown only while previewing, when content had to be cut */
+  .fit-warning {
+    position: fixed;
+    left: 20px;
+    right: 20px;
+    bottom: 20px;
+    z-index: 1000;
+    background: #8a2b2b;
+    color: #fff;
+    padding: 14px 18px;
+    border-radius: 8px;
+    font-size: 15px;
+    line-height: 1.45;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+  }
+
+  @media print {
+    .fit-warning { display: none; }
+  }
+
   /* === THE PHYSICAL SHEET === */
   .sheet {
     background: white;
@@ -115,9 +135,11 @@
     flex-direction: column;
   }
 
-  /* Events container gets 2/3 of the space */
+  /* Missionaries take only what they need (up to 45%); events get the rest.
+     A fixed 2:1 split wasted space whenever one side was short. */
   .events-container {
-    flex: 2;
+    flex: 1 1 auto;
+    min-height: 0;
     overflow: hidden;
     display: flex;
     flex-direction: column;
@@ -125,12 +147,14 @@
 
   .events-content {
     flex: 1;
+    min-height: 0;
     overflow: hidden;
   }
 
-  /* Missionaries section gets 1/3 of the space */
   .missionaries-section {
-    flex: 1;
+    flex: 0 1 auto;
+    min-height: 0;
+    max-height: 45%;
     overflow: hidden;
     margin-top: 0;
     padding-top: 0.2in;
@@ -141,6 +165,7 @@
 
   .missionaries-content {
     flex: 1;
+    min-height: 0;
     overflow: hidden;
   }
 
@@ -159,8 +184,8 @@
   }
 
   .event-item {
-    margin-bottom: 0.18in;
-    padding-bottom: 0.12in;
+    margin-bottom: calc(0.18in * var(--fit, 1));
+    padding-bottom: calc(0.12in * var(--fit, 1));
     border-bottom: 1px solid #eee;
     break-inside: avoid;
     page-break-inside: avoid;
@@ -171,7 +196,7 @@
   }
 
   .event-date {
-    font-size: 11pt;
+    font-size: calc(11pt * var(--fit, 1));
     color: #2c5530;
     font-weight: 600;
     text-transform: uppercase;
@@ -179,16 +204,17 @@
   }
 
   .event-title {
-    font-size: 14pt;
+    font-size: calc(14pt * var(--fit, 1));
     font-weight: 600;
     color: #222;
     margin: 2px 0;
   }
 
   .event-info {
-    font-size: 12pt;
+    font-size: calc(12pt * var(--fit, 1));
     color: #555;
     line-height: 1.4;
+    white-space: pre-wrap;
   }
 
   /* Front cover with logo */
@@ -289,12 +315,13 @@
 
   #announcements-list {
     flex: 1;
+    min-height: 0;
     overflow: hidden;
   }
 
   .announcement-item {
-    margin-bottom: 0.18in;
-    padding-bottom: 0.12in;
+    margin-bottom: calc(0.18in * var(--fit, 1));
+    padding-bottom: calc(0.12in * var(--fit, 1));
     border-bottom: 1px solid #eee;
   }
 
@@ -303,16 +330,17 @@
   }
 
   .announcement-title {
-    font-size: 14pt;
+    font-size: calc(14pt * var(--fit, 1));
     font-weight: 600;
     color: #222;
     margin-bottom: 2px;
   }
 
   .announcement-description {
-    font-size: 12pt;
+    font-size: calc(12pt * var(--fit, 1));
     color: #555;
     line-height: 1.4;
+    white-space: pre-wrap;
   }
 
   /* Program section (full right side) */
@@ -331,14 +359,22 @@
     border-bottom: 2px solid #2c5530;
   }
 
+  /* The program is the one region that never had a fit pass, so a long week
+     silently lost its last rows. It now scales like every other region. */
+  #program-content {
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+  }
+
   /* === SECTION STYLING === */
   .section-block {
-    margin-bottom: 0.12in;
+    margin-bottom: calc(0.12in * var(--fit, 1));
   }
 
   .section-header {
     font-family: "Playfair Display", serif;
-    font-size: 15pt;
+    font-size: calc(15pt * var(--fit, 1));
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 1.5px;
@@ -353,23 +389,26 @@
     display: flex;
     justify-content: space-between;
     align-items: baseline;
-    margin-bottom: 5px;
+    margin-bottom: calc(5px * var(--fit, 1));
     line-height: 1.35;
   }
 
   .row-label {
-    font-size: 16pt;
+    font-size: calc(16pt * var(--fit, 1));
     color: #333;
     flex-shrink: 0;
     margin-right: 8px;
     min-width: 1.4in;
   }
 
+  /* pre-wrap so line breaks typed in the admin panel print as typed, and so a
+     long name wraps instead of being shrunk to fit one line. */
   .row-name {
-    font-size: 16pt;
+    font-size: calc(16pt * var(--fit, 1));
     color: #111;
     text-align: right;
-    white-space: nowrap;
+    white-space: pre-wrap;
+    overflow-wrap: break-word;
     flex: 1;
     max-width: 2.8in;
   }
@@ -390,11 +429,12 @@
     text-align: center;
     padding: 0.12in 0.15in;
     color: #444;
-    font-size: 10pt;
+    font-size: calc(11pt * var(--fit, 1));
     line-height: 1.4;
     background: #f9f9f9;
     border-radius: 4px;
     margin: 0.1in 0;
+    white-space: pre-wrap;
   }
 
   /* === EMPTY STATE === */
@@ -418,9 +458,10 @@
   }
 
   .missionary-item {
-    margin-bottom: 0.12in;
-    padding-bottom: 0.08in;
+    margin-bottom: calc(0.12in * var(--fit, 1));
+    padding-bottom: calc(0.08in * var(--fit, 1));
     border-bottom: 1px solid #eee;
+    break-inside: avoid;
   }
 
   .missionary-item:last-child {
@@ -428,7 +469,7 @@
   }
 
   .missionary-type {
-    font-size: 9pt;
+    font-size: calc(9pt * var(--fit, 1));
     color: #2c5530;
     font-weight: 600;
     text-transform: uppercase;
@@ -436,20 +477,20 @@
   }
 
   .missionary-name {
-    font-size: 13pt;
+    font-size: calc(13pt * var(--fit, 1));
     font-weight: 600;
     color: #222;
     margin: 1px 0;
   }
 
   .missionary-location {
-    font-size: 11pt;
+    font-size: calc(11pt * var(--fit, 1));
     color: #555;
     font-style: italic;
   }
 
   .missionary-contact {
-    font-size: 10pt;
+    font-size: calc(10pt * var(--fit, 1));
     color: #666;
     margin-top: 2px;
     line-height: 1.3;
@@ -495,7 +536,7 @@
   <!-- Front Cover with Logo (when folded, this is the front) -->
   <div class="half-page right-side front-cover">
     <div>
-      <img src="https://storage.googleapis.com/msgsndr/Y17ODAHcaxgHoS9kMX9v/media/680a878771b53cd35214434a.jpeg" alt="Aspen Ward" class="cover-logo">
+      <img src="/public/assets/ward-logo.jpeg" alt="Aspen Ward" class="cover-logo">
       <div class="cover-badge">The Church of Jesus Christ of Latter-day Saints</div>
       <h1 class="cover-title">Aspen Ward</h1>
       <p class="cover-subtitle">Sacrament Meeting</p>
@@ -524,22 +565,19 @@
 </div>
 
 <script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/11.7.3/firebase-app.js";
-import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/11.7.3/firebase-database.js";
+import { ref, get } from "https://www.gstatic.com/firebasejs/11.7.3/firebase-database.js";
+import { db } from "/js/firebase.js";
 
-// Firebase config (same as main site)
-const firebaseConfig = {
-  apiKey: "AIzaSyBbwlTuMoSMl2vfXA5aHkQM0RC2PUrKDXk",
-  authDomain: "aspen-ward-missionary-dinner.firebaseapp.com",
-  databaseURL: "https://aspen-ward-missionary-dinner-default-rtdb.firebaseio.com",
-  projectId: "aspen-ward-missionary-dinner",
-  storageBucket: "aspen-ward-missionary-dinner.firebasestorage.app",
-  messagingSenderId: "350865820261",
-  appId: "1:350865820261:web:26912e9b753852ae7ed48c"
-};
-
-const firebaseApp = initializeApp(firebaseConfig);
-const db = getDatabase(firebaseApp);
+// Everything below builds HTML strings from admin-entered text, so anything
+// interpolated has to be escaped or a stray angle bracket breaks the program.
+function escapeHtml(text = '') {
+  return String(text)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
 
 // Get current Sunday's date
 function getCurrentSunday() {
@@ -563,13 +601,13 @@ function createSectionHTML(title, items) {
   if (validItems.length === 0) return '';
 
   let html = `<div class="section-block">
-    <div class="section-header">${title}</div>`;
+    <div class="section-header">${escapeHtml(title)}</div>`;
 
   validItems.forEach(item => {
     html += `
       <div class="program-row">
-        <span class="row-label">${item.label || ''}</span>
-        <span class="row-name">${item.details || ''}</span>
+        <span class="row-label">${escapeHtml(item.label || '')}</span>
+        <span class="row-name">${escapeHtml(item.details || '')}</span>
       </div>`;
   });
 
@@ -582,7 +620,6 @@ async function loadProgram() {
   try {
     const snapshot = await get(ref(db, 'sundayProgram'));
     const data = snapshot.val();
-    console.log('Program data from Firebase:', data);
 
     // Set the date
     document.getElementById('program-date').textContent = getCurrentSunday();
@@ -615,7 +652,7 @@ async function loadProgram() {
 
       programHTML += `<div class="section-block">
         <div class="section-header">Testimonies</div>
-        <div class="testimony-message">${data.testimonyMessage || 'Members of the congregation are invited to share their testimonies.'}</div>
+        <div class="testimony-message">${escapeHtml(data.testimonyMessage || 'Members of the congregation are invited to share their testimonies.')}</div>
       </div>`;
     } else {
       const progHeader = document.querySelector('.program-header');
@@ -632,15 +669,6 @@ async function loadProgram() {
 
     // Load announcements from the program data
     loadAnnouncements(data.sections.announcements);
-
-    // Apply fitty for auto-text-sizing
-    setTimeout(() => {
-      fitty('.row-name', {
-        minSize: 12,
-        maxSize: 16,
-        multiLine: false
-      });
-    }, 100);
 
   } catch (error) {
     console.error('Failed to load program:', error);
@@ -676,8 +704,8 @@ function loadAnnouncements(announcements) {
   validAnnouncements.forEach(item => {
     html += `
       <div class="announcement-item">
-        <div class="announcement-title">${item.label || 'Announcement'}</div>
-        <div class="announcement-description">${item.details || ''}</div>
+        <div class="announcement-title">${escapeHtml(item.label || 'Announcement')}</div>
+        <div class="announcement-description">${escapeHtml(item.details || '')}</div>
       </div>`;
   });
 
@@ -720,9 +748,9 @@ async function loadEvents() {
     validEvents.forEach(event => {
       html += `
         <div class="event-item">
-          <div class="event-date">${event.date || 'Date TBD'}</div>
-          <div class="event-title">${event.title || 'Ward Event'}</div>
-          <div class="event-info">${event.info || ''}</div>
+          <div class="event-date">${escapeHtml(event.date || 'Date TBD')}</div>
+          <div class="event-title">${escapeHtml(event.title || 'Ward Event')}</div>
+          <div class="event-info">${escapeHtml(event.info || '')}</div>
         </div>`;
     });
 
@@ -743,8 +771,6 @@ async function loadMissionaries() {
   try {
     const snapshot = await get(ref(db, 'missionaries'));
     let data = snapshot.val();
-
-    console.log('Missionaries data from Firebase:', data);
 
     if (!data) {
       section.style.display = 'none';
@@ -775,11 +801,11 @@ async function loadMissionaries() {
       html += `
         <div class="missionary-item">
           <div class="missionary-type">${typeLabel}</div>
-          <div class="missionary-name">${person.name || ''}</div>
-          ${person.location ? `<div class="missionary-location">${person.location}</div>` : ''}
+          <div class="missionary-name">${escapeHtml(person.name || '')}</div>
+          ${person.location ? `<div class="missionary-location">${escapeHtml(person.location)}</div>` : ''}
           <div class="missionary-contact">
-            ${person.email ? `<div>Email: <a href="mailto:${person.email}">${person.email}</a></div>` : ''}
-            ${person.address ? `<div>${person.address.replace(/\n/g, ', ')}</div>` : ''}
+            ${person.email ? `<div>Email: <a href="mailto:${encodeURIComponent(person.email)}">${escapeHtml(person.email)}</a></div>` : ''}
+            ${person.address ? `<div>${escapeHtml(person.address.replace(/\n/g, ', '))}</div>` : ''}
           </div>
         </div>`;
     });
@@ -787,132 +813,119 @@ async function loadMissionaries() {
     container.innerHTML = html;
     section.style.display = 'flex';
 
+    // Same trick as events: a second column roughly doubles what fits before
+    // the scale-to-fit pass has to start shrinking the text.
+    if (validMissionaries.length >= 4) {
+      container.style.columnCount = '2';
+      container.style.columnGap = '0.2in';
+    } else {
+      container.style.columnCount = '1';
+    }
+
   } catch (error) {
     console.error('Failed to load missionaries:', error);
     section.style.display = 'none';
   }
 }
 
-// Auto-scale events text to fit container
-function fitEventsToContainer() {
-  const container = document.getElementById('events-content');
-  const eventsList = document.getElementById('events-list');
+// === FIT CONTENT TO ITS HALF-PAGE ===
+//
+// Every region is a fixed-height box with overflow hidden, so anything too tall
+// used to be silently cut off — a speaker could just vanish from the program.
+// Each region now scales as a unit via a --fit multiplier that all its font
+// sizes and spacing are expressed against, binary-searched to the largest value
+// that still fits. Replaces three near-identical shrink loops (and the program,
+// which had no fit pass at all).
 
-  if (!container || !eventsList || !eventsList.children.length) return;
+const FIT_REGIONS = [
+  { name: 'program',       box: '#program-content' },
+  { name: 'events',        box: '.events-content' },
+  { name: 'announcements', box: '#announcements-list' },
+  { name: 'missionaries',  box: '.missionaries-content' }
+];
 
-  // Start with default font sizes
-  let baseFontSize = 14; // event-title base
-  const minFontSize = 9; // Don't go smaller than this
+const MIN_FIT = 0.55; // below this the print is too small to read
 
-  // Check if content overflows and shrink if needed
-  while (eventsList.scrollHeight > container.clientHeight && baseFontSize > minFontSize) {
-    baseFontSize -= 0.5;
-
-    // Scale all event text proportionally
-    const eventItems = eventsList.querySelectorAll('.event-item');
-    eventItems.forEach(item => {
-      const date = item.querySelector('.event-date');
-      const title = item.querySelector('.event-title');
-      const info = item.querySelector('.event-info');
-
-      if (date) date.style.fontSize = (baseFontSize - 3) + 'pt';
-      if (title) title.style.fontSize = baseFontSize + 'pt';
-      if (info) info.style.fontSize = (baseFontSize - 2) + 'pt';
-
-      // Also reduce margins/padding
-      item.style.marginBottom = Math.max(0.08, 0.18 - (14 - baseFontSize) * 0.02) + 'in';
-      item.style.paddingBottom = Math.max(0.06, 0.12 - (14 - baseFontSize) * 0.01) + 'in';
-    });
-  }
+// Height alone is not enough: the events list uses column-count, and content
+// that will not fit spills into an extra column sideways rather than growing
+// taller.
+function overflows(box) {
+  // No slack: a sub-pixel overrun still shows up as a clipped final line.
+  return box.scrollHeight > box.clientHeight || box.scrollWidth > box.clientWidth;
 }
 
-// Auto-scale missionaries/military text to fit container
-function fitMissionariesToContainer() {
-  const container = document.getElementById('missionaries-content');
-  const missionariesList = document.getElementById('missionaries-list');
-  const section = document.getElementById('missionaries-section');
-  const header = section ? section.querySelector('.missionaries-header') : null;
+function fitRegion(box) {
+  if (!box || !box.children.length) return 1;
 
-  if (!container || !missionariesList || !missionariesList.children.length) return;
+  box.style.setProperty('--fit', '1');
+  if (!overflows(box)) return 1;
 
-  // Start with default font sizes
-  let baseFontSize = 13; // missionary-name base
-  const minFontSize = 6; // Allow smaller font to fit more people
+  let low = MIN_FIT;
+  let high = 1;
+  let best = MIN_FIT;
 
-  // Helper to check overflow
-  const isOverflowing = () => missionariesList.scrollHeight > container.clientHeight;
-
-  // If initially overflowing, try to gain space from header/padding first
-  if (isOverflowing()) {
-    if (section) section.style.paddingTop = '0.05in';
-    if (header) {
-      header.style.fontSize = '12pt';
-      header.style.marginBottom = '0.05in';
-      header.style.paddingBottom = '2px';
+  // 10 iterations lands within ~0.05% of the largest scale that fits
+  for (let i = 0; i < 10; i++) {
+    const mid = (low + high) / 2;
+    box.style.setProperty('--fit', String(mid));
+    if (!overflows(box)) {
+      best = mid;
+      low = mid;
+    } else {
+      high = mid;
     }
   }
 
-  // Check if content overflows and shrink if needed
-  while (isOverflowing() && baseFontSize > minFontSize) {
-    baseFontSize -= 0.5;
-
-    // Scale all missionary text proportionally
-    const missionaryItems = missionariesList.querySelectorAll('.missionary-item');
-    missionaryItems.forEach(item => {
-      const type = item.querySelector('.missionary-type');
-      const name = item.querySelector('.missionary-name');
-      const location = item.querySelector('.missionary-location');
-      const contact = item.querySelector('.missionary-contact');
-
-      if (type) type.style.fontSize = Math.max(5, baseFontSize - 4) + 'pt';
-      if (name) name.style.fontSize = baseFontSize + 'pt';
-      if (location) location.style.fontSize = Math.max(6, baseFontSize - 2) + 'pt';
-      if (contact) {
-        contact.style.fontSize = Math.max(6, baseFontSize - 3) + 'pt';
-        contact.style.lineHeight = Math.max(1.0, 1.2 - (13 - baseFontSize) * 0.05);
-      }
-
-      // Also reduce margins/padding
-      item.style.marginBottom = Math.max(0.01, 0.10 - (13 - baseFontSize) * 0.03) + 'in';
-      item.style.paddingBottom = Math.max(0.01, 0.06 - (13 - baseFontSize) * 0.02) + 'in';
-    });
-
-    // If we are getting very small, shrink the header further
-    if (baseFontSize < 10 && header) {
-      header.style.fontSize = '11pt';
-      header.style.marginBottom = '0.02in';
-    }
-  }
+  box.style.setProperty('--fit', String(best));
+  return best;
 }
 
-// Auto-scale announcements text to fit container
-function fitAnnouncementsToContainer() {
-  const container = document.getElementById('announcements-list');
+function fitAllRegions() {
+  const tooSmall = [];
 
-  if (!container || !container.children.length) return;
+  FIT_REGIONS.forEach(({ name, box: selector }) => {
+    const box = document.querySelector(selector);
+    if (!box) return;
+    const scale = fitRegion(box);
+    // Report anything that still does not fit even at the floor, so a genuinely
+    // overloaded week is visible rather than quietly truncated.
+    if (scale <= MIN_FIT + 0.001 && overflows(box)) {
+      tooSmall.push(`${name} (overflows by ${Math.round(box.scrollHeight - box.clientHeight)}px at minimum size)`);
+    }
+  });
 
-  // Start with default font sizes
-  let baseFontSize = 14; // announcement-title base
-  const minFontSize = 9; // Don't go smaller than this
+  reportOverflow(tooSmall);
+}
 
-  // Check if content overflows and shrink if needed
-  while (container.scrollHeight > container.clientHeight && baseFontSize > minFontSize) {
-    baseFontSize -= 0.5;
+// If content cannot fit even at the smallest readable size, say so on screen
+// rather than printing a program that quietly drops people. Screen only —
+// .print-controls is hidden when printing.
+function reportOverflow(tooSmall) {
+  let banner = document.getElementById('fit-warning');
 
-    // Scale all announcement text proportionally
-    const items = container.querySelectorAll('.announcement-item');
-    items.forEach(item => {
-      const title = item.querySelector('.announcement-title');
-      const description = item.querySelector('.announcement-description');
-
-      if (title) title.style.fontSize = baseFontSize + 'pt';
-      if (description) description.style.fontSize = (baseFontSize - 2) + 'pt';
-
-      // Also reduce margins/padding
-      item.style.marginBottom = Math.max(0.08, 0.18 - (14 - baseFontSize) * 0.02) + 'in';
-      item.style.paddingBottom = Math.max(0.06, 0.12 - (14 - baseFontSize) * 0.01) + 'in';
-    });
+  if (!tooSmall.length) {
+    banner?.remove();
+    return;
   }
+
+  if (!banner) {
+    banner = document.createElement('div');
+    banner.id = 'fit-warning';
+    banner.className = 'fit-warning';
+    document.body.appendChild(banner);
+  }
+
+  banner.textContent =
+    'Too much content to fit on two pages: ' + tooSmall.join('; ') +
+    '. Some items are cut off — remove or shorten a few entries in the admin panel.';
+  console.warn('Printable program: ' + banner.textContent);
+}
+
+// Re-fit whenever the measurements could have changed. Web fonts in particular
+// land after first paint and shift every height; the old code guessed with a
+// fixed 500ms timeout.
+function scheduleFit() {
+  requestAnimationFrame(() => requestAnimationFrame(fitAllRegions));
 }
 
 // Initialize
@@ -923,12 +936,21 @@ async function init() {
     loadMissionaries()
   ]);
 
-  // After all content loads, fit content to containers
-  setTimeout(() => {
-    fitEventsToContainer();
-    fitMissionariesToContainer();
-    fitAnnouncementsToContainer();
-  }, 500);
+  scheduleFit();
+
+  // Web fonts change every measurement, so fit again once they are in.
+  if (document.fonts?.ready) {
+    document.fonts.ready.then(scheduleFit);
+  }
+
+  // The browser may lay out differently for print than for screen.
+  window.addEventListener('beforeprint', fitAllRegions);
+
+  let resizeTimer = null;
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(fitAllRegions, 150);
+  });
 }
 
 document.addEventListener('DOMContentLoaded', init);

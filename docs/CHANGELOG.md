@@ -1,3 +1,7 @@
+> **Out of date.** This document describes a modular `css/` + `js/` + `tests/`
+> structure that was planned but never built. See
+> [ARCHITECTURE.md](ARCHITECTURE.md) for how the site is actually put together.
+
 # Changelog
 
 ## Version 2.0.0 - Complete Rewrite (2026-01-11)

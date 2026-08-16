@@ -4,11 +4,16 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Aspen Ward – Missionary Dinner Signup</title>
+<meta name="description" content="Sign up to host the missionaries for dinner on the Aspen Ward calendar." />
+<meta name="theme-color" content="#7c3aed" />
+<link rel="icon" href="/public/assets/favicon.svg" type="image/svg+xml" />
+<meta property="og:type" content="website" />
+<meta property="og:title" content="Aspen Ward – Missionary Dinner Signup" />
+<meta property="og:description" content="Sign up to host the missionaries for dinner on the Aspen Ward calendar." />
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="icon" href="data:,">
 <link rel="stylesheet" href="/dist/output.css">
 
 <style>
@@ -156,23 +161,11 @@ document.getElementById('nav-select')?.addEventListener('change', e => {
 });
 
 /* ===== Firebase + Calendar ===== */
-import { initializeApp } from "https://www.gstatic.com/firebasejs/11.7.3/firebase-app.js";
-import { getDatabase, ref, onValue, set, remove } from "https://www.gstatic.com/firebasejs/11.7.3/firebase-database.js";
+import { ref, onValue, set, remove } from "https://www.gstatic.com/firebasejs/11.7.3/firebase-database.js";
+import { db, firebaseApp } from "/js/firebase.js";
 import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.7.3/firebase-auth.js";
 
-const firebaseConfig = {
-  apiKey: "AIzaSyBbwlTuMoSMl2vfXA5aHkQM0RC2PUrKDXk",
-  authDomain: "aspen-ward-missionary-dinner.firebaseapp.com",
-  databaseURL: "https://aspen-ward-missionary-dinner-default-rtdb.firebaseio.com",
-  projectId: "aspen-ward-missionary-dinner",
-  storageBucket: "aspen-ward-missionary-dinner.firebasestorage.app",
-  messagingSenderId: "350865820261",
-  appId: "1:350865820261:web:26912e9b753852ae7ed48c",
-  measurementId: "G-G9WT2W399C"
-};
-const app = initializeApp(firebaseConfig);
-const db = getDatabase(app);
-const auth = getAuth(app);
+const auth = getAuth(firebaseApp);
 
 let currentMonth = new Date().getMonth();
 let currentYear  = new Date().getFullYear();
@@ -185,13 +178,21 @@ renderCalendar();
 document.getElementById('prev-month').addEventListener('click', prevMonth);
 document.getElementById('next-month').addEventListener('click', nextMonth);
 
+let hasPrunedPastSignups = false;
+
 // Sign in anonymously first, then set up Firebase listener
 signInAnonymously(auth).then(() => {
-  console.log('Signed in anonymously');
   // Now set up the Firebase listener after authentication
   onValue(ref(db, 'signups'), snap => {
     signups = snap.val() || {};
     renderCalendar();
+    // Prune once per page load, after the first snapshot. This used to run
+    // inside renderCalendar(), which meant every render issued deletes that
+    // re-triggered this listener and re-rendered.
+    if (!hasPrunedPastSignups) {
+      hasPrunedPastSignups = true;
+      clearPastSignups();
+    }
   }, (error) => {
     console.error('Firebase error:', error);
   });
@@ -204,14 +205,14 @@ function clearPastSignups() {
   const now = new Date();
   for (const k in signups) {
     const [y,m,d] = k.split('-').map(Number);
+    if (!Number.isFinite(y) || !Number.isFinite(m) || !Number.isFinite(d)) continue;
     const start = new Date(y,m,d);
     const clear = new Date(start.getTime() + 25*60*60*1000);
-    if (now >= clear) remove(ref(db,'signups/'+k));
+    if (now >= clear) remove(ref(db,'signups/'+k)).catch(console.error);
   }
 }
 
 function renderCalendar() {
-  clearPastSignups();
   const cal = document.getElementById('calendar');
   cal.innerHTML = '';
   const title = document.getElementById('month-year');

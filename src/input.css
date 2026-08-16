@@ -465,10 +465,13 @@
     color: var(--ink);
   }
 
+  /* Details are entered as free text in the admin panel, where line breaks and
+     spacing are meaningful — they carry through to the printed program. */
   .program-detail {
     @apply m-0 leading-snug break-words;
     font-size: 0.82rem;
     color: var(--ink-soft);
+    white-space: pre-wrap;
   }
 
   .program-detail a {
@@ -531,6 +534,7 @@
   .announcement-body {
     @apply mt-1 text-sm;
     color: var(--ink-soft);
+    white-space: pre-wrap;
   }
 
   .announcement-body a {
@@ -591,11 +595,17 @@
   .event-body {
     @apply text-sm;
     color: var(--ink-soft);
+    white-space: pre-wrap;
   }
 
   .event-body a {
     @apply underline;
     color: var(--accent-strong);
+  }
+
+  .event-more-info {
+    @apply block text-xs mt-1 italic;
+    color: var(--accent);
   }
 
   .calendar-link {

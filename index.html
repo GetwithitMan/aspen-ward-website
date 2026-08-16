@@ -4,10 +4,27 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Aspen Ward – Sunday Worship</title>
+<meta name="description" content="Sunday program, announcements, and upcoming activities for the Aspen Ward in Fruita, Colorado." />
+<meta name="theme-color" content="#7c3aed" />
+<link rel="icon" href="/public/assets/favicon.svg" type="image/svg+xml" />
+<meta property="og:type" content="website" />
+<meta property="og:title" content="Aspen Ward – Sunday Worship" />
+<meta property="og:description" content="Sunday program, announcements, and upcoming activities for the Aspen Ward in Fruita, Colorado." />
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/dist/output.css">
+<script>
+// Resolve the theme before first paint. The module script below runs after the
+// document parses, which was long enough to flash the wrong theme.
+(function () {
+  var stored = null;
+  try { stored = localStorage.getItem('theme'); } catch (e) { /* private mode */ }
+  var prefersLight = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
+  var theme = stored === 'light' || stored === 'dark' ? stored : (prefersLight ? 'light' : 'dark');
+  document.documentElement.setAttribute('data-theme', theme);
+})();
+</script>
 </head>
 <body>
 <div class="news-flash" id="news-flash" role="alert" aria-live="polite" hidden>
@@ -40,6 +57,7 @@
 <li><a class="nav-link" data-scroll="announcements" href="#announcements" hidden>Announcements</a></li>
 <li><a class="nav-link" data-scroll="events" href="#events">Events</a></li>
 <li><a class="nav-link" href="/missionary">Missionary</a></li>
+<li><a class="nav-link" href="/classrooms" id="classrooms-nav-link" hidden>Classrooms</a></li>
 <li><a class="nav-link" href="/zoom">Zoom</a></li>
 </ul>
 </nav>
@@ -107,22 +125,8 @@
 </div>
 </div>
 <script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/11.7.3/firebase-app.js";
-import { getDatabase, ref, onValue, get } from "https://www.gstatic.com/firebasejs/11.7.3/firebase-database.js";
-
-// Firebase config (same as admin and missionary pages)
-const firebaseConfig = {
-  apiKey: "AIzaSyBbwlTuMoSMl2vfXA5aHkQM0RC2PUrKDXk",
-  authDomain: "aspen-ward-missionary-dinner.firebaseapp.com",
-  databaseURL: "https://aspen-ward-missionary-dinner-default-rtdb.firebaseio.com",
-  projectId: "aspen-ward-missionary-dinner",
-  storageBucket: "aspen-ward-missionary-dinner.firebasestorage.app",
-  messagingSenderId: "350865820261",
-  appId: "1:350865820261:web:26912e9b753852ae7ed48c"
-};
-
-const firebaseApp = initializeApp(firebaseConfig);
-const db = getDatabase(firebaseApp);
+import { ref, onValue, get } from "https://www.gstatic.com/firebasejs/11.7.3/firebase-database.js";
+import { db } from "/js/firebase.js";
 
 const CONFIG = {
   WARD_INFO_URL: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSv7a_sC6S7ytGdHJSEZMHqCPsKhOY-C7hp6K1d-rpUsAUj8LV3Ss3lE89p-IAfEdtFcpOhrOng3LWw/pub?gid=981144620&single=true&output=csv',
@@ -133,7 +137,14 @@ const state = {
   debugBanner: false,
   bannerSeenKey: 'aspen-ward-banner-seen',
   wardDetails: null,
-  lastFocusedElement: null
+  lastFocusedElement: null,
+  // Resolves once loadWardInfo() has settled. The hideBanner/hideEvents toggles
+  // live in the ward info sheet, so anything they gate must await this instead
+  // of racing it.
+  wardInfoReady: Promise.resolve(),
+  // Set when the program data supplies its own introduction, so the generic
+  // ward-info fallback does not overwrite it.
+  hasProgramIntro: false
 };
 const SELECTORS = {
   brandTitle: document.getElementById('brand-title'),
@@ -164,10 +175,25 @@ const SELECTORS = {
   newsFlashClose: document.getElementById('news-flash-close')
 };
 state.debugBanner = new URLSearchParams(window.location.search).get('banner') === 'debug' || state.debugBanner;
-const sanitize = (text = '') => text.replace(/\n/g, '<br>');
+const escapeHtml = (text = '') => String(text)
+  .replace(/&/g, '&amp;')
+  .replace(/</g, '&lt;')
+  .replace(/>/g, '&gt;')
+  .replace(/"/g, '&quot;')
+  .replace(/'/g, '&#39;');
+// Escape first, then turn newlines into line breaks. Anything typed in the
+// admin panel is plain text, so ampersands and angle brackets must survive.
+const formatMultiline = (text = '') => escapeHtml(text).replace(/\n/g, '<br>');
+// Only http(s) links are rendered, so a malformed or unexpected scheme in the
+// sheet degrades to plain text rather than an unusable link.
+const isSafeUrl = (url = '') => /^https?:\/\//i.test(url.trim());
 function showInlineError(container, message) {
   if (!container) return;
-  container.innerHTML = `<p class="error-text">${message}</p>`;
+  container.replaceChildren();
+  const paragraph = document.createElement('p');
+  paragraph.className = 'error-text';
+  paragraph.textContent = message;
+  container.appendChild(paragraph);
 }
 async function fetchWithFallback(url) {
   try {
@@ -486,9 +512,16 @@ function renderBanner({ title, announcements }) {
       heading.style.color = item.accent;
     }
     const copy = document.createElement('div');
-    copy.innerHTML = item.link
-      ? `<a href="${item.link}" target="_blank" rel="noopener">${item.description}</a>`
-      : item.description;
+    if (isSafeUrl(item.link)) {
+      const anchor = document.createElement('a');
+      anchor.href = item.link.trim();
+      anchor.target = '_blank';
+      anchor.rel = 'noopener';
+      anchor.textContent = item.description;
+      copy.appendChild(anchor);
+    } else {
+      copy.textContent = item.description;
+    }
     row.append(heading, copy);
     SELECTORS.modalBody.appendChild(row);
   });
@@ -510,10 +543,12 @@ function renderNewsFlash({ announcements }) {
   SELECTORS.newsFlashContent.innerHTML = '';
   const defaultColors = ['#ffffff', '#f0f0f0', '#e0e0e0', '#d0d0d0'];
   const content = announcements.map((item, index) => {
-    const titleText = item.title || 'Announcement';
-    const descriptionText = item.description || '';
-    const linkText = item.link ? `<a href="${item.link}" target="_blank" rel="noopener">${descriptionText}</a>` : descriptionText;
-    const color = item.accent || defaultColors[index % defaultColors.length];
+    const titleText = escapeHtml(item.title || 'Announcement');
+    const descriptionText = escapeHtml(item.description || '');
+    const linkText = isSafeUrl(item.link)
+      ? `<a href="${escapeHtml(item.link.trim())}" target="_blank" rel="noopener">${descriptionText}</a>`
+      : descriptionText;
+    const color = escapeHtml(item.accent || defaultColors[index % defaultColors.length]);
     return `<span style="color: ${color}; padding-right: 3rem;">${titleText}: ${linkText}</span>`;
   }).join(' ••• ');
   SELECTORS.newsFlashContent.innerHTML = content;
@@ -553,13 +588,15 @@ function updateWardDom({
   if (SELECTORS.brandSubtitle) SELECTORS.brandSubtitle.textContent = subtitle;
   if (SELECTORS.heroTitle) SELECTORS.heroTitle.textContent = `${wardName} Sunday Services`;
   if (SELECTORS.heroSubtitle) {
-    SELECTORS.heroSubtitle.textContent = `${subtitle} · .`;
+    SELECTORS.heroSubtitle.textContent = subtitle;
   }
   if (SELECTORS.heroMeta) {
     SELECTORS.heroMeta.textContent = `🗓️ ${getCurrentSunday()} ⛪ ${location} ⏰ ${sacramentStart}`;
   }
-  if (SELECTORS.programIntro) {
-    SELECTORS.programIntro.textContent = "A quick look";
+  // The program's own introduction wins. This runs in parallel with loadProgram(),
+  // so only fall back when that data had nothing to say.
+  if (SELECTORS.programIntro && !state.hasProgramIntro) {
+    SELECTORS.programIntro.textContent = 'A quick look';
   }
   if (SELECTORS.footerCopy) {
     SELECTORS.footerCopy.textContent = `❖ Not an official site of The Church of Jesus Christ of Latter-day Saints. Intended for local ${wardName} use only.`;
@@ -649,10 +686,10 @@ function renderAnnouncements(items = []) {
     if (item.description) {
       const body = document.createElement('p');
       body.className = 'announcement-body';
-      body.innerHTML = sanitize(item.description);
+      body.innerHTML = formatMultiline(item.description);
       card.appendChild(body);
     }
-    if (item.link && item.link.startsWith('http')) {
+    if (isSafeUrl(item.link)) {
       const link = document.createElement('a');
       link.className = 'announcement-link';
       link.href = item.link;
@@ -726,8 +763,9 @@ function renderProgram(rows) {
     const description = document.createElement('p');
     description.className = 'program-detail';
     const trimmedLink = link.trim();
-    const html = trimmedLink.startsWith('http') ? `<a href="${trimmedLink}" target="_blank" rel="noopener">${sanitize(details)}</a>` : sanitize(details);
-    description.innerHTML = html;
+    description.innerHTML = isSafeUrl(trimmedLink)
+      ? `<a href="${escapeHtml(trimmedLink)}" target="_blank" rel="noopener">${formatMultiline(details)}</a>`
+      : formatMultiline(details);
     card.append(heading, description);
     cards.push(card);
   }
@@ -743,10 +781,18 @@ function renderProgram(rows) {
     });
   }
   renderAnnouncements(announcementItems);
-  if (!state.wardDetails?.hideBanner && bannerItems.length) {
-    renderBanner({ title: bannerTitle, announcements: bannerItems });
-    renderNewsFlash({ announcements: bannerItems });
+  if (bannerItems.length) {
+    void showBannerWhenReady({ title: bannerTitle, announcements: bannerItems });
   }
+}
+// The "pop up banner" switch lives in the ward info sheet, which loads in
+// parallel with the program. Wait for it rather than reading a value that may
+// not have arrived yet.
+async function showBannerWhenReady({ title, announcements }) {
+  await state.wardInfoReady;
+  if (state.wardDetails?.hideBanner) return;
+  renderBanner({ title, announcements });
+  renderNewsFlash({ announcements });
 }
 async function loadProgram() {
   try {
@@ -764,6 +810,7 @@ async function loadProgram() {
       // Set introduction if available
       if (data.introduction && SELECTORS.programIntro) {
         SELECTORS.programIntro.textContent = data.introduction;
+        state.hasProgramIntro = true;
       }
 
       // Convert structured sections to rows format for renderProgram
@@ -843,20 +890,29 @@ async function loadProgram() {
     renderAnnouncements([]);
   }
 }
-function renderEvents(rows) {
+// Both sources (Firebase records and Google Sheet columns) funnel through here
+// so renderEvents only ever sees one shape.
+function normalizeEvent({ date, title, info, icon, link } = {}) {
+  return {
+    date: (date || '').trim(),
+    title: (title || '').trim(),
+    info: (info || '').trim(),
+    icon: (icon || '').trim(),
+    link: (link || '').trim()
+  };
+}
+// Takes { date, title, info, icon, link } records. It previously took
+// positional arrays, which is how the icon column silently shifted the link
+// into the wrong slot.
+function renderEvents(events) {
   if (!SELECTORS.eventsTimeline) return;
   SELECTORS.eventsTimeline.innerHTML = '';
-  if (!rows.length) {
+  if (!events.length) {
     showInlineError(SELECTORS.eventsTimeline, 'No upcoming events were found. Check back soon!');
     return;
   }
-  rows.forEach(([dateRaw = '', titleRaw = '', infoRaw = '', iconRaw = '', urlRaw = '']) => {
-    const info = infoRaw.trim();
+  events.forEach(({ date = '', title = '', info = '', icon = '', link = '' }) => {
     if (!info) return;
-    const date = dateRaw.trim();
-    const title = titleRaw.trim();
-    const icon = iconRaw.trim();
-    const link = urlRaw.trim();
     const card = document.createElement('article');
     card.className = 'event-card';
     const header = document.createElement('div');
@@ -866,16 +922,31 @@ function renderEvents(rows) {
     dateLabel.textContent = date || 'Date TBD';
     const name = document.createElement('h3');
     name.className = 'event-title';
-    name.textContent = `${icon || '📅'} ${title || 'Ward Event'}`;
+    const titleText = `${icon || '📅'} ${title || 'Ward Event'}`;
+    const hasLink = isSafeUrl(link);
+    if (hasLink) {
+      const anchor = document.createElement('a');
+      anchor.href = link;
+      anchor.target = '_blank';
+      anchor.rel = 'noopener';
+      anchor.textContent = titleText;
+      name.appendChild(anchor);
+    } else {
+      name.textContent = titleText;
+    }
     header.append(dateLabel, name);
     const body = document.createElement('div');
     body.className = 'event-body';
-    body.innerHTML = link.startsWith('http')
-      ? `<a href="${link}" target="_blank" rel="noopener">${info}</a>`
-      : info;
+    body.textContent = info;
+    if (hasLink) {
+      const moreInfo = document.createElement('span');
+      moreInfo.className = 'event-more-info';
+      moreInfo.textContent = 'Click for more info';
+      body.appendChild(moreInfo);
+    }
     card.append(header, body);
     if (hasDateOrDay(date) || hasDateOrDay(info)) {
-      const { start, end } = parseEventDate(date, infoRaw);
+      const { start, end } = parseEventDate(date, info);
       const calendarLink = document.createElement('a');
       calendarLink.href = createCalendarLink({
         title: title || 'Ward Event',
@@ -894,23 +965,22 @@ function renderEvents(rows) {
   });
 }
 async function loadEvents() {
+  // The "hide events" switch is applied by loadWardInfo(), so check it only
+  // once that has settled.
+  await state.wardInfoReady;
   if (SELECTORS.eventsSection?.hasAttribute('hidden')) return;
   try {
     // Try Firebase first (new admin page stores events here)
     const snapshot = await get(ref(db, 'events'));
     const data = snapshot.val();
 
-    if (data && Array.isArray(data) && data.length > 0) {
-      // Convert Firebase format to rows format expected by renderEvents
-      // Firebase stores: [{type, date, title, info, link}, ...]
-      // renderEvents expects: [[date, title, info, link], ...]
-      const rows = data.map(event => [
-        event.date || '',
-        event.title || '',
-        event.info || '',
-        event.link || ''
-      ]);
-      renderEvents(rows);
+    // Firebase returns an object instead of an array when keys are sparse.
+    const stored = Array.isArray(data)
+      ? data
+      : (data && typeof data === 'object' ? Object.values(data) : []);
+
+    if (stored.length > 0) {
+      renderEvents(stored.filter(Boolean).map(normalizeEvent));
     } else {
       // Fallback to Google Sheets if no Firebase data
       const response = await fetchWithFallback(CONFIG.EVENTS_URL);
@@ -918,11 +988,30 @@ async function loadEvents() {
       if (rows[0]?.[0]?.toLowerCase().includes('date')) {
         rows.shift();
       }
-      renderEvents(rows);
+      renderEvents(rows.map(([date, title, info, icon, link]) =>
+        normalizeEvent({ date, title, info, icon, link })));
     }
   } catch (error) {
     console.error('Events failed to load', error);
     showInlineError(SELECTORS.eventsTimeline, 'Upcoming events are unavailable right now.');
+  }
+}
+async function loadSiteSettings() {
+  try {
+    const snapshot = await get(ref(db, 'siteSettings'));
+    const settings = snapshot.val() || {};
+
+    // Show/hide Classrooms nav link based on setting
+    const classroomsNavLink = document.getElementById('classrooms-nav-link');
+    if (classroomsNavLink) {
+      if (settings.showClassroomsNav) {
+        classroomsNavLink.removeAttribute('hidden');
+      } else {
+        classroomsNavLink.setAttribute('hidden', '');
+      }
+    }
+  } catch (error) {
+    console.warn('Could not load site settings:', error);
   }
 }
 async function init() {
@@ -931,11 +1020,14 @@ async function init() {
   initModal();
 
   // Load everything in parallel for faster page load
-  // Program from Firebase is fast, ward info from Google Sheets is slow
+  // Program from Firebase is fast, ward info from Google Sheets is slow.
+  // Kick off ward info first so the pieces gated by its toggles can await it.
+  state.wardInfoReady = loadWardInfo();
   const results = await Promise.allSettled([
     loadProgram(),
     loadEvents(),
-    loadWardInfo()
+    state.wardInfoReady,
+    loadSiteSettings()
   ]);
   results.forEach((result) => {
     if (result.status === 'rejected') {
