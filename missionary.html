@@ -1,4 +1,21 @@
 <!DOCTYPE html>
+<!--
+  HIDDEN as of 2026-08-17. This page is intact but unreachable:
+    - the "Missionary" link was removed from the nav in index.html
+    - /missionary redirects to / via the redirects block in vercel.json
+
+  Why: the calendar cannot read its data in production. Anonymous sign-in
+  succeeds (a uid is issued) but the database still denies /signups with
+  permission_denied, so the calendar renders empty and nobody can sign up.
+
+  To restore: fix the read rule on /signups, then remove the redirect from
+  vercel.json and put the nav link back in index.html. Nothing here needs to
+  change. The redirect is intentionally temporary (not permanent) so browsers
+  do not cache it and make the page hard to bring back.
+
+  Note: this is the dinner SIGNUP calendar. The "Missionaries & Military"
+  list on the printed program is a different feature and is unaffected.
+-->
 <html lang="en" data-theme="light">
 <head>
 <meta charset="UTF-8" />

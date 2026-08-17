@@ -2,5 +2,12 @@
   "version": 2,
   "cleanUrls": true,
   "buildCommand": null,
-  "outputDirectory": "."
+  "outputDirectory": ".",
+  "redirects": [
+    {
+      "source": "/missionary",
+      "destination": "/",
+      "permanent": false
+    }
+  ]
 }

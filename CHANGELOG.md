@@ -1,5 +1,24 @@
 # Changelog
 
+## August 17, 2026
+
+### Missionary Dinner Calendar Hidden
+
+Temporarily taken off the site. It could not read its data in production —
+anonymous sign-in succeeds but the database denies `/signups`, so the calendar
+rendered empty and nobody could sign up.
+
+- Removed the "Missionary" link from the main navigation.
+- `/missionary` now redirects to the homepage, so the page is unreachable even
+  for anyone with the URL bookmarked. The redirect is deliberately **temporary**
+  rather than permanent, so browsers do not cache it and make the page hard to
+  bring back.
+- `missionary.html` is left in place and unchanged, with a comment at the top
+  explaining why it is hidden and exactly how to restore it.
+
+**Unaffected:** the "Missionaries & Military" list on the printed program and in
+the admin panel is a separate feature and still works normally.
+
 ## August 16, 2026 (part 3)
 
 ### Unsaved Changes Are Now Visible in the Admin Panel
