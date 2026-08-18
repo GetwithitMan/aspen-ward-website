@@ -84,6 +84,10 @@
     .fit-warning { display: none; }
   }
 
+  /* Landmark wrapper only - display:contents keeps it out of the layout so
+     the sheets still behave exactly as direct children of body. */
+  main { display: contents; }
+
   /* === THE PHYSICAL SHEET === */
   .sheet {
     background: white;
@@ -511,6 +515,7 @@
   <button class="print-btn" onclick="window.print()">Print Program</button>
 </div>
 
+<main>
 <!-- PAGE 1: EVENTS (Left) + FRONT COVER (Right) -->
 <div class="sheet" id="page-1">
   <!-- Events (when folded, this is the back) -->
@@ -563,6 +568,7 @@
     <div id="program-content"></div>
   </div>
 </div>
+</main>
 
 <script type="module">
 // Read-only page: plain database reads, no SDK bundle.

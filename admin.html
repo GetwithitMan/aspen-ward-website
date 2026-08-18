@@ -1176,6 +1176,9 @@ main {
             <span class="toggle-label" data-for="testimony">Testimony Meeting</span>
           </div>
           <p class="form-hint" style="margin-top: 0.75rem; text-align: center;">Toggle to switch between regular speakers and fast & testimony meeting.</p>
+          <div class="section-actions">
+            <button type="button" class="btn success section-save-btn">Save Changes</button>
+          </div>
         </div>
       </div>
 
@@ -1436,46 +1439,97 @@ function normalizeMultiline(value = '') {
   return String(value).replace(/^\s*\n/, '').replace(/\s+$/, '');
 }
 
-// === Unsaved Changes Guard ===
+// === Sections, Saving and Concurrency ===
 //
-// Nothing here saves on its own. Every "Save Changes" button runs saveProgram(),
-// which writes the whole form at once — they are not per-section saves — so they
-// all reflect the same state and light up together.
+// Each section owns one database path and saves only that path. Two people
+// editing different sections no longer overwrite each other: previously every
+// save rewrote the whole form, so whoever saved second silently wiped the
+// other's work with the stale copy their browser had been holding.
+//
+// Opening a section also re-reads it, so you see a colleague's saved edits the
+// moment you expand that section.
+const SECTION_SPEC = {
+  'banner':        { path: 'sundayProgram/sections/banner',        kind: 'items' },
+  'introduction':  { path: 'sundayProgram/introduction',           kind: 'text', field: 'intro-message' },
+  'opening':       { path: 'sundayProgram/sections/opening',       kind: 'items' },
+  'sacrament':     { path: 'sundayProgram/sections/sacrament',     kind: 'items' },
+  'meeting-type':  { path: 'sundayProgram/isTestimonyMeeting',     kind: 'flag', field: 'testimony-toggle' },
+  'testimony':     { path: 'sundayProgram/testimonyMessage',       kind: 'text', field: 'testimony-message' },
+  'speakers':      { path: 'sundayProgram/sections/speakers',      kind: 'items' },
+  'closing':       { path: 'sundayProgram/sections/closing',       kind: 'items' },
+  'announcements': { path: 'sundayProgram/sections/announcements', kind: 'items' },
+  'events':        { path: 'events',                               kind: 'events' },
+  'missionaries':  { path: 'missionaries',                         kind: 'missionaries' },
+  'site-settings': { path: 'siteSettings/showClassroomsNav',       kind: 'flag', field: 'show-classrooms-toggle' }
+};
+
+// Sections with edits not yet written.
+const dirtySections = new Set();
 let hasUnsavedChanges = false;
 
-function setSaveButtonsDirty(dirty) {
-  document.querySelectorAll('.section-save-btn, #save-btn').forEach(btn => {
-    btn.classList.toggle('needs-save', dirty);
-    // Colour alone is not a signal for everyone; give the button a text hint too.
-    if (dirty) {
-      btn.setAttribute('title', 'You have unsaved changes');
-    } else {
-      btn.removeAttribute('title');
-    }
-  });
+function cardFor(key) {
+  return document.querySelector(`.section-card[data-section="${key}"]`);
 }
 
-function markFormDirty() {
+function sectionKeyOf(el) {
+  return el?.closest?.('.section-card')?.dataset.section || '';
+}
+
+function markSectionDirty(key) {
+  if (!key || !SECTION_SPEC[key]) return;
+  dirtySections.add(key);
   hasUnsavedChanges = true;
-  setSaveButtonsDirty(true);
+  paintSaveButtons();
+}
+
+function markSectionClean(key) {
+  dirtySections.delete(key);
+  hasUnsavedChanges = dirtySections.size > 0;
+  paintSaveButtons();
 }
 
 function markFormClean() {
+  dirtySections.clear();
   hasUnsavedChanges = false;
-  setSaveButtonsDirty(false);
+  paintSaveButtons();
+}
+
+// Only the sections you actually changed light up, which now matches what the
+// buttons do.
+function paintSaveButtons() {
+  Object.keys(SECTION_SPEC).forEach((key) => {
+    const btn = cardFor(key)?.querySelector('.section-save-btn');
+    if (!btn) return;
+    const dirty = dirtySections.has(key);
+    btn.classList.toggle('needs-save', dirty);
+    if (dirty) btn.setAttribute('title', 'Unsaved changes in this section');
+    else btn.removeAttribute('title');
+  });
+
+  const all = document.getElementById('save-btn');
+  if (all) {
+    all.classList.toggle('needs-save', dirtySections.size > 0);
+    if (dirtySections.size > 0) {
+      all.setAttribute('title', `Save ${dirtySections.size} changed section${dirtySections.size === 1 ? '' : 's'}`);
+    } else {
+      all.removeAttribute('title');
+    }
+  }
 }
 
 function initUnsavedChangesGuard() {
-  // Any edit inside the panel counts. The panel is rebuilt from Firebase on
-  // load, so listening on the container covers items added later too.
+  // Attribute each edit to the section it happened in, so only that section is
+  // marked unsaved and only that section gets written.
   adminPanel.addEventListener('input', (event) => {
-    markFormDirty();
+    markSectionDirty(sectionKeyOf(event.target));
     autosize(event.target);
   });
-  adminPanel.addEventListener('change', markFormDirty);
+  adminPanel.addEventListener('change', (event) => {
+    markSectionDirty(sectionKeyOf(event.target));
+  });
   adminPanel.addEventListener('click', (event) => {
     if (event.target.closest('.add-btn, .remove-btn, .remove-link-btn')) {
-      markFormDirty();
+      markSectionDirty(sectionKeyOf(event.target));
     }
   });
 
@@ -1507,7 +1561,31 @@ function hideStatus() {
 function initSectionToggles() {
   document.querySelectorAll('.section-header').forEach(header => {
     header.addEventListener('click', () => {
-      header.closest('.section-card').classList.toggle('collapsed');
+      const card = header.closest('.section-card');
+      const key = card.dataset.section;
+      const opening = card.classList.contains('collapsed');
+
+      if (opening) {
+        // One section open at a time. Collapsing is presentational - a section
+        // with unsaved edits keeps them, it is just folded away.
+        document.querySelectorAll('.section-card:not(.collapsed)').forEach((other) => {
+          if (other !== card) other.classList.add('collapsed');
+        });
+        card.classList.remove('collapsed');
+
+        // Pull the latest copy so you see what anyone else has saved since you
+        // opened the page. Skipped when you have unsaved edits here, which
+        // would otherwise be thrown away.
+        if (SECTION_SPEC[key]) {
+          if (dirtySections.has(key)) {
+            showStatus('Showing your unsaved edits — save them to see anyone else\'s changes.', 'info');
+          } else {
+            void refreshSection(key);
+          }
+        }
+      } else {
+        card.classList.add('collapsed');
+      }
     });
   });
 }
@@ -2298,38 +2376,130 @@ function collectFormData() {
   };
 }
 
-// === Save Program to Firebase ===
-async function saveProgram() {
-  showStatus('Saving...', 'info');
-  saveBtn.disabled = true;
+// === Per-section collect / apply / save ===
+
+function collectProgramItems(container) {
+  const out = [];
+  container?.querySelectorAll('.program-item').forEach((item) => {
+    const label = item.querySelector('.item-label')?.value?.trim() || '';
+    const details = normalizeMultiline(item.querySelector('.item-details')?.value);
+    let link = item.querySelector('.item-link')?.value?.trim() || '';
+    if (isHymnItem(label)) {
+      const hymnUrl = getHymnUrl(extractHymnNumber(details));
+      if (hymnUrl) link = hymnUrl;
+    }
+    if (label || details) out.push({ label, details, link });
+  });
+  return out;
+}
+
+function collectSection(key) {
+  const spec = SECTION_SPEC[key];
+  switch (spec.kind) {
+    case 'items':
+      return collectProgramItems(sections[key]);
+    case 'text':
+      return normalizeMultiline(document.getElementById(spec.field)?.value);
+    case 'flag':
+      return !!document.getElementById(spec.field)?.checked;
+    case 'events':
+      return collectFormData().events;
+    case 'missionaries':
+      return collectFormData().missionaries;
+    default:
+      return null;
+  }
+}
+
+// Repaint a section from a database value.
+function applySection(key, value) {
+  const spec = SECTION_SPEC[key];
+  switch (spec.kind) {
+    case 'items': {
+      const container = sections[key];
+      if (!container) return;
+      container.innerHTML = '';
+      toArray(value).forEach((item) => container.appendChild(createProgramItemHTML(item, key)));
+      autosizeAll(container);
+      break;
+    }
+    case 'text': {
+      const field = document.getElementById(spec.field);
+      if (field) { field.value = value || ''; autosize(field); }
+      break;
+    }
+    case 'flag': {
+      const box = document.getElementById(spec.field);
+      if (box) box.checked = !!value;
+      if (key === 'meeting-type') { isTestimonyMeeting = !!value; updateMeetingTypeUI(); }
+      break;
+    }
+    case 'events':
+      eventsData = toArray(value); renderEvents(); autosizeAll(sections.events); break;
+    case 'missionaries':
+      missionariesData = toArray(value); renderMissionaries(); autosizeAll(sections.missionaries); break;
+  }
+}
+
+// Pull the latest copy of one section. Refuses to discard your own unsaved work.
+async function refreshSection(key, { force = false } = {}) {
+  if (!SECTION_SPEC[key]) return false;
+  if (!force && dirtySections.has(key)) return false;
+  try {
+    const snapshot = await get(ref(db, SECTION_SPEC[key].path));
+    applySection(key, snapshot.val());
+    markSectionClean(key);
+    return true;
+  } catch (error) {
+    console.error(`Could not refresh ${key}:`, error);
+    return false;
+  }
+}
+
+async function saveSection(key) {
+  const spec = SECTION_SPEC[key];
+  if (!spec) return;
+  const btn = cardFor(key)?.querySelector('.section-save-btn');
+  const label = cardFor(key)?.querySelector('.section-title')?.textContent?.trim() || key;
+
+  if (btn) btn.disabled = true;
+  showStatus(`Saving ${label}…`, 'info');
 
   try {
-    const data = collectFormData();
-    const showClassroomsToggle = document.getElementById('show-classrooms-toggle');
-
-    // One multi-path update so the four sections land together. Writing them as
-    // separate set() calls left the database half-updated when one failed.
+    // Writes this one path only, so a colleague's other sections are untouched.
     await update(ref(db), {
-      sundayProgram: {
-        introduction: data.introduction,
-        isTestimonyMeeting: data.isTestimonyMeeting,
-        testimonyMessage: data.testimonyMessage,
-        sections: data.sections,
-        lastUpdated: new Date().toISOString()
-      },
-      events: data.events,
-      missionaries: data.missionaries,
-      'siteSettings/showClassroomsNav': showClassroomsToggle?.checked || false
+      [spec.path]: collectSection(key),
+      'sundayProgram/lastUpdated': new Date().toISOString()
     });
-
-    markFormClean();
-    showStatus('Changes saved successfully!', 'success');
+    markSectionClean(key);
+    // Read back so what you see is what is actually stored.
+    await refreshSection(key, { force: true });
+    showStatus(`${label} saved.`, 'success');
   } catch (error) {
     console.error('Save error:', error);
-    showStatus('Error saving: ' + error.message, 'error');
+    showStatus(`Error saving ${label}: ` + error.message, 'error');
+  } finally {
+    if (btn) btn.disabled = false;
   }
+}
 
-  saveBtn.disabled = false;
+// The header button saves only the sections you actually changed - writing
+// untouched sections is what used to clobber other people's work.
+async function saveDirtySections() {
+  const pending = Array.from(dirtySections);
+  if (!pending.length) {
+    showStatus('No changes to save.', 'info');
+    return;
+  }
+  saveBtn.disabled = true;
+  try {
+    for (const key of pending) {
+      await saveSection(key);
+    }
+    showStatus(`Saved ${pending.length} section${pending.length === 1 ? '' : 's'}.`, 'success');
+  } finally {
+    saveBtn.disabled = false;
+  }
 }
 
 // === Add Item Buttons ===
@@ -2354,7 +2524,11 @@ function initAddButtons() {
 // === Section Save Buttons ===
 function initSectionSaveButtons() {
   document.querySelectorAll('.section-save-btn').forEach(btn => {
-    btn.addEventListener('click', saveProgram);
+    btn.addEventListener('click', (event) => {
+      event.stopPropagation();
+      const key = sectionKeyOf(btn);
+      if (key) void saveSection(key);
+    });
   });
 }
 
@@ -2370,7 +2544,7 @@ passwordInput.addEventListener('keypress', (e) => {
   if (e.key === 'Enter') login();
 });
 logoutBtn.addEventListener('click', logout);
-saveBtn.addEventListener('click', saveProgram);
+saveBtn.addEventListener('click', saveDirtySections);
 
 // === Initialize ===
 initTheme();

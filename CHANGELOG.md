@@ -1,5 +1,48 @@
 # Changelog
 
+## August 18, 2026 (part 2)
+
+### Two People Can Now Edit at the Same Time
+
+Reported after real work was lost: one person saved, then the other saved and
+the first person's changes vanished — even though they were editing different
+sections.
+
+**The cause.** Every "Save Changes" button wrote the *entire* form. All twelve
+of them. So the sequence was:
+
+1. Both admins open the panel and load the same snapshot.
+2. He edits Speakers and saves. The database now has his speakers.
+3. Your form still holds the speakers from when *you* loaded the page.
+4. You edit something else and save — your save rewrites everything, stale
+   speakers included, and his work is gone silently.
+
+Working on different sections gave no protection at all, and the
+section-labelled buttons made it look like it should have.
+
+**The fix.** Each section now owns one database path and saves only that path:
+
+- `Speakers` writes `sundayProgram/sections/speakers` and nothing else.
+- **Opening a section re-reads it**, so a colleague's saved edits appear the
+  moment you expand it.
+- **One section open at a time.** Opening one closes the others, which is what
+  makes the re-read on open reliable.
+- **Saving re-reads that section**, so what you see is what is actually stored.
+- **Only the section you changed turns amber**, which now matches what its
+  button does. The header button saves just the changed sections — never the
+  untouched ones, since writing those is what destroyed other people's work.
+- Reopening a section with unsaved edits keeps your edits rather than
+  overwriting them with the stored copy.
+- The old whole-form writer was deleted outright, so it cannot be called again
+  by accident.
+
+**Verified** by driving two admin sessions at once against a scratch copy of the
+data. With the new code both editors' work survives and each sees the other's on
+expanding the section. Running the identical scenario against the previous code
+loses the edits — confirming the test detects the bug rather than just passing.
+
+Also added a `main` landmark to the printable program (accessibility 96 to 100).
+
 ## August 18, 2026
 
 ### Performance, Accessibility and Platform Update

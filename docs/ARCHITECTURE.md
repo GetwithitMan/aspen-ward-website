@@ -91,6 +91,26 @@ too tall would be silently cut off. Each region therefore scales as a unit:
 **Do not add fixed `pt` font sizes to a fitted region** — express them against
 `var(--fit, 1)` or that element will not scale with the rest.
 
+## Saving in the admin panel
+
+Each section owns exactly one database path, listed in `SECTION_SPEC` in
+`admin.html`, and its Save button writes **only that path**. This is what lets
+two people edit at once: previously every button wrote the whole form, so
+whoever saved second silently overwrote the other with the stale copy their
+browser was holding.
+
+Rules worth keeping:
+
+- **Never reintroduce a whole-form write.** If you add a section, give it an
+  entry in `SECTION_SPEC` and a `data-section` on its card; do not add a helper
+  that writes several sections at once. The header button deliberately saves
+  only the sections marked dirty.
+- **Opening a section re-reads it** so other people's saves show up, and only
+  one section is open at a time, which is what makes that reliable. A section
+  with unsaved edits is *not* refreshed — your edits win until you save.
+- Dirty state is tracked per section in `dirtySections`, which drives both the
+  amber buttons and what the header button writes.
+
 ## Free-text fields
 
 Details entered in the admin panel are `<textarea>`s: line breaks and spacing
