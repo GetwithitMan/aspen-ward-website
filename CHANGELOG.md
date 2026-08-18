@@ -1,5 +1,25 @@
 # Changelog
 
+## August 18, 2026 (part 3)
+
+### Prompt to Save When Leaving a Section
+
+Switching sections used to just fold the current one away, leaving any unsaved
+edits sitting there quietly. Easy to forget, and the longer edits sit unsaved
+the more likely someone else saves that section first.
+
+Leaving a section with unsaved changes now asks:
+
+> You have unsaved changes in Opening.
+> OK — save them now
+> Cancel — leave them unsaved for the moment
+
+- Applies both to opening a different section and to folding up the one you are
+  editing.
+- **Declining is safe** — the edits stay in the form and the section stays
+  amber until you save or reload. Nothing is discarded either way.
+- No prompt when the section has no changes, so it does not nag.
+
 ## August 18, 2026 (part 2)
 
 ### Two People Can Now Edit at the Same Time

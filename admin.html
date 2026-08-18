@@ -1558,16 +1558,38 @@ function hideStatus() {
 }
 
 // === Section Toggle ===
+// Leaving a section with unsaved edits is the easiest way to forget them, and
+// the longer they sit unsaved the more likely someone else saves that section
+// first. So ask on the way out.
+//
+// Declining is safe: collapsing is presentational, so the edits stay in the
+// form (and the section stays amber) until you save or reload.
+async function offerToSaveBefore(key) {
+  if (!key || !dirtySections.has(key)) return;
+  const name = cardFor(key)?.querySelector('.section-title')?.textContent?.trim() || key;
+  const save = confirm(
+    `You have unsaved changes in ${name}.\n\n` +
+    `OK — save them now\n` +
+    `Cancel — leave them unsaved for the moment`
+  );
+  if (save) await saveSection(key);
+}
+
 function initSectionToggles() {
   document.querySelectorAll('.section-header').forEach(header => {
-    header.addEventListener('click', () => {
+    header.addEventListener('click', async () => {
       const card = header.closest('.section-card');
       const key = card.dataset.section;
       const opening = card.classList.contains('collapsed');
 
       if (opening) {
-        // One section open at a time. Collapsing is presentational - a section
-        // with unsaved edits keeps them, it is just folded away.
+        // Offer to save whatever is open before moving on.
+        const leaving = document.querySelector('.section-card:not(.collapsed)');
+        if (leaving && leaving !== card) {
+          await offerToSaveBefore(leaving.dataset.section);
+        }
+
+        // One section open at a time.
         document.querySelectorAll('.section-card:not(.collapsed)').forEach((other) => {
           if (other !== card) other.classList.add('collapsed');
         });
@@ -1584,6 +1606,8 @@ function initSectionToggles() {
           }
         }
       } else {
+        // Folding away the section you are editing counts as leaving it too.
+        await offerToSaveBefore(key);
         card.classList.add('collapsed');
       }
     });

@@ -110,6 +110,10 @@ Rules worth keeping:
   with unsaved edits is *not* refreshed — your edits win until you save.
 - Dirty state is tracked per section in `dirtySections`, which drives both the
   amber buttons and what the header button writes.
+- **Leaving a section with unsaved edits prompts to save** (`offerToSaveBefore`),
+  on both switching away and collapsing. Declining is deliberately harmless:
+  collapsing is presentational, so the edits remain in the form and the section
+  stays marked dirty.
 
 ## Free-text fields
 
