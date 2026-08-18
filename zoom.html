@@ -9,6 +9,11 @@
     <link rel="icon" href="/public/assets/favicon.svg" type="image/svg+xml" />
     <meta property="og:type" content="website" />
     <meta property="og:title" content="Aspen Ward – Zoom" />
+<meta property="og:url" content="https://www.aspenward.com/zoom" />
+<meta property="og:image" content="https://www.aspenward.com/public/assets/og-image.jpeg" />
+<meta property="og:image:alt" content="Aspen Ward" />
+<meta name="twitter:card" content="summary_large_image" />
+<link rel="canonical" href="https://www.aspenward.com/zoom" />
     <meta property="og:description" content="Join Aspen Ward sacrament meeting on Zoom." />
     <style>
         body {
@@ -42,12 +47,13 @@
         }
         .logo {
             width: 150px;
+            height: auto; /* keeps aspect ratio now that width/height attrs are set */
             margin: 20px 0;
         }
         button {
             padding: 15px 30px;
             font-size: 1.2em;
-            background-color: #d66d75;
+            background-color: #b04a55; /* was #d66d75 - only 3.33:1 against white */
             color: white;
             border: none;
             border-radius: 8px;
@@ -55,7 +61,7 @@
             transition: background-color 0.3s;
         }
         button:hover {
-            background-color: #b55961;
+            background-color: #993943;
         }
         .note {
             font-style: italic;
@@ -70,26 +76,44 @@
         }
         .instructions img {
             max-width: 100%;
+            height: auto; /* keeps aspect ratio now that width/height attrs are set */
             border-radius: 8px;
             margin: 10px 0;
         }
+
+        /* Opt in so navigation to/from the other pages cross-fades. */
+        @view-transition { navigation: auto; }
+
+        @media (prefers-reduced-motion: reduce) {
+          ::view-transition-group(*),
+          ::view-transition-old(*),
+          ::view-transition-new(*) { animation: none !important; }
+        }
     </style>
+<script type="speculationrules">
+{
+  "prerender": [{
+    "where": { "href_matches": "/(|classrooms|zoom)" },
+    "eagerness": "moderate"
+  }]
+}
+</script>
 </head>
 <body>
-    <div class="container">
+    <main class="container">
         <h1>Aspen Ward - Colorado</h1>
-        <img src="/public/assets/zoom-1.png" alt="Church Logo" class="logo">
+        <img src="/public/assets/zoom-1.webp" alt="The Church of Jesus Christ of Latter-day Saints" class="logo" width="600" height="338" decoding="async">
         <p>Worship Service: 10:30 AM Every Sunday</p>
         <button onclick="checkCode()">Join Zoom Meeting</button>
         <p class="note">To request the password, please reach out to a member of the bishopric.</p>
         <div class="instructions">
             <h2>Enable Full Sound for Zoom Meeting</h2>
             <p><strong>For Desktop/Laptop Users:</strong> Follow these steps to ensure full sound is enabled in Zoom.</p>
-            <img src="/public/assets/zoom-2.png" alt="Desktop Sound Settings">
+            <img src="/public/assets/zoom-2.webp" alt="Zoom desktop audio settings with Original sound for musicians enabled" width="1600" height="942" loading="lazy" decoding="async">
             <p><strong>For Mobile Users:</strong> Follow this guide to enable full sound on your phone.</p>
-            <img src="/public/assets/zoom-3.gif" alt="Mobile Sound Settings">
+            <img src="/public/assets/zoom-3.webp" alt="Walkthrough of enabling original sound in the Zoom mobile app" width="252" height="548" loading="lazy" decoding="async">
         </div>
-    </div>
+    </main>
     <script>
         function checkCode() {
             const input = prompt('Enter the code');

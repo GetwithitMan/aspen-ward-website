@@ -9,6 +9,11 @@
 <link rel="icon" href="/public/assets/favicon.svg" type="image/svg+xml" />
 <meta property="og:type" content="website" />
 <meta property="og:title" content="Aspen Ward – Classroom Finder" />
+<meta property="og:url" content="https://www.aspenward.com/classrooms" />
+<meta property="og:image" content="https://www.aspenward.com/public/assets/og-image.jpeg" />
+<meta property="og:image:alt" content="Aspen Ward" />
+<meta name="twitter:card" content="summary_large_image" />
+<link rel="canonical" href="https://www.aspenward.com/classrooms" />
 <meta property="og:description" content="Find your Sunday class on an interactive floorplan of the Aspen Ward building." />
 <script>
 // Resolve the theme before first paint, matching the logic further down.
@@ -21,9 +26,6 @@
   document.documentElement.dataset.theme = stored;
 })();
 </script>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/dist/output.css">
 <style>
 /* Classroom-specific styles */
@@ -119,6 +121,7 @@
 
 .floorplan-wrapper img {
   width: 100%;
+  height: auto; /* preserves aspect ratio now that width/height attrs are set */
   display: block;
 }
 
@@ -386,6 +389,17 @@
   display: flex;
 }
 </style>
+<link rel="preload" as="font" type="font/woff2" crossorigin href="/public/assets/fonts/plus-jakarta-sans-var.woff2">
+<link rel="preload" as="font" type="font/woff2" crossorigin href="/public/assets/fonts/playfair-display-var.woff2">
+<link rel="stylesheet" href="/public/assets/fonts/fonts.css">
+<script type="speculationrules">
+{
+  "prerender": [{
+    "where": { "href_matches": "/(|classrooms|zoom)" },
+    "eagerness": "moderate"
+  }]
+}
+</script>
 </head>
 <body>
 <div class="app-shell">
@@ -456,7 +470,7 @@
 
 <div class="floorplan-wrapper" id="floorplan">
 <div class="floorplan-inner">
-<img src="/public/assets/floorplan.jpeg" alt="Building Floorplan" id="floorplan-img">
+<img src="/public/assets/floorplan.webp" width="860" height="1739" decoding="async" alt="Building Floorplan" id="floorplan-img">
 <!-- Room overlays will be dynamically added here -->
 </div>
 </div>

@@ -29,8 +29,17 @@ browser.
 
 ## Shared code
 
-- **`js/firebase.js`** — the only place the Firebase config lives. Every page
-  imports `db` from here. Do not paste the config into a page again.
+- **`js/config.js`** — the only place the Firebase connection details live. It
+  deliberately has no imports, so a page can use it without pulling in the SDK.
+  Do not paste the config into a page again.
+- **`js/db-read.js`** — `readPath(path)`, a one-shot database read over plain
+  HTTPS. The database returns exactly what `snapshot.val()` would. Read-only
+  pages (home, printable program) use this and skip the ~74 KB SDK entirely.
+- **`js/firebase.js`** — the SDK connection, for pages that need live updates
+  (classroom finder) or that write (admin panels).
+- **`public/assets/fonts/`** — self-hosted variable fonts, one file per family
+  covering all weights. Self-hosting removes a render-blocking third-party
+  request; variable files avoid one download per weight.
 - **`src/input.css`** — Tailwind source and the design tokens. Compiled to
   `dist/output.css` by `npm run build`.
 - **`public/assets/`** — favicon, ward logo, floorplans, Zoom screenshots. These
@@ -88,6 +97,21 @@ Details entered in the admin panel are `<textarea>`s: line breaks and spacing
 are preserved and carry through to both the public page and the printed program.
 Anything rendering them uses `white-space: pre-wrap`, and `normalizeMultiline()`
 strips only leading blank lines and trailing whitespace.
+
+## Performance rules
+
+These are easy to undo by accident:
+
+- **Images are WebP at display size, with `width`/`height` on every `<img>`.**
+  Those attributes are what stop the page reflowing as images load — if you add
+  an image without them, layout shift comes back. Any CSS that sets an image's
+  width also needs `height: auto`, or the aspect ratio breaks.
+- **The print cover logo stays JPEG.** WebP was no smaller at print quality.
+- **Content areas reserve their space.** The program, events and announcements
+  containers render skeleton placeholders and remember their previous height in
+  `localStorage`, so returning visitors see no jump. The renderers clear both.
+- **The Announcements nav link and section default to shown.** An extra nav link
+  appearing later wraps the nav to a second row and moves the whole page down.
 
 ## Known gaps
 

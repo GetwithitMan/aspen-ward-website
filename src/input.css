@@ -52,7 +52,7 @@
     --stroke-strong: rgba(61, 41, 21, 0.18);
     --ink: #2f1c11;
     --ink-soft: rgba(47, 28, 17, 0.78);
-    --ink-muted: rgba(47, 28, 17, 0.56);
+    --ink-muted: rgba(47, 28, 17, 0.66); /* 0.56 gave 3.85:1; WCAG AA needs 4.5:1 */
     --accent: #7c3aed;
     --accent-strong: #5b21b6;
     --accent-soft: rgba(124, 58, 237, 0.18);
@@ -159,7 +159,11 @@
     border-color: var(--stroke);
   }
 
-  .news-flash[hidden] + .app-shell .site-header {
+  /* The header sits 2.5rem down to clear the news ticker. While the ticker is
+     hidden it can sit flush - except when we already know from the last visit
+     that a ticker is coming, in which case holding the gap avoids the whole
+     page jumping down the moment it appears. */
+  :root:not([data-newsflash="reserved"]) .news-flash[hidden] + .app-shell .site-header {
     @apply top-0;
   }
 
@@ -367,10 +371,14 @@
     @apply m-0 text-base;
     max-width: 36ch;
     color: var(--ink-soft);
+    min-height: 1.6em; /* starts empty; ward info fills it ~2s in */
   }
 
+  /* Ward details arrive from a Google Sheet ~2s in and can wrap to a second
+     line. Holding two lines' worth of height stops the hero resizing then. */
   .hero-meta {
     @apply my-3 inline-flex items-center gap-2 py-2 px-4 border font-semibold;
+    min-height: 3.9rem;
     border-radius: var(--radius-sm);
     background: color-mix(in srgb, var(--surface) 72%, transparent);
     border-color: var(--stroke);
@@ -445,6 +453,52 @@
   /* Program Grid */
   .program-grid {
     @apply flex flex-col gap-0.5;
+  }
+
+  /* Placeholders that occupy the same space the real content will, so the page
+     does not jump when program and event data arrive from the database.
+     Cleared by the renderers, which replace the container's contents. */
+  .skeleton-card {
+    @apply border;
+    background: var(--surface);
+    border-color: var(--stroke);
+    border-radius: var(--radius-sm);
+    box-shadow: var(--shadow-sm);
+    padding: 0.2rem 0.4rem;
+    height: 1.55rem;
+  }
+
+  .skeleton-card.event {
+    border-radius: var(--radius-md);
+    padding: 0.7rem 0.9rem;
+    height: 5.2rem;
+  }
+
+  .skeleton-card::after {
+    content: '';
+    display: block;
+    width: min(62%, 22rem);
+    height: 0.62rem;
+    border-radius: 999px;
+    background: linear-gradient(
+      90deg,
+      var(--surface-muted) 0%,
+      var(--bg-alt) 50%,
+      var(--surface-muted) 100%
+    );
+    background-size: 200% 100%;
+    animation: skeleton-sheen 1.4s ease-in-out infinite;
+  }
+
+  .skeleton-card.event::after { width: min(84%, 30rem); }
+
+  @keyframes skeleton-sheen {
+    0%   { background-position: 140% 0; }
+    100% { background-position: -40% 0; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .skeleton-card::after { animation: none; }
   }
 
   .program-card {
@@ -828,5 +882,20 @@
 
   .program-detail {
     font-size: 0.78rem;
+  }
+}
+
+/* Cross-document view transitions: navigating between pages cross-fades
+   instead of flashing white. Browsers without support simply navigate as
+   before, and anyone who prefers reduced motion opts out. */
+@view-transition {
+  navigation: auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
   }
 }

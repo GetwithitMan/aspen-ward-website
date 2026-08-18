@@ -8,9 +8,6 @@
 <link rel="icon" href="/public/assets/favicon.svg" type="image/svg+xml" />
 <meta name="robots" content="noindex, nofollow">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%234f7942' rx='20' width='100' height='100'/><text x='50' y='68' font-size='48' font-weight='bold' fill='white' text-anchor='middle' font-family='system-ui'>AW</text></svg>">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root {
   color-scheme: light dark;
@@ -491,6 +488,7 @@ main {
 
 .floorplan-preview img {
   width: 100%;
+  height: auto; /* preserves aspect ratio now that width/height attrs are set */
   display: block;
 }
 
@@ -542,6 +540,9 @@ main {
   }
 }
 </style>
+<link rel="preload" as="font" type="font/woff2" crossorigin href="/public/assets/fonts/plus-jakarta-sans-var.woff2">
+<link rel="preload" as="font" type="font/woff2" crossorigin href="/public/assets/fonts/playfair-display-var.woff2">
+<link rel="stylesheet" href="/public/assets/fonts/fonts.css">
 </head>
 <body>
 <div class="app-shell">
@@ -624,7 +625,7 @@ main {
 <div class="section-body" id="floorplan-section-body">
 <p style="color: var(--ink-muted); margin: 0 0 1rem;">Use this floorplan to identify room numbers.</p>
 <div class="floorplan-preview" id="floorplan-preview">
-<img src="/public/assets/floorplan-admin.jpeg" alt="Building Floorplan">
+<img src="/public/assets/floorplan-admin.webp" alt="Building floorplan showing room numbers" width="1200" height="834" loading="lazy" decoding="async">
 </div>
 </div>
 </div>

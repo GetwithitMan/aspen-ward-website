@@ -1,5 +1,82 @@
 # Changelog
 
+## August 18, 2026
+
+### Performance, Accessibility and Platform Update
+
+Acting on the six-month review. Measured before and after in the same run with
+caching disabled, on a simulated phone.
+
+| Page | Before | After | |
+|---|---|---|---|
+| /zoom | 2,044 KB | 262 KB | **-87%** |
+| /classrooms | 419 KB | 233 KB | **-44%** |
+| / (home) | 166 KB | 100 KB | **-40%** |
+| /print | 225 KB | 159 KB | **-29%** |
+
+Lighthouse on the home page went from 75 / 91 / 100 / 100 to **98 / 100 / 100 /
+100**. Every public page now scores 100 for accessibility.
+
+**Images**
+
+- Converted to WebP at sensible dimensions. The worst offender was the church
+  logo on the Zoom page: a 3840x2160 PNG (847 KB) displayed at 150px wide, now
+  15 KB. The annotated Zoom screenshot went 929 KB to 48 KB with its small text
+  still legible at 1:1.
+- The print cover logo was deliberately **left as JPEG** - WebP was no smaller
+  at print quality, and that image goes on paper.
+- Every image now declares width and height, so nothing reflows as they load.
+  The two instruction screenshots load lazily.
+
+**Layout stability (CLS 0.751 -> 0.076 first visit, 0.017 returning)**
+
+The page used to jump badly while loading. Three separate causes, each measured
+rather than guessed:
+
+- The header grew ~59px when the Announcements nav link appeared, wrapping the
+  nav onto a second row and shoving the whole page down. Announcements now
+  default to shown, since a ward nearly always has them.
+- The program, events and announcements areas render skeleton placeholders, and
+  remember their previous height so returning visitors get the space reserved
+  exactly.
+- The hero subtitle and meta line reserve their height rather than growing when
+  ward details arrive.
+
+**Fonts**
+
+- Self-hosted as variable fonts (one file per family instead of one per weight),
+  removing a render-blocking third-party request. First contentful paint on the
+  home page went from 464ms to 72ms; on the print page, 2,224ms to 40ms.
+
+**Accessibility**
+
+- Event cards were missing `role="listitem"`, so screen readers announced the
+  events list as malformed.
+- Muted text was 3.85:1 where 4.5:1 is required; the token is now 5.29:1.
+- The Zoom button was 3.33:1 against white, and that page had no main landmark.
+
+**Smaller pages, no SDK where it is not needed**
+
+- The home and printable program pages only ever read, so they now use plain
+  database requests instead of the ~74 KB Firebase SDK. Pages that need live
+  updates (classroom finder) or write (admin panels) still use the SDK.
+
+**Platform features new since this was built**
+
+- `field-sizing: content` (Baseline June 2026) now handles the growing admin
+  textareas natively; the JavaScript remains as a fallback for older browsers.
+- Cross-document view transitions cross-fade navigation, and speculation rules
+  prerender the public pages. Both degrade silently where unsupported.
+
+**Housekeeping**
+
+- Removed the dead `api.allorigins.win` fallback, which returned 5xx after 9-20
+  seconds every time and could stall the events section. Requests are now
+  bounded by a 6-second timeout.
+- Added security headers, long cache lifetimes for fonts and images, a
+  `robots.txt` and `sitemap.xml`, link-preview images and canonical URLs.
+- Dependencies updated (Tailwind 4.1.18 to 4.3.3).
+
 ## August 17, 2026
 
 ### Missionary Dinner Calendar Hidden

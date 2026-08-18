@@ -9,10 +9,12 @@
 <link rel="icon" href="/public/assets/favicon.svg" type="image/svg+xml" />
 <meta property="og:type" content="website" />
 <meta property="og:title" content="Aspen Ward – Sunday Worship" />
+<meta property="og:url" content="https://www.aspenward.com/" />
+<meta property="og:image" content="https://www.aspenward.com/public/assets/og-image.jpeg" />
+<meta property="og:image:alt" content="Aspen Ward" />
+<meta name="twitter:card" content="summary_large_image" />
+<link rel="canonical" href="https://www.aspenward.com/" />
 <meta property="og:description" content="Sunday program, announcements, and upcoming activities for the Aspen Ward in Fruita, Colorado." />
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/dist/output.css">
 <script>
 // Resolve the theme before first paint. The module script below runs after the
@@ -23,7 +25,27 @@
   var prefersLight = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
   var theme = stored === 'light' || stored === 'dark' ? stored : (prefersLight ? 'light' : 'dark');
   document.documentElement.setAttribute('data-theme', theme);
+
+  // If a news ticker appeared last visit, hold its space from the first paint.
+  // Otherwise the header drops in ~40px late and shoves the whole page down.
+  try {
+    if (localStorage.getItem('aspen-ward-newsflash') === '1') {
+      document.documentElement.setAttribute('data-newsflash', 'reserved');
+    }
+  } catch (e) { /* private mode */ }
+
 })();
+</script>
+<link rel="preload" as="font" type="font/woff2" crossorigin href="/public/assets/fonts/plus-jakarta-sans-var.woff2">
+<link rel="preload" as="font" type="font/woff2" crossorigin href="/public/assets/fonts/playfair-display-var.woff2">
+<link rel="stylesheet" href="/public/assets/fonts/fonts.css">
+<script type="speculationrules">
+{
+  "prerender": [{
+    "where": { "href_matches": "/(|classrooms|zoom)" },
+    "eagerness": "moderate"
+  }]
+}
 </script>
 </head>
 <body>
@@ -54,12 +76,51 @@
 <nav class="primary-nav" id="primary-nav" aria-label="Section links">
 <ul class="nav-list">
 <li><a class="nav-link" data-scroll="program" href="#program">Program</a></li>
-<li><a class="nav-link" data-scroll="announcements" href="#announcements" hidden>Announcements</a></li>
+<li><a class="nav-link" id="announcements-nav-link" data-scroll="announcements" href="#announcements">Announcements</a></li>
 <li><a class="nav-link" data-scroll="events" href="#events">Events</a></li>
 <li><a class="nav-link" href="/classrooms" id="classrooms-nav-link" hidden>Classrooms</a></li>
 <li><a class="nav-link" href="/zoom">Zoom</a></li>
 </ul>
 </nav>
+<script>
+// Runs during parsing, right after the links exist and before first paint.
+// The Announcements and Classrooms links are only revealed once their data
+// arrives; at this content width that extra link wraps the nav onto a second
+// row, growing the header ~59px and shoving the whole page down. Restoring
+// last visit's nav means returning visitors never see that jump.
+(function () {
+  try {
+    var nav = localStorage.getItem('aspen-ward-nav');
+
+    // Classrooms is an admin toggle, so it stays hidden until we know better.
+    if (nav && nav.indexOf('classrooms-nav-link') !== -1) {
+      var cl = document.getElementById('classrooms-nav-link');
+      if (cl) cl.removeAttribute('hidden');
+    }
+
+    // Announcements default to shown (the usual case). Only correct that when
+    // we positively know last visit had none.
+    if (nav !== null && nav.indexOf('announcements-nav-link') === -1) {
+      var al = document.getElementById('announcements-nav-link');
+      var sec = document.getElementById('announcements');
+      if (al) al.setAttribute('hidden', '');
+      if (sec) sec.setAttribute('hidden', '');
+    }
+
+    // Same idea for the containers whose contents arrive later: hold the height
+    // they had last visit so nothing below them is pushed down on arrival.
+    // Released by the renderers once the real content is in.
+    [['aspen-ward-ann-height', 'announcements', true],
+     ['aspen-ward-events-height', 'events-timeline', false]].forEach(function (row) {
+      var h = parseInt(localStorage.getItem(row[0]) || '0', 10);
+      if (!(h > 0)) return;
+      var el = document.getElementById(row[1]);
+      if (!el || el.hasAttribute('hidden')) return;
+      el.style.minHeight = h + 'px';
+    });
+  } catch (e) { /* private mode */ }
+})();
+</script>
 </div>
 </header>
 <main id="top">
@@ -84,17 +145,17 @@
 <h2 class="section-title" id="program-heading">Sunday program</h2>
 <p class="section-intro" id="program-intro"></p>
 </div>
-<div class="program-grid" id="program-grid" role="list"></div>
+<div class="program-grid" id="program-grid" role="list"><div class="skeleton-card" aria-hidden="true"></div><div class="skeleton-card" aria-hidden="true"></div><div class="skeleton-card" aria-hidden="true"></div><div class="skeleton-card" aria-hidden="true"></div><div class="skeleton-card" aria-hidden="true"></div><div class="skeleton-card" aria-hidden="true"></div><div class="skeleton-card" aria-hidden="true"></div><div class="skeleton-card" aria-hidden="true"></div><div class="skeleton-card" aria-hidden="true"></div><div class="skeleton-card" aria-hidden="true"></div><div class="skeleton-card" aria-hidden="true"></div><div class="skeleton-card" aria-hidden="true"></div><div class="skeleton-card" aria-hidden="true"></div></div>
 </div>
 </section>
-<section class="section simple" id="announcements" aria-labelledby="announcements-heading" hidden>
+<section class="section simple" id="announcements" aria-labelledby="announcements-heading">
 <div class="section-shell">
 <div class="section-header">
 <span class="section-overline">Quick updates</span>
 <h2 class="section-title" id="announcements-heading">Ward announcements</h2>
 <p class="section-intro">Ward reminders.</p>
 </div>
-<div class="announcements-list" id="announcements-list" role="list"></div>
+<div class="announcements-list" id="announcements-list" role="list"><div class="skeleton-card event" aria-hidden="true"></div><div class="skeleton-card event" aria-hidden="true"></div><div class="skeleton-card event" aria-hidden="true"></div></div>
 </div>
 </section>
 <section class="section" id="events" aria-labelledby="events-heading">
@@ -104,7 +165,7 @@
 <h2 class="section-title" id="events-heading">Upcoming events</h2>
 <p class="section-intro">Ward activities, service opportunities, and upcoming events.</p>
 </div>
-<div class="events-timeline" id="events-timeline" role="list"></div>
+<div class="events-timeline" id="events-timeline" role="list"><div class="skeleton-card event" aria-hidden="true"></div><div class="skeleton-card event" aria-hidden="true"></div></div>
 </div>
 </section>
 </main>
@@ -124,13 +185,12 @@
 </div>
 </div>
 <script type="module">
-import { ref, onValue, get } from "https://www.gstatic.com/firebasejs/11.7.3/firebase-database.js";
-import { db } from "/js/firebase.js";
+// Read-only page: plain database reads, no SDK bundle.
+import { readPath } from "/js/db-read.js";
 
 const CONFIG = {
   WARD_INFO_URL: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSv7a_sC6S7ytGdHJSEZMHqCPsKhOY-C7hp6K1d-rpUsAUj8LV3Ss3lE89p-IAfEdtFcpOhrOng3LWw/pub?gid=981144620&single=true&output=csv',
-  EVENTS_URL: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSv7a_sC6S7ytGdHJSEZMHqCPsKhOY-C7hp6K1d-rpUsAUj8LV3Ss3lE89p-IAfEdtFcpOhrOng3LWw/pub?gid=321660920&single=true&output=csv',
-  CORS_PROXY: 'https://api.allorigins.win/raw?url='
+  EVENTS_URL: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSv7a_sC6S7ytGdHJSEZMHqCPsKhOY-C7hp6K1d-rpUsAUj8LV3Ss3lE89p-IAfEdtFcpOhrOng3LWw/pub?gid=321660920&single=true&output=csv'
 };
 const state = {
   debugBanner: false,
@@ -194,25 +254,26 @@ function showInlineError(container, message) {
   paragraph.textContent = message;
   container.appendChild(paragraph);
 }
-async function fetchWithFallback(url) {
+// Bounded fetch. The events section waits on ward info, so a hanging request
+// here used to stall the page: the old fallback relayed through
+// api.allorigins.win, which now returns 5xx after 9-20 seconds every time.
+// A slow failure is worse than a fast one - the caller has sensible defaults.
+async function fetchWithTimeout(url, ms = 6000) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), ms);
   try {
-    const response = await fetch(url);
+    const response = await fetch(url, { signal: controller.signal });
     if (!response.ok) {
       throw new Error(`Fetch failed: ${response.status} ${response.statusText}`);
     }
     return response;
   } catch (error) {
-    console.warn(`Direct fetch failed for ${url}. Retrying with proxy`, error);
-    try {
-      const proxyResponse = await fetch(`${CONFIG.CORS_PROXY}${encodeURIComponent(url)}`);
-      if (!proxyResponse.ok) {
-        throw new Error(`Proxy fetch failed: ${proxyResponse.status} ${proxyResponse.statusText}`);
-      }
-      return proxyResponse;
-    } catch (proxyError) {
-      console.error(`Unable to retrieve ${url}`, proxyError);
-      throw new Error('We were unable to load the latest information. Please try again soon.');
+    if (error.name === 'AbortError') {
+      throw new Error(`Timed out after ${ms}ms: ${url}`);
     }
+    throw error;
+  } finally {
+    clearTimeout(timer);
   }
 }
 function parseCSV(text) {
@@ -615,7 +676,7 @@ function updateWardDom({
 }
 async function loadWardInfo() {
   try {
-    const response = await fetchWithFallback(CONFIG.WARD_INFO_URL);
+    const response = await fetchWithTimeout(CONFIG.WARD_INFO_URL);
     const rows = parseCSV(await response.text());
     if (!rows.length) {
       throw new Error('Ward info sheet is empty');
@@ -659,10 +720,15 @@ function renderAnnouncements(items = []) {
   const { announcementsSection, announcementsList, announcementsNavLink } = SELECTORS;
   if (!announcementsSection || !announcementsList) return;
   announcementsList.innerHTML = '';
+  // The pre-paint script may have reopened this section at last visit's height.
+  // Now that the real answer is known, hand layout back to the content.
+  announcementsSection.style.removeProperty('min-height');
+
   if (!items || !items.length) {
     announcementsSection.setAttribute('hidden', '');
     announcementsSection.setAttribute('aria-hidden', 'true');
     announcementsNavLink?.setAttribute('hidden', '');
+    rememberAnnouncementsHeight(0);
     return;
   }
   announcementsSection.removeAttribute('hidden');
@@ -700,6 +766,17 @@ function renderAnnouncements(items = []) {
     }
     announcementsList.appendChild(card);
   });
+
+  // Measure after layout settles so next visit reserves the right amount.
+  requestAnimationFrame(() => {
+    rememberAnnouncementsHeight(Math.round(announcementsSection.getBoundingClientRect().height));
+  });
+}
+
+function rememberAnnouncementsHeight(px) {
+  try {
+    localStorage.setItem('aspen-ward-ann-height', String(px));
+  } catch (e) { /* private mode */ }
 }
 function renderProgram(rows) {
   if (!SELECTORS.programGrid) return;
@@ -782,6 +859,8 @@ function renderProgram(rows) {
   renderAnnouncements(announcementItems);
   if (bannerItems.length) {
     void showBannerWhenReady({ title: bannerTitle, announcements: bannerItems });
+  } else {
+    rememberNewsFlash(false);
   }
 }
 // The "pop up banner" switch lives in the ward info sheet, which loads in
@@ -789,14 +868,36 @@ function renderProgram(rows) {
 // not have arrived yet.
 async function showBannerWhenReady({ title, announcements }) {
   await state.wardInfoReady;
-  if (state.wardDetails?.hideBanner) return;
+  if (state.wardDetails?.hideBanner) {
+    rememberNewsFlash(false);
+    return;
+  }
   renderBanner({ title, announcements });
   renderNewsFlash({ announcements });
+  rememberNewsFlash(true);
+}
+
+// Records whether a ticker showed, so the pre-paint script next visit reserves
+// its space (or stops reserving it) correctly.
+function rememberNavState() {
+  const shown = ['announcements-nav-link', 'classrooms-nav-link']
+    .filter((id) => !document.getElementById(id)?.hasAttribute('hidden'));
+  try {
+    localStorage.setItem('aspen-ward-nav', shown.join(','));
+  } catch (e) { /* private mode */ }
+}
+
+function rememberNewsFlash(shown) {
+  try {
+    localStorage.setItem('aspen-ward-newsflash', shown ? '1' : '0');
+  } catch (e) { /* private mode */ }
+  if (!shown) {
+    document.documentElement.removeAttribute('data-newsflash');
+  }
 }
 async function loadProgram() {
   try {
-    const snapshot = await get(ref(db, 'sundayProgram'));
-    const data = snapshot.val();
+    const data = await readPath('sundayProgram');
 
     if (!data) {
       throw new Error('Program data is empty');
@@ -905,6 +1006,7 @@ function normalizeEvent({ date, title, info, icon, link } = {}) {
 // into the wrong slot.
 function renderEvents(events) {
   if (!SELECTORS.eventsTimeline) return;
+  SELECTORS.eventsTimeline.style.removeProperty('min-height');
   SELECTORS.eventsTimeline.innerHTML = '';
   if (!events.length) {
     showInlineError(SELECTORS.eventsTimeline, 'No upcoming events were found. Check back soon!');
@@ -914,6 +1016,9 @@ function renderEvents(events) {
     if (!info) return;
     const card = document.createElement('article');
     card.className = 'event-card';
+    // The container is role="list"; without this the list is announced as
+    // malformed. The program and announcement renderers already do this.
+    card.setAttribute('role', 'listitem');
     const header = document.createElement('div');
     header.className = 'event-header';
     const dateLabel = document.createElement('span');
@@ -962,6 +1067,13 @@ function renderEvents(events) {
     }
     SELECTORS.eventsTimeline.appendChild(card);
   });
+
+  requestAnimationFrame(() => {
+    try {
+      localStorage.setItem('aspen-ward-events-height',
+        String(Math.round(SELECTORS.eventsTimeline.getBoundingClientRect().height)));
+    } catch (e) { /* private mode */ }
+  });
 }
 async function loadEvents() {
   // The "hide events" switch is applied by loadWardInfo(), so check it only
@@ -970,8 +1082,7 @@ async function loadEvents() {
   if (SELECTORS.eventsSection?.hasAttribute('hidden')) return;
   try {
     // Try Firebase first (new admin page stores events here)
-    const snapshot = await get(ref(db, 'events'));
-    const data = snapshot.val();
+    const data = await readPath('events');
 
     // Firebase returns an object instead of an array when keys are sparse.
     const stored = Array.isArray(data)
@@ -982,7 +1093,7 @@ async function loadEvents() {
       renderEvents(stored.filter(Boolean).map(normalizeEvent));
     } else {
       // Fallback to Google Sheets if no Firebase data
-      const response = await fetchWithFallback(CONFIG.EVENTS_URL);
+      const response = await fetchWithTimeout(CONFIG.EVENTS_URL);
       const rows = parseCSV(await response.text());
       if (rows[0]?.[0]?.toLowerCase().includes('date')) {
         rows.shift();
@@ -997,8 +1108,7 @@ async function loadEvents() {
 }
 async function loadSiteSettings() {
   try {
-    const snapshot = await get(ref(db, 'siteSettings'));
-    const settings = snapshot.val() || {};
+    const settings = (await readPath('siteSettings')) || {};
 
     // Show/hide Classrooms nav link based on setting
     const classroomsNavLink = document.getElementById('classrooms-nav-link');
@@ -1033,6 +1143,10 @@ async function init() {
       console.error(result.reason);
     }
   });
+
+  // Everything has settled, so the nav is in its final state. Record it for the
+  // pre-paint pass on the next visit.
+  rememberNavState();
 }
 document.addEventListener('DOMContentLoaded', init);
 </script>

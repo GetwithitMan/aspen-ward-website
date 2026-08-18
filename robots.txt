@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /classrooms-admin
+Disallow: /print
+
+Sitemap: https://www.aspenward.com/sitemap.xml

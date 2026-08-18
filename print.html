@@ -4,9 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Aspen Ward - Printable Program</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Crimson+Pro:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="icon" href="/public/assets/favicon.svg" type="image/svg+xml">
 <meta name="robots" content="noindex">
 
@@ -502,6 +499,9 @@
     text-decoration: none;
   }
 </style>
+<link rel="preload" as="font" type="font/woff2" crossorigin href="/public/assets/fonts/crimson-pro-var.woff2">
+<link rel="preload" as="font" type="font/woff2" crossorigin href="/public/assets/fonts/playfair-display-var.woff2">
+<link rel="stylesheet" href="/public/assets/fonts/fonts.css">
 </head>
 <body>
 
@@ -565,8 +565,8 @@
 </div>
 
 <script type="module">
-import { ref, get } from "https://www.gstatic.com/firebasejs/11.7.3/firebase-database.js";
-import { db } from "/js/firebase.js";
+// Read-only page: plain database reads, no SDK bundle.
+import { readPath } from "/js/db-read.js";
 
 // Everything below builds HTML strings from admin-entered text, so anything
 // interpolated has to be escaped or a stray angle bracket breaks the program.
@@ -618,8 +618,7 @@ function createSectionHTML(title, items) {
 // Load and render the program
 async function loadProgram() {
   try {
-    const snapshot = await get(ref(db, 'sundayProgram'));
-    const data = snapshot.val();
+    const data = await readPath('sundayProgram');
 
     // Set the date
     document.getElementById('program-date').textContent = getCurrentSunday();
@@ -718,8 +717,7 @@ async function loadEvents() {
   const loading = document.getElementById('events-loading');
 
   try {
-    const snapshot = await get(ref(db, 'events'));
-    const data = snapshot.val();
+    const data = await readPath('events');
 
     loading.style.display = 'none';
 
@@ -769,8 +767,7 @@ async function loadMissionaries() {
   const container = document.getElementById('missionaries-list');
 
   try {
-    const snapshot = await get(ref(db, 'missionaries'));
-    let data = snapshot.val();
+    let data = await readPath('missionaries');
 
     if (!data) {
       section.style.display = 'none';
