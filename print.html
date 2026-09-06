@@ -402,11 +402,29 @@
     margin-bottom: calc(0.06in * var(--fit, 1));
   }
 
-  /* Small QR to the temple schedule, centred under the temple name. Its size is
-     set on the SVG itself (module count x a safe per-module size). */
+  /* The temple title block; with a QR it becomes a centred row of title + code
+     so the code adds no vertical space of its own. */
+  .temple-print-head {
+    margin-bottom: calc(0.06in * var(--fit, 1));
+  }
+
+  .temple-print-head.has-qr {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.24in;
+  }
+
+  .temple-print-head.has-qr .temple-print-header,
+  .temple-print-head.has-qr .temple-print-name {
+    margin-bottom: 0;
+  }
+
+  /* Small QR to the temple schedule. Its size is set on the SVG itself (module
+     count x a safe per-module size). */
   .temple-qr {
     text-align: center;
-    margin: calc(0.02in * var(--fit, 1)) 0 calc(0.1in * var(--fit, 1));
+    flex: 0 0 auto;
   }
 
   .temple-qr .qr-svg { display: inline-block; }
@@ -414,6 +432,7 @@
   .temple-qr-caption {
     font-size: calc(8pt * var(--fit, 1));
     color: var(--ink-muted);
+    line-height: 1.15;
     margin-top: 2px;
   }
 
@@ -1355,14 +1374,17 @@ async function loadTemple() {
       return `<div class="temple-print-row"><span class="day">${escapeHtml(templeDayLabel(e))}</span><span class="times">${escapeHtml(times)}</span></div>`;
     }).join('');
 
-    let html = '<div class="temple-print-header">Temple</div>';
-    if (has(t.templeName)) html += `<div class="temple-print-name">${escapeHtml(t.templeName)}</div>`;
-    // A small QR to the temple's schedule (a short /t link that forwards to the
-    // schedule link set in the admin), shown only when that link is set.
+    // The "Temple" title and temple name, with a small schedule QR alongside
+    // (a short /t link that forwards to the admin's schedule link). The QR sits
+    // inline beside the title so it costs no extra row; shown only when a
+    // schedule link is set.
+    const nameHtml = has(t.templeName) ? `<div class="temple-print-name">${escapeHtml(t.templeName)}</div>` : '';
+    let qrBlock = '';
     if (has(t.scheduleUrl)) {
       const qr = makeQrSvg('https://aspenward.com/t');
-      if (qr) html += `<div class="temple-qr">${qr}<div class="temple-qr-caption">Scan for the temple schedule</div></div>`;
+      if (qr) qrBlock = `<div class="temple-qr">${qr}<div class="temple-qr-caption">Scan for<br>schedule</div></div>`;
     }
+    let html = `<div class="temple-print-head${qrBlock ? ' has-qr' : ''}"><div class="temple-print-titles"><div class="temple-print-header">Temple</div>${nameHtml}</div>${qrBlock}</div>`;
     html += scheduleRows(hours);
 
     closures.forEach((c) => {
