@@ -273,7 +273,7 @@
     max-width: 3.4in;
     height: auto;
     max-height: 3.3in;
-    border: 1px solid #999;
+    border: 1px solid var(--ink-faint);
     padding: 5px;
     background: #fff;
   }
@@ -406,7 +406,7 @@
     display: flex;
     justify-content: space-between;
     gap: 0.3in;
-    font-size: calc(11.5pt * var(--fit, 1));
+    font-size: calc(12pt * var(--fit, 1));
     color: var(--ink-mid);
     padding: calc(0.035in * var(--fit, 1)) 0;
   }
@@ -422,7 +422,7 @@
   }
 
   .temple-print-sub {
-    font-size: calc(11pt * var(--fit, 1));
+    font-size: calc(12pt * var(--fit, 1));
     font-weight: 600;
     color: var(--accent);
     margin-top: calc(0.07in * var(--fit, 1));
@@ -451,10 +451,13 @@
     text-align: right;
   }
 
+  /* Closures are the one alert on the sheet. The program prints greyscale, where
+     colour cannot carry emphasis, so they lean on the darkest ink, weight, and
+     the word "Closed:" rather than a red that would just become a stray grey. */
   .temple-print-closed {
-    font-size: calc(11pt * var(--fit, 1));
-    color: #7a1f1f;
-    font-weight: 600;
+    font-size: calc(12pt * var(--fit, 1));
+    color: var(--ink-strong);
+    font-weight: 700;
     margin: calc(0.03in * var(--fit, 1)) 0;
   }
 

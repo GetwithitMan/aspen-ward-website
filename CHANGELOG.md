@@ -1,5 +1,35 @@
 # Changelog
 
+## September 6, 2026 (part 19)
+
+### Bringing Today\'s Additions Into the System
+
+A pass over everything added today, measured against the same processing-fluency
+idea the program was already built on: a page feels good in proportion to how
+effortlessly it reads, and consistency is most of that ease. Three things had
+drifted out of the system and were pulled back in.
+
+- **Temple closures were red (`#7a1f1f`); they are now the darkest warm ink,
+  bold.** The program prints in greyscale, where colour cannot carry emphasis —
+  a red simply becomes an indistinct grey, so it failed as an alert *and* broke
+  the one-warm-ink-palette rule. Closures now lean on darkness, weight, and the
+  word "Closed:", the same tools the rest of the sheet uses. They read calmer and
+  stand out more.
+- **The temple type sizes were a muddle** — rows at 11.5pt, sub-headings and
+  closures at 11pt, a 4-5% spread that the type-scale rule exists to prevent
+  ("no two sizes within 5% of each other in the same place"). They are now one
+  size, 12pt — which also matches the announcement body directly above them, so
+  the whole inside-left panel reads as a single column of type.
+- **The fine-art cover frame used a neutral grey (`#999`)**; it is now the warm
+  `--ink-faint`, so the hairline around a painting belongs to the same ink family
+  as everything else.
+
+Considered and left alone: the website\'s temple closures keep their soft red —
+that page is viewed in colour, where red is a fair, gentle alert; the greyscale
+argument is specific to print. The uppercase program-section labels (OPENING,
+SACRAMENT) also stay: the small-caps case was made for the long cover line, where
+full capitals cost real reading speed, not for short single-word labels.
+
 ## September 6, 2026 (part 18)
 
 ### Cover Picker Folded into Introduction
