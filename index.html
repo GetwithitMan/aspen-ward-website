@@ -168,6 +168,16 @@
 <div class="events-timeline" id="events-timeline" role="list"><div class="skeleton-card event" aria-hidden="true"></div><div class="skeleton-card event" aria-hidden="true"></div></div>
 </div>
 </section>
+<section class="section simple" id="temple" aria-labelledby="temple-heading" hidden aria-hidden="true">
+<div class="section-shell">
+<div class="section-header">
+<span class="section-overline">House of the Lord</span>
+<h2 class="section-title" id="temple-heading">Temple</h2>
+<p class="section-intro">Temple schedule and recommend interviews.</p>
+</div>
+<div class="announcements-list" id="temple-body" role="list"></div>
+</div>
+</section>
 </main>
 <footer class="site-footer" aria-label="Site footer">
 <p id="footer-copy">❖ Not an official site of The Church of Jesus Christ of Latter-day Saints. Intended for local Aspen Ward use only.</p>
@@ -217,6 +227,8 @@ const SELECTORS = {
   announcementsList: document.getElementById('announcements-list'),
   eventsTimeline: document.getElementById('events-timeline'),
   eventsSection: document.getElementById('events'),
+  templeSection: document.getElementById('temple'),
+  templeBody: document.getElementById('temple-body'),
   footerCopy: document.getElementById('footer-copy'),
   navLinks: Array.from(document.querySelectorAll('.nav-link[data-scroll]')),
   modal: document.getElementById('banner-modal'),
@@ -1106,6 +1118,102 @@ async function loadEvents() {
     showInlineError(SELECTORS.eventsTimeline, 'Upcoming events are unavailable right now.');
   }
 }
+// The Temple section is standing reference information (schedule + recommend
+// interviews) rather than a dated feed, so it stays hidden until an admin
+// turns it on and gives it something to say.
+function renderTemple(t) {
+  const { templeSection, templeBody } = SELECTORS;
+  if (!templeSection || !templeBody) return;
+
+  const temple = t || {};
+  const has = (v) => typeof v === 'string' && v.trim().length > 0;
+  const meaningful = has(temple.templeName) || has(temple.scheduleUrl) ||
+    has(temple.wardTempleDay) || has(temple.interviews) || has(temple.notes);
+
+  if (!temple.show || !meaningful) {
+    templeSection.setAttribute('hidden', '');
+    templeSection.setAttribute('aria-hidden', 'true');
+    templeBody.innerHTML = '';
+    return;
+  }
+
+  templeBody.innerHTML = '';
+
+  // Card 1 — the temple itself: name, address, ward temple day, and the
+  // official schedule link (the authoritative source for hours). Only shown
+  // when there is a detail to carry it, so recommend-interview-only weeks do
+  // not leave a bare "Temple" heading floating above the interviews card.
+  const hasDetails = has(temple.templeName) || has(temple.address) ||
+    has(temple.wardTempleDay) || has(temple.notes) || isSafeUrl(temple.scheduleUrl);
+  if (hasDetails) {
+    const details = document.createElement('article');
+    details.className = 'announcement-card';
+    details.setAttribute('role', 'listitem');
+
+    const name = document.createElement('h3');
+    name.className = 'announcement-title';
+    name.textContent = has(temple.templeName) ? temple.templeName : 'Temple';
+    details.appendChild(name);
+
+    const lines = [];
+    if (has(temple.address)) lines.push(temple.address);
+    if (has(temple.wardTempleDay)) lines.push(temple.wardTempleDay);
+    if (has(temple.notes)) lines.push(temple.notes);
+    if (lines.length) {
+      const body = document.createElement('p');
+      body.className = 'announcement-body';
+      body.innerHTML = lines.map((l) => formatMultiline(l)).join('<br>');
+      details.appendChild(body);
+    }
+
+    if (isSafeUrl(temple.scheduleUrl)) {
+      const link = document.createElement('a');
+      link.className = 'announcement-link';
+      link.href = temple.scheduleUrl.trim();
+      link.target = '_blank';
+      link.rel = 'noopener';
+      link.setAttribute('aria-label', `View the ${has(temple.templeName) ? temple.templeName : 'temple'} schedule on ChurchofJesusChrist.org`);
+      link.innerHTML = 'View temple schedule <span aria-hidden="true">↗</span>';
+      details.appendChild(link);
+    }
+    templeBody.appendChild(details);
+  }
+
+  // Card 2 — recommend interviews, only when there is something to show.
+  if (has(temple.interviews) || has(temple.interviewsContact)) {
+    const interviews = document.createElement('article');
+    interviews.className = 'announcement-card';
+    interviews.setAttribute('role', 'listitem');
+
+    const iTitle = document.createElement('h3');
+    iTitle.className = 'announcement-title';
+    iTitle.textContent = 'Temple recommend interviews';
+    interviews.appendChild(iTitle);
+
+    const iLines = [];
+    if (has(temple.interviews)) iLines.push(temple.interviews);
+    if (has(temple.interviewsContact)) iLines.push(temple.interviewsContact);
+    const iBody = document.createElement('p');
+    iBody.className = 'announcement-body';
+    iBody.innerHTML = iLines.map((l) => formatMultiline(l)).join('<br>');
+    interviews.appendChild(iBody);
+    templeBody.appendChild(interviews);
+  }
+
+  templeSection.removeAttribute('hidden');
+  templeSection.setAttribute('aria-hidden', 'false');
+}
+
+async function loadTemple() {
+  try {
+    const data = await readPath('temple');
+    renderTemple(data);
+  } catch (error) {
+    console.warn('Could not load temple info:', error);
+    renderTemple(null);
+  }
+}
+
 async function loadSiteSettings() {
   try {
     const settings = (await readPath('siteSettings')) || {};
@@ -1135,6 +1243,7 @@ async function init() {
   const results = await Promise.allSettled([
     loadProgram(),
     loadEvents(),
+    loadTemple(),
     state.wardInfoReady,
     loadSiteSettings()
   ]);

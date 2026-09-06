@@ -1278,6 +1278,68 @@ main {
       </div>
 
       <!-- Site Settings Section -->
+      <div class="section-card collapsed" data-section="temple">
+        <div class="section-header">
+          <h2 class="section-title">Temple</h2>
+          <span class="section-toggle">▼</span>
+        </div>
+        <div class="section-content">
+          <p class="form-hint" style="margin-bottom: 1rem;">Temple hours and recommend interviews, kept in one place. The schedule link points at the Church's official temple page, so hours are never out of date. Turn this off to hide the whole Temple area from the site and printed program.</p>
+
+          <div class="form-group" style="display: flex; align-items: center; gap: 1rem; padding: 0.75rem; background: var(--surface-muted); border-radius: var(--radius-sm);">
+            <label class="toggle-switch" style="flex-shrink: 0;">
+              <input type="checkbox" id="temple-show">
+              <span class="toggle-slider"></span>
+            </label>
+            <div>
+              <span style="font-weight: 600; color: var(--ink);">Show Temple section</span>
+              <p class="form-hint" style="margin: 0.25rem 0 0;">When on, the Temple section appears on the home page and printed program.</p>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="temple-name">Temple name</label>
+            <input type="text" id="temple-name" class="form-input" placeholder="e.g. Denver Colorado Temple">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="temple-schedule-url">Official schedule link</label>
+            <input type="text" id="temple-schedule-url" class="form-input" placeholder="https://www.churchofjesuschrist.org/temples/schedule/…">
+            <p class="form-hint" style="margin: 0.25rem 0 0;">Paste the temple's page from ChurchofJesusChrist.org. This is the authoritative source for hours, so they never go stale.</p>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="temple-address">Address <span style="font-weight:400; color: var(--ink-muted);">(optional)</span></label>
+            <input type="text" id="temple-address" class="form-input" placeholder="e.g. 2001 E Phillips Cir, Centennial, CO">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="temple-ward-day">Ward temple day / night <span style="font-weight:400; color: var(--ink-muted);">(optional)</span></label>
+            <input type="text" id="temple-ward-day" class="form-input" placeholder="e.g. Ward temple night: 2nd Thursday, 7:00 PM">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="temple-interviews">Temple recommend interviews <span style="font-weight:400; color: var(--ink-muted);">(optional)</span></label>
+            <textarea id="temple-interviews" class="form-textarea" rows="3" placeholder="e.g. Sundays 8:30–8:50 AM in the bishop's office, and by appointment."></textarea>
+            <p class="form-hint" style="margin: 0.25rem 0 0;">When and where the bishopric is available. Line breaks are kept.</p>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="temple-interviews-contact">Interview contact <span style="font-weight:400; color: var(--ink-muted);">(optional)</span></label>
+            <input type="text" id="temple-interviews-contact" class="form-input" placeholder="e.g. Contact the ward clerk to schedule">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="temple-notes">Notes <span style="font-weight:400; color: var(--ink-muted);">(optional)</span></label>
+            <textarea id="temple-notes" class="form-textarea" rows="2" placeholder="e.g. Closed for cleaning the first week of each month."></textarea>
+          </div>
+
+          <div class="section-actions">
+            <button type="button" class="btn success section-save-btn">Save Changes</button>
+          </div>
+        </div>
+      </div>
+
       <div class="section-card collapsed" data-section="site-settings">
         <div class="section-header">
           <h2 class="section-title">Site Settings</h2>
@@ -1460,6 +1522,7 @@ const SECTION_SPEC = {
   'announcements': { path: 'sundayProgram/sections/announcements', kind: 'items' },
   'events':        { path: 'events',                               kind: 'events' },
   'missionaries':  { path: 'missionaries',                         kind: 'missionaries' },
+  'temple':        { path: 'temple',                               kind: 'temple' },
   'site-settings': { path: 'siteSettings/showClassroomsNav',       kind: 'flag', field: 'show-classrooms-toggle' }
 };
 
@@ -2154,6 +2217,10 @@ async function loadProgram() {
     missionariesData = toArray(missionariesSnapshot.val());
     renderMissionaries();
 
+    // Load temple info
+    const templeSnapshot = await get(ref(db, 'temple'));
+    applyTemple(templeSnapshot.val());
+
     // Load site settings
     const siteSettingsSnapshot = await get(ref(db, 'siteSettings'));
     const siteSettings = siteSettingsSnapshot.val() || {};
@@ -2430,9 +2497,42 @@ function collectSection(key) {
       return collectFormData().events;
     case 'missionaries':
       return collectFormData().missionaries;
+    case 'temple':
+      return collectTemple();
     default:
       return null;
   }
+}
+
+// The Temple section is a small fixed-shape object rather than a list, so it
+// reads and writes field by field. Empty strings are kept (not dropped) so
+// clearing a field in the admin actually clears it on the site.
+function collectTemple() {
+  const val = (id) => (document.getElementById(id)?.value || '').trim();
+  return {
+    show: !!document.getElementById('temple-show')?.checked,
+    templeName: val('temple-name'),
+    scheduleUrl: val('temple-schedule-url'),
+    address: val('temple-address'),
+    wardTempleDay: val('temple-ward-day'),
+    interviews: normalizeMultiline(document.getElementById('temple-interviews')?.value),
+    interviewsContact: val('temple-interviews-contact'),
+    notes: normalizeMultiline(document.getElementById('temple-notes')?.value)
+  };
+}
+
+function applyTemple(value) {
+  const t = value || {};
+  const set = (id, v) => { const el = document.getElementById(id); if (el) { el.value = v || ''; autosize(el); } };
+  const box = document.getElementById('temple-show');
+  if (box) box.checked = !!t.show;
+  set('temple-name', t.templeName);
+  set('temple-schedule-url', t.scheduleUrl);
+  set('temple-address', t.address);
+  set('temple-ward-day', t.wardTempleDay);
+  set('temple-interviews', t.interviews);
+  set('temple-interviews-contact', t.interviewsContact);
+  set('temple-notes', t.notes);
 }
 
 // Repaint a section from a database value.
@@ -2462,6 +2562,8 @@ function applySection(key, value) {
       eventsData = toArray(value); renderEvents(); autosizeAll(sections.events); break;
     case 'missionaries':
       missionariesData = toArray(value); renderMissionaries(); autosizeAll(sections.missionaries); break;
+    case 'temple':
+      applyTemple(value); break;
   }
 }
 

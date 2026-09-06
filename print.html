@@ -327,6 +327,55 @@
     margin: 0.25in auto;
   }
 
+  /* Temple block on the front cover. The cover is not a fitted region, so these
+     use fixed point sizes rather than calc(... * var(--fit)). */
+  .cover-temple {
+    margin: 0.28in auto 0;
+    max-width: 4in;
+    text-align: center;
+  }
+
+  .cover-temple-rule {
+    width: 1in;
+    height: 1px;
+    background: var(--ink-faint);
+    margin: 0 auto 0.16in;
+  }
+
+  .cover-temple-heading {
+    font-size: 10.5pt;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent);
+    font-weight: 600;
+    margin-bottom: 0.08in;
+  }
+
+  .cover-temple-name {
+    font-size: 12.5pt;
+    color: var(--ink-soft);
+    font-weight: 600;
+    margin-bottom: 0.04in;
+  }
+
+  .cover-temple-line {
+    font-size: 10.5pt;
+    color: var(--ink-mid);
+    line-height: 1.45;
+    margin: 0.03in 0;
+  }
+
+  .cover-temple-line .label {
+    font-weight: 600;
+    color: var(--ink-soft);
+  }
+
+  .cover-temple-schedule {
+    font-size: 9.5pt;
+    color: var(--ink-muted);
+    margin-top: 0.07in;
+  }
+
   /* === PAGE 2: ANNOUNCEMENTS (Left) + PROGRAM (Right) === */
 
   /* Announcements section */
@@ -659,6 +708,11 @@
       <div class="cover-divider"></div>
       <p class="cover-date" id="program-date">Loading...</p>
       <p class="cover-welcome" id="cover-welcome"></p>
+      <div class="cover-temple" id="cover-temple" style="display: none;">
+        <div class="cover-temple-rule"></div>
+        <div class="cover-temple-heading">Temple</div>
+        <div id="cover-temple-body"></div>
+      </div>
     </div>
   </div>
 </div>
@@ -988,6 +1042,61 @@ async function loadMissionaries() {
   }
 }
 
+// Temple block on the front cover. A print sheet cannot be clicked, so the
+// official schedule shows as a short readable address rather than a raw link.
+function shortenUrl(url = '') {
+  return url.trim().replace(/^https?:\/\//i, '').replace(/^www\./i, '').replace(/\/+$/, '');
+}
+
+async function loadTemple() {
+  const wrap = document.getElementById('cover-temple');
+  const body = document.getElementById('cover-temple-body');
+  if (!wrap || !body) return;
+
+  try {
+    const t = await readPath('temple');
+    const has = (v) => typeof v === 'string' && v.trim().length > 0;
+    const meaningful = t && (has(t.templeName) || has(t.scheduleUrl) ||
+      has(t.wardTempleDay) || has(t.interviews) || has(t.notes));
+
+    if (!t || !t.show || !meaningful) {
+      wrap.style.display = 'none';
+      return;
+    }
+
+    const nl2br = (s) => escapeHtml(s).replace(/\n/g, '<br>');
+    let html = '';
+
+    if (has(t.templeName)) {
+      html += `<div class="cover-temple-name">${escapeHtml(t.templeName)}</div>`;
+    }
+    if (has(t.address)) {
+      html += `<div class="cover-temple-line">${escapeHtml(t.address)}</div>`;
+    }
+    if (has(t.wardTempleDay)) {
+      html += `<div class="cover-temple-line">${nl2br(t.wardTempleDay)}</div>`;
+    }
+    if (has(t.interviews) || has(t.interviewsContact)) {
+      const parts = [];
+      if (has(t.interviews)) parts.push(nl2br(t.interviews));
+      if (has(t.interviewsContact)) parts.push(nl2br(t.interviewsContact));
+      html += `<div class="cover-temple-line"><span class="label">Recommend interviews:</span> ${parts.join('<br>')}</div>`;
+    }
+    if (has(t.notes)) {
+      html += `<div class="cover-temple-line">${nl2br(t.notes)}</div>`;
+    }
+    if (has(t.scheduleUrl)) {
+      html += `<div class="cover-temple-schedule">Full schedule: ${escapeHtml(shortenUrl(t.scheduleUrl))}</div>`;
+    }
+
+    body.innerHTML = html;
+    wrap.style.display = 'block';
+  } catch (error) {
+    console.error('Failed to load temple info:', error);
+    wrap.style.display = 'none';
+  }
+}
+
 // === FIT CONTENT TO ITS HALF-PAGE ===
 //
 // Every region is a fixed-height box with overflow hidden, so anything too tall
@@ -1246,7 +1355,8 @@ async function init() {
   await Promise.all([
     loadProgram(),
     loadEvents(),
-    loadMissionaries()
+    loadMissionaries(),
+    loadTemple()
   ]);
 
   scheduleFit();

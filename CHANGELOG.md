@@ -1,5 +1,39 @@
 # Changelog
 
+## September 6, 2026 (part 6)
+
+### A Temple Section, in One Place
+
+Temple hours and recommend interviews used to be typed by hand into a weekly
+announcement — which is why they felt unofficial and quietly went stale. They
+now have their own home: a single **Temple** area in the admin that feeds both
+the website and the printed program.
+
+- **Hours point at the source of truth, not a copy.** Rather than re-typing
+  session times that drift out of date, the admin holds a link to the temple's
+  own page on ChurchofJesusChrist.org. That page is the authoritative schedule,
+  so the hours are correct by construction and never need maintaining. On the
+  website it renders as a "View temple schedule ↗" button; on the printed
+  program, where a link cannot be clicked, it prints as a short readable
+  address (`churchofjesuschrist.org/temples/…`).
+- **Recommend interviews live beside it.** When and where the bishopric is
+  available, plus an optional contact line, kept in the same section so the
+  whole thing is changed in one place.
+- **It reveals itself only when it has something to say.** A show/hide toggle,
+  and the section stays hidden on the site and the program until it is turned on
+  and given real content — matching how Announcements and Classrooms already
+  appear only when populated. An interview-only week shows just the interviews,
+  with no bare "Temple" heading left floating.
+- **Built on the existing section engine.** The admin card registers as one more
+  entry in `SECTION_SPEC` (a new `temple` kind), so it saves independently, marks
+  itself dirty, and re-reads on open exactly like every other section — no new
+  save machinery. The public side reuses the announcement-card styling, so it
+  looks native and needed no new CSS (the build is unchanged).
+
+Data lives in a new `temple` Firebase node:
+`{ show, templeName, scheduleUrl, address, wardTempleDay, interviews,
+interviewsContact, notes }`.
+
 ## September 6, 2026 (part 5)
 
 ### Small Things That Make It Feel Good to Read
