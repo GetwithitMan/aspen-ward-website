@@ -1,5 +1,23 @@
 # Changelog
 
+## September 6, 2026 (part 21)
+
+### QR Codes Get a Show/Hide Checkbox
+
+Every QR the printed program can show now has a checkbox in the admin to turn it
+on or off.
+
+- **Each announcement** gained a "Show QR code on the printed program" checkbox
+  (on by default), so a link or online-only announcement can print with or
+  without its code.
+- **The temple** gained a checkbox for its schedule QR, and the code\'s caption
+  changed from "Scan for schedule" to "Make a temple appointment" — the temple
+  link now points at the reservations page. The code sits inline to the right of
+  the "Temple" title.
+
+Stored as `showQr` on an announcement and `scheduleQr` on the temple; both
+default to on, so nothing disappears unless it is unchecked.
+
 ## September 6, 2026 (part 20)
 
 ### A QR to the Temple Schedule

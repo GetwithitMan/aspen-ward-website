@@ -1109,10 +1109,11 @@ function loadAnnouncements(announcements) {
     const link = (item.link || '').trim();
     const more = (item.moreOnline || '').trim();
     const caption = (item.linkLabel || '').trim() || 'Scan for more info';
+    const showQr = item.showQr !== false; // default on; the admin checkbox can turn it off
     let qr = '';
-    if (link) {
+    if (showQr && link) {
       qr = qrBlock(link, caption);
-    } else if (more) {
+    } else if (showQr && more) {
       // Short path (redirects to the announcements section) so the read-more
       // code has fewer modules and can print smaller while staying scannable.
       qr = qrBlock('https://aspenward.com/a', caption);
@@ -1380,9 +1381,9 @@ async function loadTemple() {
     // schedule link is set.
     const nameHtml = has(t.templeName) ? `<div class="temple-print-name">${escapeHtml(t.templeName)}</div>` : '';
     let qrBlock = '';
-    if (has(t.scheduleUrl)) {
+    if (has(t.scheduleUrl) && t.scheduleQr !== false) {
       const qr = makeQrSvg('https://aspenward.com/t');
-      if (qr) qrBlock = `<div class="temple-qr">${qr}<div class="temple-qr-caption">Scan for<br>schedule</div></div>`;
+      if (qr) qrBlock = `<div class="temple-qr">${qr}<div class="temple-qr-caption">Make a temple<br>appointment</div></div>`;
     }
     let html = `<div class="temple-print-head${qrBlock ? ' has-qr' : ''}"><div class="temple-print-titles"><div class="temple-print-header">Temple</div>${nameHtml}</div>${qrBlock}</div>`;
     html += scheduleRows(hours);

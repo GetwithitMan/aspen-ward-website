@@ -1215,6 +1215,18 @@ main {
 
 .qr-hint a:hover { text-decoration: underline; }
 
+.qr-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  font-size: 0.85rem;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.qr-toggle input { flex: 0 0 auto; width: 1rem; height: 1rem; cursor: pointer; }
+
 /* === Cover image thumbnail picker === */
 .cover-thumb-grid {
   display: flex;
@@ -1577,9 +1589,13 @@ main {
           </div>
 
           <div class="form-group">
-            <label class="form-label" for="temple-schedule-url">Official schedule link <span style="font-weight:400; color: var(--ink-muted);">(optional)</span></label>
-            <input type="text" id="temple-schedule-url" class="form-input" placeholder="https://www.churchofjesuschrist.org/temples/details/…">
+            <label class="form-label" for="temple-schedule-url">Official schedule / appointment link <span style="font-weight:400; color: var(--ink-muted);">(optional)</span></label>
+            <input type="text" id="temple-schedule-url" class="form-input" placeholder="https://www.churchofjesuschrist.org/temples/schedule/…">
             <p class="form-hint" style="margin: 0.25rem 0 0;">A link to the temple's page on ChurchofJesusChrist.org, shown as a button on the website.</p>
+            <label class="qr-toggle">
+              <input type="checkbox" id="temple-schedule-qr">
+              <span>Show a "Make a temple appointment" QR code on the printed program</span>
+            </label>
           </div>
 
           <div class="form-group">
@@ -2209,7 +2225,7 @@ function extractHymnNumber(details) {
 
 // === Program Item Templates ===
 function createProgramItemHTML(item, section) {
-  const { label = '', details = '', link = '', moreOnline = '', linkLabel = '' } = item;
+  const { label = '', details = '', link = '', moreOnline = '', linkLabel = '', showQr } = item;
   const hasLink = link && link.trim() !== '';
   const isAnnouncement = section === 'announcements';
   const isHymn = isHymnItem(label);
@@ -2243,6 +2259,10 @@ function createProgramItemHTML(item, section) {
       <button type="button" class="remove-link-btn" title="Remove link">&times;</button>
     </div>
     ${isAnnouncement ? `
+    <label class="qr-toggle">
+      <input type="checkbox" class="item-show-qr" ${showQr === false ? '' : 'checked'}>
+      <span>Show QR code on the printed program</span>
+    </label>
     <div class="qr-label-row">
       <label class="qr-label-label">QR label</label>
       <input type="text" class="item-link-label" placeholder="Scan for more info" value="${escapeHtml(linkLabel)}">
@@ -2796,10 +2816,12 @@ function collectProgramItems(container) {
     // object entirely when empty so other sections' items are unaffected.
     const moreOnline = normalizeMultiline(item.querySelector('.item-more')?.value);
     const linkLabel = item.querySelector('.item-link-label')?.value?.trim() || '';
+    const showQrBox = item.querySelector('.item-show-qr');
     if (label || details) out.push({
       label, details, link,
       ...(moreOnline ? { moreOnline } : {}),
-      ...(linkLabel ? { linkLabel } : {})
+      ...(linkLabel ? { linkLabel } : {}),
+      ...(showQrBox ? { showQr: showQrBox.checked } : {})
     });
   });
   return out;
@@ -2849,6 +2871,7 @@ function collectTemple() {
     templeName: val('temple-name'),
     address: val('temple-address'),
     scheduleUrl: val('temple-schedule-url'),
+    scheduleQr: !!document.getElementById('temple-schedule-qr')?.checked,
     hours: collectTempleDays('temple-hours-list'),
     closures: collectTempleClosures('temple-closures-list'),
     interviews: {
@@ -2905,6 +2928,8 @@ function applyTemple(value) {
   set('temple-name', t.templeName);
   set('temple-address', t.address);
   set('temple-schedule-url', t.scheduleUrl);
+  const scheduleQrBox = document.getElementById('temple-schedule-qr');
+  if (scheduleQrBox) scheduleQrBox.checked = t.scheduleQr !== false;
   set('temple-notes', t.notes);
   renderTempleDays('temple-hours-list', toArray(t.hours));
   renderTempleClosures('temple-closures-list', toArray(t.closures));
