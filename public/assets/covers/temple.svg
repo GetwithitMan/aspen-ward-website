@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 260" fill="none" stroke="#1a1a1a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+  <!-- steps -->
+  <line x1="26" y1="248" x2="174" y2="248"/>
+  <line x1="34" y1="240" x2="166" y2="240"/>
+  <!-- main body -->
+  <rect x="46" y="150" width="108" height="90"/>
+  <!-- arched doorway -->
+  <path d="M88 240 V196 a12 12 0 0 1 24 0 V240"/>
+  <!-- side windows -->
+  <path d="M60 236 V188 a6 6 0 0 1 12 0 V236"/>
+  <path d="M128 236 V188 a6 6 0 0 1 12 0 V236"/>
+  <!-- central tower -->
+  <rect x="84" y="96" width="32" height="54"/>
+  <!-- tower window -->
+  <path d="M94 148 V122 a6 6 0 0 1 12 0 V148"/>
+  <!-- central spire -->
+  <path d="M84 96 L100 54 L116 96"/>
+  <line x1="100" y1="54" x2="100" y2="36"/>
+  <circle cx="100" cy="31" r="4.5" fill="#1a1a1a" stroke="none"/>
+  <!-- side towers -->
+  <rect x="52" y="122" width="18" height="28"/>
+  <path d="M52 122 L61 102 L70 122"/>
+  <rect x="130" y="122" width="18" height="28"/>
+  <path d="M130 122 L139 102 L148 122"/>
+</svg>

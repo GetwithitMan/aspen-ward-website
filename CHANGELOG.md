@@ -1,5 +1,17 @@
 # Changelog
 
+## September 6, 2026 (part 15)
+
+### A Cover Image Picker
+
+The front of the printed program can now use a themed image instead of only the
+Church logo. A new "Program Cover" dropdown in the admin picks from the Church
+logo (default) plus black-and-white line-art emblems — Temple, Scriptures,
+Christmas (Star of Bethlehem), Easter, and Chapel — so a holiday or season can
+have its own cover. The emblems are original SVG art under
+`/public/assets/covers/` (no third-party imagery), and print crisp in black and
+white. Stored as `sundayProgram.coverImage`.
+
 ## September 6, 2026 (part 14)
 
 ### The Program Fills the Page

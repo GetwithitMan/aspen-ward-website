@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 260" fill="none" stroke="#1a1a1a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+  <!-- ground -->
+  <line x1="26" y1="242" x2="174" y2="242"/>
+  <!-- building -->
+  <rect x="52" y="150" width="96" height="92"/>
+  <!-- roof -->
+  <path d="M44 152 L100 116 L156 152"/>
+  <!-- steeple -->
+  <rect x="90" y="78" width="20" height="38"/>
+  <path d="M90 78 L100 50 L110 78"/>
+  <line x1="100" y1="50" x2="100" y2="34"/>
+  <!-- doorway -->
+  <path d="M88 242 V202 a12 12 0 0 1 24 0 V242"/>
+  <!-- windows -->
+  <path d="M64 236 V194 a5 5 0 0 1 10 0 V236"/>
+  <path d="M126 236 V194 a5 5 0 0 1 10 0 V236"/>
+</svg>

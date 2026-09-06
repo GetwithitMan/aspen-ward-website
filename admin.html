@@ -1444,6 +1444,30 @@ main {
       </div>
 
       <!-- Site Settings Section -->
+      <div class="section-card collapsed" data-section="cover">
+        <div class="section-header">
+          <h2 class="section-title">Program Cover</h2>
+          <span class="section-toggle">▼</span>
+        </div>
+        <div class="section-content">
+          <p class="form-hint" style="margin-bottom: 1rem;">The image printed on the front of the program. Change it for a holiday or season — it prints in black and white.</p>
+          <div class="form-group">
+            <label class="form-label" for="cover-image-select">Cover image</label>
+            <select id="cover-image-select" class="form-input">
+              <option value="logo">Church logo (default)</option>
+              <option value="temple">Temple</option>
+              <option value="scriptures">Scriptures</option>
+              <option value="christmas">Christmas — Star of Bethlehem</option>
+              <option value="easter">Easter — Three crosses</option>
+              <option value="chapel">Chapel</option>
+            </select>
+          </div>
+          <div class="section-actions">
+            <button type="button" class="btn success section-save-btn">Save Changes</button>
+          </div>
+        </div>
+      </div>
+
       <div class="section-card collapsed" data-section="temple">
         <div class="section-header">
           <h2 class="section-title">Temple</h2>
@@ -1709,6 +1733,7 @@ const SECTION_SPEC = {
   'announcements': { path: 'sundayProgram/sections/announcements', kind: 'items' },
   'events':        { path: 'events',                               kind: 'events' },
   'missionaries':  { path: 'missionaries',                         kind: 'missionaries' },
+  'cover':         { path: 'sundayProgram/coverImage',             kind: 'select', field: 'cover-image-select' },
   'temple':        { path: 'temple',                               kind: 'temple' },
   'site-settings': { path: 'siteSettings/showClassroomsNav',       kind: 'flag', field: 'show-classrooms-toggle' }
 };
@@ -2447,6 +2472,10 @@ function renderStructuredData(data) {
   // Set intro message
   document.getElementById('intro-message').value = data.introduction || '';
 
+  // Set cover image choice
+  const coverSelect = document.getElementById('cover-image-select');
+  if (coverSelect) coverSelect.value = data.coverImage || 'logo';
+
   // Set testimony meeting state
   isTestimonyMeeting = data.isTestimonyMeeting || false;
   testimonyToggle.checked = isTestimonyMeeting;
@@ -2704,6 +2733,8 @@ function collectSection(key) {
       return collectProgramItems(sections[key]);
     case 'text':
       return normalizeMultiline(document.getElementById(spec.field)?.value);
+    case 'select':
+      return document.getElementById(spec.field)?.value || '';
     case 'flag':
       return !!document.getElementById(spec.field)?.checked;
     case 'events':
@@ -2945,6 +2976,11 @@ function applySection(key, value) {
     case 'text': {
       const field = document.getElementById(spec.field);
       if (field) { field.value = value || ''; autosize(field); }
+      break;
+    }
+    case 'select': {
+      const sel = document.getElementById(spec.field);
+      if (sel) sel.value = value || 'logo';
       break;
     }
     case 'flag': {

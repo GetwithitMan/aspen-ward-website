@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 260" fill="none" stroke="#1a1a1a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Star of Bethlehem: four-point star with a long lower ray -->
+  <polygon points="100,40 112,120 100,132 88,120" fill="#1a1a1a" stroke="none"/>
+  <polygon points="100,236 90,150 100,140 110,150" fill="#1a1a1a" stroke="none"/>
+  <polygon points="40,132 118,124 130,132 118,140" fill="#1a1a1a" stroke="none"/>
+  <polygon points="160,132 82,124 70,132 82,140" fill="#1a1a1a" stroke="none"/>
+  <!-- diagonal rays -->
+  <line x1="100" y1="132" x2="66" y2="98" stroke-width="2"/>
+  <line x1="100" y1="132" x2="134" y2="98" stroke-width="2"/>
+  <line x1="100" y1="132" x2="72" y2="164" stroke-width="2"/>
+  <line x1="100" y1="132" x2="128" y2="164" stroke-width="2"/>
+  <!-- small twinkles -->
+  <path d="M52 70 l0 12 M46 76 l12 0" stroke-width="2"/>
+  <path d="M150 84 l0 10 M145 89 l10 0" stroke-width="2"/>
+</svg>

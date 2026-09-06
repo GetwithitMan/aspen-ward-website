@@ -260,6 +260,13 @@
     margin-bottom: 0.25in;
   }
 
+  /* Line-art emblems are portrait; size them by height for consistent presence. */
+  .cover-logo.cover-emblem {
+    width: auto;
+    height: 2.5in;
+    max-height: 2.5in;
+  }
+
   .cover-logo-placeholder {
     width: 2.5in;
     height: 1.5in;
@@ -781,7 +788,7 @@
   <!-- Front Cover with Logo (when folded, this is the front) -->
   <div class="half-page right-side front-cover">
     <div>
-      <img src="/public/assets/ward-logo.jpeg" alt="Aspen Ward" class="cover-logo">
+      <img src="/public/assets/ward-logo.jpeg" alt="Aspen Ward" class="cover-logo" id="cover-logo">
       <div class="cover-badge">The Church of Jesus Christ of Latter-day Saints</div>
       <h1 class="cover-title">Aspen Ward</h1>
       <p class="cover-subtitle">Sacrament Meeting</p>
@@ -906,6 +913,27 @@ function createSectionHTML(title, items) {
 }
 
 // Load and render the program
+// Front-cover image options. 'logo' is the default Church logo; the rest are
+// black-and-white emblems under /public/assets/covers/.
+const COVER_IMAGES = {
+  logo: { src: '/public/assets/ward-logo.jpeg', alt: 'The Church of Jesus Christ of Latter-day Saints' },
+  temple: { src: '/public/assets/covers/temple.svg', alt: 'Temple' },
+  scriptures: { src: '/public/assets/covers/scriptures.svg', alt: 'Scriptures' },
+  christmas: { src: '/public/assets/covers/christmas.svg', alt: 'Star of Bethlehem' },
+  easter: { src: '/public/assets/covers/easter.svg', alt: 'Easter' },
+  chapel: { src: '/public/assets/covers/chapel.svg', alt: 'Chapel' }
+};
+
+function setCoverImage(key) {
+  const img = document.getElementById('cover-logo');
+  if (!img) return;
+  const choice = COVER_IMAGES[key] || COVER_IMAGES.logo;
+  img.src = choice.src;
+  img.alt = choice.alt;
+  // Emblems are line art; give them a touch more presence than the boxed logo.
+  img.classList.toggle('cover-emblem', key && key !== 'logo');
+}
+
 async function loadProgram() {
   try {
     const data = await readPath('sundayProgram');
@@ -917,6 +945,9 @@ async function loadProgram() {
     if (data && data.introduction) {
       document.getElementById('cover-welcome').textContent = data.introduction;
     }
+
+    // Set the cover image (a seasonal emblem, or the default Church logo).
+    setCoverImage(data && data.coverImage);
 
     if (!data || !data.sections) {
       document.getElementById('program-loading').style.display = 'none';

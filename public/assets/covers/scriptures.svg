@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 260" fill="none" stroke="#1a1a1a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+  <!-- left page -->
+  <path d="M100 96 C 74 82, 44 84, 26 96 V 196 C 44 184, 74 182, 100 196 Z"/>
+  <!-- right page -->
+  <path d="M100 96 C 126 82, 156 84, 174 96 V 196 C 156 184, 126 182, 100 196 Z"/>
+  <!-- spine -->
+  <line x1="100" y1="96" x2="100" y2="196"/>
+  <!-- text lines left -->
+  <path d="M40 112 C 58 105, 78 105, 90 110" stroke-width="2"/>
+  <path d="M40 128 C 58 121, 78 121, 90 126" stroke-width="2"/>
+  <path d="M40 144 C 58 137, 78 137, 90 142" stroke-width="2"/>
+  <!-- text lines right -->
+  <path d="M110 110 C 122 105, 142 105, 160 112" stroke-width="2"/>
+  <path d="M110 126 C 122 121, 142 121, 160 128" stroke-width="2"/>
+  <path d="M110 142 C 122 137, 142 137, 160 144" stroke-width="2"/>
+  <!-- ribbon bookmark -->
+  <path d="M100 196 L100 224 L94 214 L88 222 L88 191" stroke-width="2.5"/>
+</svg>
