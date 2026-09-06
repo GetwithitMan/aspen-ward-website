@@ -327,55 +327,6 @@
     margin: 0.25in auto;
   }
 
-  /* Temple block on the front cover. The cover is not a fitted region, so these
-     use fixed point sizes rather than calc(... * var(--fit)). */
-  .cover-temple {
-    margin: 0.28in auto 0;
-    max-width: 4in;
-    text-align: center;
-  }
-
-  .cover-temple-rule {
-    width: 1in;
-    height: 1px;
-    background: var(--ink-faint);
-    margin: 0 auto 0.16in;
-  }
-
-  .cover-temple-heading {
-    font-size: 10.5pt;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: var(--accent);
-    font-weight: 600;
-    margin-bottom: 0.08in;
-  }
-
-  .cover-temple-name {
-    font-size: 12.5pt;
-    color: var(--ink-soft);
-    font-weight: 600;
-    margin-bottom: 0.04in;
-  }
-
-  .cover-temple-line {
-    font-size: 10.5pt;
-    color: var(--ink-mid);
-    line-height: 1.45;
-    margin: 0.03in 0;
-  }
-
-  .cover-temple-line .label {
-    font-weight: 600;
-    color: var(--ink-soft);
-  }
-
-  .cover-temple-schedule {
-    font-size: 9.5pt;
-    color: var(--ink-muted);
-    margin-top: 0.07in;
-  }
-
   /* === PAGE 2: ANNOUNCEMENTS (Left) + PROGRAM (Right) === */
 
   /* Announcements section */
@@ -395,10 +346,82 @@
     border-bottom: 2px solid var(--accent);
   }
 
-  #announcements-list {
+  /* The inside-left panel holds Announcements and, below them, the Temple
+     section. The wrapper is the height-bounded box that the fit pass scales, so
+     both blocks shrink together as one unit to fill the panel. */
+  #inside-left-content {
     flex: 1;
     min-height: 0;
     overflow: hidden;
+  }
+
+  #announcements-list {
+    overflow: visible;
+  }
+
+  /* Temple section — styled like Announcements and living in the same fitted
+     region, so every size is calc(... * var(--fit)). */
+  .temple-print {
+    margin-top: calc(0.3in * var(--fit, 1));
+    padding-top: calc(0.18in * var(--fit, 1));
+    border-top: 2px solid var(--accent);
+  }
+
+  .temple-print-header {
+    font-family: "Playfair Display", serif;
+    text-wrap: balance;
+    font-size: calc(16pt * var(--fit, 1));
+    font-weight: 600;
+    text-align: center;
+    color: var(--accent);
+    margin-bottom: calc(0.1in * var(--fit, 1));
+  }
+
+  .temple-print-name {
+    text-align: center;
+    font-size: calc(11pt * var(--fit, 1));
+    color: var(--ink-soft);
+    margin-bottom: calc(0.12in * var(--fit, 1));
+  }
+
+  .temple-print-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.3in;
+    font-size: calc(11.5pt * var(--fit, 1));
+    color: var(--ink-mid);
+    padding: calc(0.035in * var(--fit, 1)) 0;
+  }
+
+  .temple-print-row .day {
+    font-weight: 600;
+    color: var(--ink-soft);
+    flex: 0 0 auto;
+  }
+
+  .temple-print-row .times {
+    text-align: right;
+  }
+
+  .temple-print-sub {
+    font-size: calc(11pt * var(--fit, 1));
+    font-weight: 600;
+    color: var(--accent);
+    margin-top: calc(0.14in * var(--fit, 1));
+    margin-bottom: calc(0.04in * var(--fit, 1));
+  }
+
+  .temple-print-closed {
+    font-size: calc(11pt * var(--fit, 1));
+    color: #7a1f1f;
+    font-weight: 600;
+    margin: calc(0.03in * var(--fit, 1)) 0;
+  }
+
+  .temple-print-note {
+    font-size: calc(10.5pt * var(--fit, 1));
+    color: var(--ink-mid);
+    margin-top: calc(0.05in * var(--fit, 1));
   }
 
   .announcement-item {
@@ -708,11 +731,6 @@
       <div class="cover-divider"></div>
       <p class="cover-date" id="program-date">Loading...</p>
       <p class="cover-welcome" id="cover-welcome"></p>
-      <div class="cover-temple" id="cover-temple" style="display: none;">
-        <div class="cover-temple-rule"></div>
-        <div class="cover-temple-heading">Temple</div>
-        <div id="cover-temple-body"></div>
-      </div>
     </div>
   </div>
 </div>
@@ -723,7 +741,10 @@
   <div class="half-page left-side announcements-page" id="announcements-section">
     <div class="announcements-header">Ward Announcements</div>
     <div class="loading" id="announcements-loading">Loading announcements...</div>
-    <div id="announcements-list"></div>
+    <div id="inside-left-content">
+      <div id="announcements-list"></div>
+      <div class="temple-print" id="temple-print" style="display: none;"></div>
+    </div>
   </div>
 
   <!-- Full Program -->
@@ -1042,22 +1063,74 @@ async function loadMissionaries() {
   }
 }
 
-// Temple block on the front cover. A print sheet cannot be clicked, so the
-// official schedule shows as a short readable address rather than a raw link.
-function shortenUrl(url = '') {
-  return url.trim().replace(/^https?:\/\//i, '').replace(/^www\./i, '').replace(/\/+$/, '');
+// Shared temple formatters. Firebase can hand back a sparse list as an object,
+// so every list is normalised through templeList() first.
+const TEMPLE_ORDINALS = { '1st': '1st', '2nd': '2nd', '3rd': '3rd', '4th': '4th', 'last': 'Last' };
+const templeList = (v) => Array.isArray(v) ? v.filter(Boolean)
+  : (v && typeof v === 'object' ? Object.values(v).filter(Boolean) : []);
+
+function templeTime12(hhmm) {
+  if (typeof hhmm !== 'string' || !/^\d{1,2}:\d{2}$/.test(hhmm)) return '';
+  let [h, m] = hhmm.split(':').map(Number);
+  const ap = h >= 12 ? 'PM' : 'AM';
+  h = h % 12; if (h === 0) h = 12;
+  return `${h}:${String(m).padStart(2, '0')} ${ap}`;
 }
 
+function templeRanges(ranges) {
+  return templeList(ranges).map((r) => {
+    const o = templeTime12(r.open), c = templeTime12(r.close);
+    return o && c ? `${o} – ${c}` : (o || c || '');
+  }).filter(Boolean).join(' and ');
+}
+
+function templeDayLabel(entry) {
+  const day = entry.day || '';
+  if (entry.cadence && entry.cadence !== 'weekly') {
+    return `${TEMPLE_ORDINALS[entry.cadence] || entry.cadence} ${day}`.trim();
+  }
+  return day;
+}
+
+function templeClosureText(c) {
+  if (!c || !c.start) return '';
+  const parse = (s) => {
+    const parts = String(s).split('-').map(Number);
+    if (parts.length !== 3 || parts.some(isNaN)) return null;
+    return new Date(parts[0], parts[1] - 1, parts[2]);
+  };
+  const start = parse(c.start);
+  if (!start) return '';
+  const end = (c.end && c.end !== c.start) ? parse(c.end) : null;
+  const md = (d) => d.toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
+  let text;
+  if (!end) {
+    // A single day reads best with its weekday.
+    text = start.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+  } else if (start.getFullYear() === end.getFullYear() && start.getMonth() === end.getMonth()) {
+    text = `${md(start)} – ${end.getDate()}, ${end.getFullYear()}`;
+  } else if (start.getFullYear() === end.getFullYear()) {
+    text = `${md(start)} – ${md(end)}, ${end.getFullYear()}`;
+  } else {
+    text = `${md(start)}, ${start.getFullYear()} – ${md(end)}, ${end.getFullYear()}`;
+  }
+  return c.reason ? `${text} (${c.reason})` : text;
+}
+
+// Temple section on the inside-left panel, below Announcements. Shares that
+// panel's fitted region, so it is built from the same classes that scale.
 async function loadTemple() {
-  const wrap = document.getElementById('cover-temple');
-  const body = document.getElementById('cover-temple-body');
-  if (!wrap || !body) return;
+  const wrap = document.getElementById('temple-print');
+  if (!wrap) return;
 
   try {
     const t = await readPath('temple');
     const has = (v) => typeof v === 'string' && v.trim().length > 0;
-    const meaningful = t && (has(t.templeName) || has(t.scheduleUrl) ||
-      has(t.wardTempleDay) || has(t.interviews) || has(t.notes));
+    const hours = templeList(t && t.hours);
+    const closures = templeList(t && t.closures);
+    const interviews = templeList(t && t.interviews);
+    const meaningful = t && (has(t.templeName) || hours.length || closures.length ||
+      interviews.length || has(t.interviewsNote) || has(t.interviewsContact) || has(t.notes));
 
     if (!t || !t.show || !meaningful) {
       wrap.style.display = 'none';
@@ -1065,31 +1138,33 @@ async function loadTemple() {
     }
 
     const nl2br = (s) => escapeHtml(s).replace(/\n/g, '<br>');
-    let html = '';
+    const scheduleRows = (entries) => entries.map((e) => {
+      const times = templeRanges(e.ranges);
+      if (!times) return '';
+      return `<div class="temple-print-row"><span class="day">${escapeHtml(templeDayLabel(e))}</span><span class="times">${escapeHtml(times)}</span></div>`;
+    }).join('');
 
-    if (has(t.templeName)) {
-      html += `<div class="cover-temple-name">${escapeHtml(t.templeName)}</div>`;
-    }
-    if (has(t.address)) {
-      html += `<div class="cover-temple-line">${escapeHtml(t.address)}</div>`;
-    }
-    if (has(t.wardTempleDay)) {
-      html += `<div class="cover-temple-line">${nl2br(t.wardTempleDay)}</div>`;
-    }
-    if (has(t.interviews) || has(t.interviewsContact)) {
-      const parts = [];
-      if (has(t.interviews)) parts.push(nl2br(t.interviews));
-      if (has(t.interviewsContact)) parts.push(nl2br(t.interviewsContact));
-      html += `<div class="cover-temple-line"><span class="label">Recommend interviews:</span> ${parts.join('<br>')}</div>`;
-    }
-    if (has(t.notes)) {
-      html += `<div class="cover-temple-line">${nl2br(t.notes)}</div>`;
-    }
-    if (has(t.scheduleUrl)) {
-      html += `<div class="cover-temple-schedule">Full schedule: ${escapeHtml(shortenUrl(t.scheduleUrl))}</div>`;
+    let html = '<div class="temple-print-header">Temple</div>';
+    if (has(t.templeName)) html += `<div class="temple-print-name">${escapeHtml(t.templeName)}</div>`;
+    html += scheduleRows(hours);
+
+    closures.forEach((c) => {
+      const txt = templeClosureText(c);
+      if (txt) html += `<div class="temple-print-closed">Closed: ${escapeHtml(txt)}</div>`;
+    });
+
+    if (interviews.length || has(t.interviewsNote) || has(t.interviewsContact)) {
+      html += '<div class="temple-print-sub">Recommend Interviews</div>';
+      html += scheduleRows(interviews);
+      const extra = [];
+      if (has(t.interviewsNote)) extra.push(nl2br(t.interviewsNote));
+      if (has(t.interviewsContact)) extra.push(nl2br(t.interviewsContact));
+      if (extra.length) html += `<div class="temple-print-note">${extra.join('<br>')}</div>`;
     }
 
-    body.innerHTML = html;
+    if (has(t.notes)) html += `<div class="temple-print-note">${nl2br(t.notes)}</div>`;
+
+    wrap.innerHTML = html;
     wrap.style.display = 'block';
   } catch (error) {
     console.error('Failed to load temple info:', error);
@@ -1109,7 +1184,7 @@ async function loadTemple() {
 const FIT_REGIONS = [
   { name: 'program',       box: '#program-content' },
   { name: 'events',        box: '.events-content' },
-  { name: 'announcements', box: '#announcements-list' },
+  { name: 'announcements', box: '#inside-left-content' },
   { name: 'missionaries',  box: '.missionaries-content' }
 ];
 
@@ -1281,19 +1356,26 @@ function allocateBackPage() {
 // the lines needlessly narrow.
 const ANNOUNCEMENT_COLUMN_THRESHOLD = 0.85;
 
-function fitAnnouncements(box) {
-  box.style.columnCount = '1';
-  const single = fitRegion(box);
+// The inside-left panel holds Announcements and, when present, the Temple
+// section below them. Both scale together off one --fit set on the wrapper, so
+// the whole panel is measured as a unit. The one-versus-two column trial is
+// applied to the announcements list only; the temple rows always stack.
+function fitInsideLeft(wrap) {
+  const list = wrap.querySelector('#announcements-list');
+  if (!list) return fitRegion(wrap);
+
+  list.style.columnCount = '1';
+  const single = fitRegion(wrap);
   if (single > ANNOUNCEMENT_COLUMN_THRESHOLD) return single;
 
-  box.style.columnCount = '2';
-  box.style.columnGap = '0.25in';
-  const double = fitRegion(box);
+  list.style.columnCount = '2';
+  list.style.columnGap = '0.25in';
+  const double = fitRegion(wrap);
   if (double > single) return double;
 
   // Two columns did not help - a single very long announcement, most likely.
-  box.style.columnCount = '1';
-  return fitRegion(box);
+  list.style.columnCount = '1';
+  return fitRegion(wrap);
 }
 
 function fitAllRegions() {
@@ -1306,8 +1388,8 @@ function fitAllRegions() {
   FIT_REGIONS.forEach(({ name, box: selector }) => {
     const box = document.querySelector(selector);
     if (!box) return;
-    const scale = selector === '#announcements-list'
-      ? fitAnnouncements(box)
+    const scale = selector === '#inside-left-content'
+      ? fitInsideLeft(box)
       : fitRegion(box);
     // Report anything that still does not fit even at the floor, so a genuinely
     // overloaded week is visible rather than quietly truncated.

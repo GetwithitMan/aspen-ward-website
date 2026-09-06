@@ -1118,17 +1118,75 @@ async function loadEvents() {
     showInlineError(SELECTORS.eventsTimeline, 'Upcoming events are unavailable right now.');
   }
 }
-// The Temple section is standing reference information (schedule + recommend
-// interviews) rather than a dated feed, so it stays hidden until an admin
-// turns it on and gives it something to say.
+// Shared temple formatters. Firebase can hand back a sparse list as an object,
+// so every list is normalised through templeList() before it is read.
+const TEMPLE_ORDINALS = { '1st': '1st', '2nd': '2nd', '3rd': '3rd', '4th': '4th', 'last': 'Last' };
+const templeList = (v) => Array.isArray(v) ? v.filter(Boolean)
+  : (v && typeof v === 'object' ? Object.values(v).filter(Boolean) : []);
+
+function templeTime12(hhmm) {
+  if (typeof hhmm !== 'string' || !/^\d{1,2}:\d{2}$/.test(hhmm)) return '';
+  let [h, m] = hhmm.split(':').map(Number);
+  const ap = h >= 12 ? 'PM' : 'AM';
+  h = h % 12; if (h === 0) h = 12;
+  return `${h}:${String(m).padStart(2, '0')} ${ap}`;
+}
+
+function templeRanges(ranges) {
+  return templeList(ranges).map((r) => {
+    const o = templeTime12(r.open), c = templeTime12(r.close);
+    return o && c ? `${o} – ${c}` : (o || c || '');
+  }).filter(Boolean).join(' and ');
+}
+
+function templeDayLabel(entry) {
+  const day = entry.day || '';
+  if (entry.cadence && entry.cadence !== 'weekly') {
+    return `${TEMPLE_ORDINALS[entry.cadence] || entry.cadence} ${day}`.trim();
+  }
+  return day;
+}
+
+function templeClosureText(c) {
+  if (!c || !c.start) return '';
+  const parse = (s) => {
+    const parts = String(s).split('-').map(Number);
+    if (parts.length !== 3 || parts.some(isNaN)) return null;
+    return new Date(parts[0], parts[1] - 1, parts[2]);
+  };
+  const start = parse(c.start);
+  if (!start) return '';
+  const end = (c.end && c.end !== c.start) ? parse(c.end) : null;
+  const md = (d) => d.toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
+  let text;
+  if (!end) {
+    // A single day reads best with its weekday.
+    text = start.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+  } else if (start.getFullYear() === end.getFullYear() && start.getMonth() === end.getMonth()) {
+    text = `${md(start)} – ${end.getDate()}, ${end.getFullYear()}`;
+  } else if (start.getFullYear() === end.getFullYear()) {
+    text = `${md(start)} – ${md(end)}, ${end.getFullYear()}`;
+  } else {
+    text = `${md(start)}, ${start.getFullYear()} – ${md(end)}, ${end.getFullYear()}`;
+  }
+  return c.reason ? `${text} (${c.reason})` : text;
+}
+
+// The Temple section is standing reference information (hours, closures,
+// recommend interviews) rather than a dated feed, so it stays hidden until an
+// admin turns it on and gives it something to say.
 function renderTemple(t) {
   const { templeSection, templeBody } = SELECTORS;
   if (!templeSection || !templeBody) return;
 
   const temple = t || {};
   const has = (v) => typeof v === 'string' && v.trim().length > 0;
-  const meaningful = has(temple.templeName) || has(temple.scheduleUrl) ||
-    has(temple.wardTempleDay) || has(temple.interviews) || has(temple.notes);
+  const hours = templeList(temple.hours);
+  const closures = templeList(temple.closures);
+  const interviews = templeList(temple.interviews);
+  const meaningful = has(temple.templeName) || has(temple.address) || isSafeUrl(temple.scheduleUrl) ||
+    has(temple.notes) || has(temple.interviewsNote) || has(temple.interviewsContact) ||
+    hours.length || closures.length || interviews.length;
 
   if (!temple.show || !meaningful) {
     templeSection.setAttribute('hidden', '');
@@ -1139,25 +1197,53 @@ function renderTemple(t) {
 
   templeBody.innerHTML = '';
 
-  // Card 1 — the temple itself: name, address, ward temple day, and the
-  // official schedule link (the authoritative source for hours). Only shown
-  // when there is a detail to carry it, so recommend-interview-only weeks do
-  // not leave a bare "Temple" heading floating above the interviews card.
+  const card = (accent) => {
+    const el = document.createElement('article');
+    el.className = 'announcement-card';
+    el.setAttribute('role', 'listitem');
+    if (accent) el.style.setProperty('--announcement-accent', accent);
+    return el;
+  };
+  const title = (text) => {
+    const h = document.createElement('h3');
+    h.className = 'announcement-title';
+    h.textContent = text;
+    return h;
+  };
+  // A day/time schedule (used by hours and interviews): a stacked list of
+  // "label — times" rows.
+  const scheduleRows = (entries) => {
+    const wrap = document.createElement('div');
+    entries.forEach((entry) => {
+      const times = templeRanges(entry.ranges);
+      if (!times) return;
+      const row = document.createElement('div');
+      row.style.display = 'flex';
+      row.style.justifyContent = 'space-between';
+      row.style.gap = '1rem';
+      row.style.padding = '0.15rem 0';
+      const label = document.createElement('span');
+      label.style.fontWeight = '600';
+      label.style.flex = '0 0 auto';
+      label.textContent = templeDayLabel(entry);
+      const val = document.createElement('span');
+      val.style.textAlign = 'right';
+      val.textContent = times;
+      row.appendChild(label);
+      row.appendChild(val);
+      wrap.appendChild(row);
+    });
+    return wrap;
+  };
+
+  // Card 1 — the temple itself: name, address, schedule link, notes.
   const hasDetails = has(temple.templeName) || has(temple.address) ||
-    has(temple.wardTempleDay) || has(temple.notes) || isSafeUrl(temple.scheduleUrl);
+    has(temple.notes) || isSafeUrl(temple.scheduleUrl);
   if (hasDetails) {
-    const details = document.createElement('article');
-    details.className = 'announcement-card';
-    details.setAttribute('role', 'listitem');
-
-    const name = document.createElement('h3');
-    name.className = 'announcement-title';
-    name.textContent = has(temple.templeName) ? temple.templeName : 'Temple';
-    details.appendChild(name);
-
+    const details = card();
+    details.appendChild(title(has(temple.templeName) ? temple.templeName : 'Temple'));
     const lines = [];
     if (has(temple.address)) lines.push(temple.address);
-    if (has(temple.wardTempleDay)) lines.push(temple.wardTempleDay);
     if (has(temple.notes)) lines.push(temple.notes);
     if (lines.length) {
       const body = document.createElement('p');
@@ -1165,7 +1251,6 @@ function renderTemple(t) {
       body.innerHTML = lines.map((l) => formatMultiline(l)).join('<br>');
       details.appendChild(body);
     }
-
     if (isSafeUrl(temple.scheduleUrl)) {
       const link = document.createElement('a');
       link.className = 'announcement-link';
@@ -1179,25 +1264,48 @@ function renderTemple(t) {
     templeBody.appendChild(details);
   }
 
-  // Card 2 — recommend interviews, only when there is something to show.
-  if (has(temple.interviews) || has(temple.interviewsContact)) {
-    const interviews = document.createElement('article');
-    interviews.className = 'announcement-card';
-    interviews.setAttribute('role', 'listitem');
+  // Card 2 — hours.
+  if (hours.length) {
+    const el = card();
+    el.appendChild(title('Hours'));
+    el.appendChild(scheduleRows(hours));
+    templeBody.appendChild(el);
+  }
 
-    const iTitle = document.createElement('h3');
-    iTitle.className = 'announcement-title';
-    iTitle.textContent = 'Temple recommend interviews';
-    interviews.appendChild(iTitle);
+  // Card 3 — closures, flagged with a warm red accent so they read as an alert.
+  if (closures.length) {
+    const el = card('#b91c1c');
+    el.appendChild(title('Temple closed'));
+    const list = document.createElement('div');
+    closures.forEach((c) => {
+      const text = templeClosureText(c);
+      if (!text) return;
+      const line = document.createElement('p');
+      line.className = 'announcement-body';
+      line.style.margin = '0.1rem 0';
+      line.textContent = text;
+      list.appendChild(line);
+    });
+    el.appendChild(list);
+    templeBody.appendChild(el);
+  }
 
-    const iLines = [];
-    if (has(temple.interviews)) iLines.push(temple.interviews);
-    if (has(temple.interviewsContact)) iLines.push(temple.interviewsContact);
-    const iBody = document.createElement('p');
-    iBody.className = 'announcement-body';
-    iBody.innerHTML = iLines.map((l) => formatMultiline(l)).join('<br>');
-    interviews.appendChild(iBody);
-    templeBody.appendChild(interviews);
+  // Card 4 — recommend interviews, with an optional note and contact line.
+  if (interviews.length || has(temple.interviewsNote) || has(temple.interviewsContact)) {
+    const el = card();
+    el.appendChild(title('Temple recommend interviews'));
+    if (interviews.length) el.appendChild(scheduleRows(interviews));
+    const extra = [];
+    if (has(temple.interviewsNote)) extra.push(temple.interviewsNote);
+    if (has(temple.interviewsContact)) extra.push(temple.interviewsContact);
+    if (extra.length) {
+      const body = document.createElement('p');
+      body.className = 'announcement-body';
+      body.style.marginTop = interviews.length ? '0.5rem' : '0';
+      body.innerHTML = extra.map((l) => formatMultiline(l)).join('<br>');
+      el.appendChild(body);
+    }
+    templeBody.appendChild(el);
   }
 
   templeSection.removeAttribute('hidden');

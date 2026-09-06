@@ -1,5 +1,51 @@
 # Changelog
 
+## September 6, 2026 (part 7)
+
+### Temple Hours: a Real Schedule Builder
+
+The first pass (part 6) linked out to the temple's official schedule. The ward
+wanted the actual hours on the page and the printed program, so the Temple
+section is now a proper schedule builder rather than a link.
+
+**In the admin**, the Temple card holds three lists, all edited the same simple
+way:
+
+- **Hours** — add a day, pick open and close times with the native time picker,
+  and set a cadence. A day with a break in the middle (open in the morning,
+  again in the evening) gets a second time range with "Add time range," so
+  Wednesday prints as "8:30 AM – 12:30 PM and 5:30 PM – 8:30 PM." Cadence covers
+  the ordinary weekly day and the periodic one — set it to "3rd" and Friday
+  prints as "3rd Friday."
+- **Closures** — a start date, an optional end date for a range (a maintenance
+  closure), and an optional reason. A single day prints with its weekday
+  ("Saturday, October 3, 2026"); a range collapses sensibly ("October 5 – 19,
+  2026").
+- **Recommend interviews** — the same day/time builder, plus an optional note
+  ("and by appointment") and a contact line.
+
+Half-filled rows never reach the database: a day with no times, or a blank time
+range, is dropped on save.
+
+**On the website**, these render as cards in a Temple section styled like
+Announcements — hours as a day/time list, closures flagged in red, interviews in
+their own card.
+
+**On the printed program**, the Temple section sits on the inside-left panel
+below Ward Announcements, styled to match. The two now share that panel's
+fitted region: a wrapper around both is measured as one unit, so a heavy
+announcements week and a full set of temple hours scale together to fill the
+space rather than colliding. The announcements' one-versus-two-column trial is
+preserved.
+
+The `temple` node grew to hold the new shape:
+`{ show, templeName, address, scheduleUrl, hours[], closures[], interviews[],
+interviewsNote, interviewsContact, notes }`, where each hours/interviews entry is
+`{ day, cadence, ranges: [{ open, close }] }` and each closure is
+`{ start, end, reason }`. Times are stored 24-hour and formatted to 12-hour for
+display. It still needs a read/write rule in the Firebase console before it can
+be populated.
+
 ## September 6, 2026 (part 6)
 
 ### A Temple Section, in One Place

@@ -1048,6 +1048,102 @@ main {
     font-size: 1.5rem;
   }
 }
+
+/* === Temple hours / closures builder === */
+.temple-day-list,
+.temple-closure-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.temple-day-row {
+  padding: 0.75rem;
+  background: var(--surface-muted);
+  border-radius: var(--radius-sm);
+}
+
+.temple-day-head {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.temple-day-head .temple-day { flex: 1 1 auto; }
+.temple-day-head .temple-cadence { flex: 0 0 8rem; }
+
+.temple-ranges {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.temple-range {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.temple-range .temple-open,
+.temple-range .temple-close { flex: 1 1 0; min-width: 0; }
+
+.temple-range-dash {
+  color: var(--ink-muted);
+  flex: 0 0 auto;
+}
+
+.temple-closure-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  flex-wrap: wrap;
+  padding: 0.75rem;
+  background: var(--surface-muted);
+  border-radius: var(--radius-sm);
+}
+
+.temple-closure-row .temple-closure-start,
+.temple-closure-row .temple-closure-end { flex: 0 0 auto; }
+.temple-closure-row .temple-closure-reason { flex: 1 1 8rem; min-width: 0; }
+
+.temple-icon-btn {
+  flex: 0 0 auto;
+  width: 2rem;
+  height: 2rem;
+  border: 1px solid var(--stroke);
+  background: var(--surface);
+  border-radius: var(--radius-sm);
+  color: var(--ink-muted);
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.temple-icon-btn:hover {
+  color: #b91c1c;
+  border-color: #b91c1c;
+}
+
+.temple-text-btn {
+  border: none;
+  background: none;
+  color: var(--accent, #2c5530);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0.25rem 0;
+}
+
+.temple-text-btn:hover { text-decoration: underline; }
+
+.temple-add-btn { margin-top: 0.25rem; }
+
+@media (max-width: 640px) {
+  .temple-day-head { flex-wrap: wrap; }
+  .temple-day-head .temple-cadence { flex: 1 1 auto; }
+}
 </style>
 <link rel="preload" as="font" type="font/woff2" crossorigin href="/public/assets/fonts/plus-jakarta-sans-var.woff2">
 <link rel="preload" as="font" type="font/woff2" crossorigin href="/public/assets/fonts/playfair-display-var.woff2">
@@ -1284,7 +1380,7 @@ main {
           <span class="section-toggle">▼</span>
         </div>
         <div class="section-content">
-          <p class="form-hint" style="margin-bottom: 1rem;">Temple hours and recommend interviews, kept in one place. The schedule link points at the Church's official temple page, so hours are never out of date. Turn this off to hide the whole Temple area from the site and printed program.</p>
+          <p class="form-hint" style="margin-bottom: 1rem;">Temple hours, closures, and recommend interviews, kept in one place. Add a day, pick the open and close times, and add a second time range for a day with a break in the middle. Turn this off to hide the whole Temple area from the site and printed program.</p>
 
           <div class="form-group" style="display: flex; align-items: center; gap: 1rem; padding: 0.75rem; background: var(--surface-muted); border-radius: var(--radius-sm);">
             <label class="toggle-switch" style="flex-shrink: 0;">
@@ -1299,39 +1395,46 @@ main {
 
           <div class="form-group">
             <label class="form-label" for="temple-name">Temple name</label>
-            <input type="text" id="temple-name" class="form-input" placeholder="e.g. Denver Colorado Temple">
-          </div>
-
-          <div class="form-group">
-            <label class="form-label" for="temple-schedule-url">Official schedule link</label>
-            <input type="text" id="temple-schedule-url" class="form-input" placeholder="https://www.churchofjesuschrist.org/temples/schedule/…">
-            <p class="form-hint" style="margin: 0.25rem 0 0;">Paste the temple's page from ChurchofJesusChrist.org. This is the authoritative source for hours, so they never go stale.</p>
+            <input type="text" id="temple-name" class="form-input" placeholder="e.g. Grand Junction Colorado Temple">
           </div>
 
           <div class="form-group">
             <label class="form-label" for="temple-address">Address <span style="font-weight:400; color: var(--ink-muted);">(optional)</span></label>
-            <input type="text" id="temple-address" class="form-input" placeholder="e.g. 2001 E Phillips Cir, Centennial, CO">
+            <input type="text" id="temple-address" class="form-input" placeholder="e.g. 678 Horizon Dr, Grand Junction, CO 81506">
           </div>
 
           <div class="form-group">
-            <label class="form-label" for="temple-ward-day">Ward temple day / night <span style="font-weight:400; color: var(--ink-muted);">(optional)</span></label>
-            <input type="text" id="temple-ward-day" class="form-input" placeholder="e.g. Ward temple night: 2nd Thursday, 7:00 PM">
+            <label class="form-label" for="temple-schedule-url">Official schedule link <span style="font-weight:400; color: var(--ink-muted);">(optional)</span></label>
+            <input type="text" id="temple-schedule-url" class="form-input" placeholder="https://www.churchofjesuschrist.org/temples/details/…">
+            <p class="form-hint" style="margin: 0.25rem 0 0;">A link to the temple's page on ChurchofJesusChrist.org, shown as a button on the website.</p>
           </div>
 
           <div class="form-group">
-            <label class="form-label" for="temple-interviews">Temple recommend interviews <span style="font-weight:400; color: var(--ink-muted);">(optional)</span></label>
-            <textarea id="temple-interviews" class="form-textarea" rows="3" placeholder="e.g. Sundays 8:30–8:50 AM in the bishop's office, and by appointment."></textarea>
-            <p class="form-hint" style="margin: 0.25rem 0 0;">When and where the bishopric is available. Line breaks are kept.</p>
+            <label class="form-label">Hours</label>
+            <p class="form-hint" style="margin: 0 0 0.5rem;">Each day the temple is open. Use "Add time range" for a day with split hours (a morning and an evening). Set the cadence to "3rd" for a day like the 3rd Friday of the month.</p>
+            <div id="temple-hours-list" class="temple-day-list"></div>
+            <button type="button" class="btn ghost temple-add-btn" data-temple-action="add-day" data-target="hours">+ Add a day</button>
           </div>
 
           <div class="form-group">
-            <label class="form-label" for="temple-interviews-contact">Interview contact <span style="font-weight:400; color: var(--ink-muted);">(optional)</span></label>
-            <input type="text" id="temple-interviews-contact" class="form-input" placeholder="e.g. Contact the ward clerk to schedule">
+            <label class="form-label">Closures <span style="font-weight:400; color: var(--ink-muted);">(optional)</span></label>
+            <p class="form-hint" style="margin: 0 0 0.5rem;">Dates the temple is closed. Leave the end date blank for a single day, or set it for a range (like a maintenance closure).</p>
+            <div id="temple-closures-list" class="temple-closure-list"></div>
+            <button type="button" class="btn ghost temple-add-btn" data-temple-action="add-closure">+ Add a closure</button>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Temple recommend interviews <span style="font-weight:400; color: var(--ink-muted);">(optional)</span></label>
+            <p class="form-hint" style="margin: 0 0 0.5rem;">The days and times the bishopric is available, entered the same way as hours.</p>
+            <div id="temple-interviews-list" class="temple-day-list"></div>
+            <button type="button" class="btn ghost temple-add-btn" data-temple-action="add-day" data-target="interviews">+ Add a day</button>
+            <input type="text" id="temple-interviews-note" class="form-input" style="margin-top: 0.5rem;" placeholder="e.g. and by appointment">
+            <input type="text" id="temple-interviews-contact" class="form-input" style="margin-top: 0.5rem;" placeholder="Contact, e.g. See the ward clerk to schedule">
           </div>
 
           <div class="form-group">
             <label class="form-label" for="temple-notes">Notes <span style="font-weight:400; color: var(--ink-muted);">(optional)</span></label>
-            <textarea id="temple-notes" class="form-textarea" rows="2" placeholder="e.g. Closed for cleaning the first week of each month."></textarea>
+            <textarea id="temple-notes" class="form-textarea" rows="2" placeholder="Anything else worth noting."></textarea>
           </div>
 
           <div class="section-actions">
@@ -2511,21 +2614,54 @@ function collectSection(key) {
   }
 }
 
-// The Temple section is a small fixed-shape object rather than a list, so it
-// reads and writes field by field. Empty strings are kept (not dropped) so
-// clearing a field in the admin actually clears it on the site.
+// The Temple section holds scalar fields plus three dynamic lists: hours,
+// closures, and recommend interviews. Hours and interviews share the same
+// day/time-range shape; closures are date entries.
+const TEMPLE_DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+const TEMPLE_CADENCES = [
+  ['weekly', 'Every week'], ['1st', '1st'], ['2nd', '2nd'], ['3rd', '3rd'], ['4th', '4th'], ['last', 'Last']
+];
+
 function collectTemple() {
   const val = (id) => (document.getElementById(id)?.value || '').trim();
   return {
     show: !!document.getElementById('temple-show')?.checked,
     templeName: val('temple-name'),
-    scheduleUrl: val('temple-schedule-url'),
     address: val('temple-address'),
-    wardTempleDay: val('temple-ward-day'),
-    interviews: normalizeMultiline(document.getElementById('temple-interviews')?.value),
+    scheduleUrl: val('temple-schedule-url'),
+    hours: collectTempleDays('temple-hours-list'),
+    closures: collectTempleClosures('temple-closures-list'),
+    interviews: collectTempleDays('temple-interviews-list'),
+    interviewsNote: val('temple-interviews-note'),
     interviewsContact: val('temple-interviews-contact'),
     notes: normalizeMultiline(document.getElementById('temple-notes')?.value)
   };
+}
+
+// A day entry keeps a day, a cadence, and one or more time ranges. Rows with no
+// day or no times are dropped, and blank ranges within a kept row are dropped,
+// so half-filled rows never reach the database.
+function collectTempleDays(listId) {
+  const list = document.getElementById(listId);
+  if (!list) return [];
+  return Array.from(list.querySelectorAll('.temple-day-row')).map((row) => ({
+    day: row.querySelector('.temple-day')?.value || '',
+    cadence: row.querySelector('.temple-cadence')?.value || 'weekly',
+    ranges: Array.from(row.querySelectorAll('.temple-range')).map((r) => ({
+      open: r.querySelector('.temple-open')?.value || '',
+      close: r.querySelector('.temple-close')?.value || ''
+    })).filter((r) => r.open || r.close)
+  })).filter((entry) => entry.day && entry.ranges.length);
+}
+
+function collectTempleClosures(listId) {
+  const list = document.getElementById(listId);
+  if (!list) return [];
+  return Array.from(list.querySelectorAll('.temple-closure-row')).map((row) => ({
+    start: row.querySelector('.temple-closure-start')?.value || '',
+    end: row.querySelector('.temple-closure-end')?.value || '',
+    reason: (row.querySelector('.temple-closure-reason')?.value || '').trim()
+  })).filter((c) => c.start);
 }
 
 function applyTemple(value) {
@@ -2534,12 +2670,138 @@ function applyTemple(value) {
   const box = document.getElementById('temple-show');
   if (box) box.checked = !!t.show;
   set('temple-name', t.templeName);
-  set('temple-schedule-url', t.scheduleUrl);
   set('temple-address', t.address);
-  set('temple-ward-day', t.wardTempleDay);
-  set('temple-interviews', t.interviews);
+  set('temple-schedule-url', t.scheduleUrl);
+  set('temple-interviews-note', t.interviewsNote);
   set('temple-interviews-contact', t.interviewsContact);
   set('temple-notes', t.notes);
+  renderTempleDays('temple-hours-list', toArray(t.hours));
+  renderTempleDays('temple-interviews-list', toArray(t.interviews));
+  renderTempleClosures('temple-closures-list', toArray(t.closures));
+}
+
+function renderTempleDays(listId, entries) {
+  const list = document.getElementById(listId);
+  if (!list) return;
+  list.innerHTML = '';
+  entries.forEach((entry) => list.appendChild(createTempleDayRow(entry)));
+}
+
+function renderTempleClosures(listId, entries) {
+  const list = document.getElementById(listId);
+  if (!list) return;
+  list.innerHTML = '';
+  entries.forEach((entry) => list.appendChild(createTempleClosureRow(entry)));
+}
+
+function templeSelect(cls, options, selected) {
+  const sel = document.createElement('select');
+  sel.className = `form-input ${cls}`;
+  options.forEach(([v, label]) => {
+    const o = document.createElement('option');
+    o.value = v;
+    o.textContent = label;
+    if (v === selected) o.selected = true;
+    sel.appendChild(o);
+  });
+  return sel;
+}
+
+function createTempleRangeRow(range = {}) {
+  const div = document.createElement('div');
+  div.className = 'temple-range';
+  div.innerHTML = `
+    <input type="time" class="form-input temple-open" value="${escapeHtml(range.open || '')}" aria-label="Opening time">
+    <span class="temple-range-dash">–</span>
+    <input type="time" class="form-input temple-close" value="${escapeHtml(range.close || '')}" aria-label="Closing time">
+    <button type="button" class="temple-icon-btn" data-temple-action="remove-range" title="Remove this time range" aria-label="Remove this time range">×</button>
+  `;
+  return div;
+}
+
+function createTempleDayRow(entry = {}) {
+  const row = document.createElement('div');
+  row.className = 'temple-day-row';
+
+  const head = document.createElement('div');
+  head.className = 'temple-day-head';
+  head.appendChild(templeSelect('temple-day', TEMPLE_DAYS.map((d) => [d, d]), entry.day || 'Tuesday'));
+  head.appendChild(templeSelect('temple-cadence', TEMPLE_CADENCES, entry.cadence || 'weekly'));
+  const removeDay = document.createElement('button');
+  removeDay.type = 'button';
+  removeDay.className = 'temple-icon-btn';
+  removeDay.dataset.templeAction = 'remove-day';
+  removeDay.title = 'Remove this day';
+  removeDay.setAttribute('aria-label', 'Remove this day');
+  removeDay.textContent = '×';
+  head.appendChild(removeDay);
+  row.appendChild(head);
+
+  const ranges = document.createElement('div');
+  ranges.className = 'temple-ranges';
+  const rangeList = (entry.ranges && entry.ranges.length) ? entry.ranges : [{}];
+  rangeList.forEach((r) => ranges.appendChild(createTempleRangeRow(r)));
+  row.appendChild(ranges);
+
+  const addRange = document.createElement('button');
+  addRange.type = 'button';
+  addRange.className = 'temple-text-btn';
+  addRange.dataset.templeAction = 'add-range';
+  addRange.textContent = '+ Add time range';
+  row.appendChild(addRange);
+
+  return row;
+}
+
+function createTempleClosureRow(closure = {}) {
+  const row = document.createElement('div');
+  row.className = 'temple-closure-row';
+  row.innerHTML = `
+    <input type="date" class="form-input temple-closure-start" value="${escapeHtml(closure.start || '')}" aria-label="Closure start date">
+    <span class="temple-range-dash">to</span>
+    <input type="date" class="form-input temple-closure-end" value="${escapeHtml(closure.end || '')}" aria-label="Closure end date (optional)">
+    <input type="text" class="form-input temple-closure-reason" value="${escapeHtml(closure.reason || '')}" placeholder="Reason (optional)">
+    <button type="button" class="temple-icon-btn" data-temple-action="remove-closure" title="Remove this closure" aria-label="Remove this closure">×</button>
+  `;
+  return row;
+}
+
+// One delegated handler for every add/remove button in the Temple card. Static
+// "Add a day/closure" buttons and dynamically added rows both carry a
+// data-temple-action, so delegation covers them without per-row wiring.
+function initTempleControls() {
+  const card = cardFor('temple');
+  if (!card) return;
+  card.addEventListener('click', (event) => {
+    const btn = event.target.closest('[data-temple-action]');
+    if (!btn || !card.contains(btn)) return;
+    const action = btn.dataset.templeAction;
+
+    if (action === 'add-day') {
+      const target = btn.dataset.target === 'interviews' ? 'temple-interviews-list' : 'temple-hours-list';
+      document.getElementById(target)?.appendChild(createTempleDayRow());
+    } else if (action === 'add-range') {
+      btn.closest('.temple-day-row')?.querySelector('.temple-ranges')?.appendChild(createTempleRangeRow());
+    } else if (action === 'remove-range') {
+      const ranges = btn.closest('.temple-ranges');
+      const range = btn.closest('.temple-range');
+      // Always leave at least one range on a day; clear the last one instead.
+      if (ranges && ranges.querySelectorAll('.temple-range').length > 1) {
+        range?.remove();
+      } else {
+        range?.querySelectorAll('input').forEach((i) => { i.value = ''; });
+      }
+    } else if (action === 'remove-day') {
+      btn.closest('.temple-day-row')?.remove();
+    } else if (action === 'add-closure') {
+      document.getElementById('temple-closures-list')?.appendChild(createTempleClosureRow());
+    } else if (action === 'remove-closure') {
+      btn.closest('.temple-closure-row')?.remove();
+    } else {
+      return;
+    }
+    markSectionDirty('temple');
+  });
 }
 
 // Repaint a section from a database value.
@@ -2684,6 +2946,7 @@ initTheme();
 initSectionToggles();
 initAddButtons();
 initSectionSaveButtons();
+initTempleControls();
 initUnsavedChangesGuard();
 
 // Check if already logged in
