@@ -1,5 +1,17 @@
 # Changelog
 
+## September 6, 2026 (part 22)
+
+### Announcements Collapse to Titles
+
+The admin announcement editor was a wall of open fields — every announcement
+showing its label, details, link, QR options, and online-only box at once. Each
+announcement now collapses to just its title with an **Edit** button; clicking it
+opens the fields (and a **Done** button to close them again). A newly added
+announcement opens straight to its fields. The collapsed title mirrors the label
+as it is typed, and the × still removes an announcement without opening it. The
+list is readable at a glance now.
+
 ## September 6, 2026 (part 21)
 
 ### QR Codes Get a Show/Hide Checkbox

@@ -1227,6 +1227,51 @@ main {
 
 .qr-toggle input { flex: 0 0 auto; width: 1rem; height: 1rem; cursor: pointer; }
 
+/* === Announcement collapse (title + Edit, expands to fields) === */
+.ann-item {
+  border: 1px solid var(--stroke);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.ann-item + .ann-item { margin-top: 0.5rem; }
+
+.ann-head {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.45rem 0.6rem;
+  background: var(--surface-muted);
+}
+
+.ann-title {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-weight: 600;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ann-toggle {
+  flex: 0 0 auto;
+  border: 1px solid var(--stroke);
+  background: var(--surface);
+  border-radius: var(--radius-sm);
+  padding: 0.2rem 0.75rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--accent, #2c5530);
+  cursor: pointer;
+}
+
+.ann-toggle:hover { border-color: var(--accent, #2c5530); }
+
+.ann-body { padding: 0.75rem 0.6rem; }
+
+.ann-item.ann-collapsed .ann-body { display: none; }
+
 /* === Cover image thumbnail picker === */
 .cover-thumb-grid {
   display: flex;
@@ -2236,7 +2281,7 @@ function createProgramItemHTML(item, section) {
   div.className = 'program-item';
   div.dataset.section = section;
 
-  div.innerHTML = `
+  const bodyHtml = `
     <div class="program-item-row">
       <div class="mobile-field">
         <label class="mobile-label">Label</label>
@@ -2274,6 +2319,22 @@ function createProgramItemHTML(item, section) {
     </div>` : ''}
   `;
 
+  // Announcements collapse to just their title with an Edit button, so a long
+  // list of them stays readable; other program items show their fields directly.
+  if (isAnnouncement) {
+    div.classList.add('ann-item', 'ann-collapsed');
+    div.innerHTML = `
+      <div class="ann-head">
+        <span class="ann-title">${label.trim() ? escapeHtml(label) : 'Untitled announcement'}</span>
+        <button type="button" class="ann-toggle">Edit</button>
+        <button type="button" class="remove-btn ann-remove" title="Remove">&times;</button>
+      </div>
+      <div class="ann-body">${bodyHtml}</div>
+    `;
+  } else {
+    div.innerHTML = bodyHtml;
+  }
+
   // Event listeners
   const labelInput = div.querySelector('.item-label');
   const detailsInput = div.querySelector('.item-details');
@@ -2295,6 +2356,22 @@ function createProgramItemHTML(item, section) {
       addLinkBtn.classList.remove('hidden');
     }
   });
+
+  // Announcement collapse: the head's Edit button opens/closes the fields, and
+  // the collapsed title mirrors the label as it is typed.
+  const annToggle = div.querySelector('.ann-toggle');
+  if (annToggle) {
+    annToggle.addEventListener('click', () => {
+      const collapsed = div.classList.toggle('ann-collapsed');
+      annToggle.textContent = collapsed ? 'Edit' : 'Done';
+    });
+  }
+  const annTitle = div.querySelector('.ann-title');
+  if (annTitle) {
+    labelInput.addEventListener('input', () => {
+      annTitle.textContent = labelInput.value.trim() || 'Untitled announcement';
+    });
+  }
 
   // Update hymn status when number changes
   hymnNumberInput.addEventListener('input', () => {
@@ -2336,11 +2413,13 @@ function createProgramItemHTML(item, section) {
     }
   });
 
-  // Remove item button with confirmation
-  div.querySelector('.remove-btn').addEventListener('click', () => {
-    if (confirm('Are you sure you want to delete this item?')) {
-      div.remove();
-    }
+  // Remove item button(s) with confirmation
+  div.querySelectorAll('.remove-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      if (confirm('Are you sure you want to delete this item?')) {
+        div.remove();
+      }
+    });
   });
 
   // Add link button
@@ -2422,11 +2501,13 @@ function createEventItemHTML(item) {
     datePicker.classList.toggle('hidden', !isOneTimeNow);
   });
 
-  // Remove item button with confirmation
-  div.querySelector('.remove-btn').addEventListener('click', () => {
-    if (confirm('Are you sure you want to delete this item?')) {
-      div.remove();
-    }
+  // Remove item button(s) with confirmation
+  div.querySelectorAll('.remove-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      if (confirm('Are you sure you want to delete this item?')) {
+        div.remove();
+      }
+    });
   });
 
   // Add link button
@@ -3195,6 +3276,12 @@ function initAddButtons() {
         added = sections.missionaries?.appendChild(createMissionaryItemHTML({}));
       } else if (sections[sectionKey]) {
         added = sections[sectionKey].appendChild(createProgramItemHTML({}, sectionKey));
+      }
+      // A newly added announcement opens straight to its fields to fill in.
+      if (added && added.classList.contains('ann-item')) {
+        added.classList.remove('ann-collapsed');
+        const toggle = added.querySelector('.ann-toggle');
+        if (toggle) toggle.textContent = 'Done';
       }
       if (added) autosizeAll(added);
     });
