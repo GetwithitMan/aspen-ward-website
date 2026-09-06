@@ -1,5 +1,36 @@
 # Changelog
 
+## September 6, 2026 (part 9)
+
+### QR Codes and Split Announcements
+
+Two ways to keep the printed program short without losing anything.
+
+- **A link becomes a QR.** Give an announcement a link and the printed program
+  prints a QR code beside it ("Scan to open") — the Empty Bowls fundraiser's
+  "order online," a sign-up form, an event page. On the website the same link is
+  just tappable, so the QR is print-only.
+- **An "online only" box.** Each announcement now has a second text box that does
+  not print. The program prints the first box plus a "Scan for the rest" QR that
+  goes to the website's announcements section (which shows every announcement in
+  full); the website shows both boxes together. So a long announcement — the ward
+  history call for photos, say — prints as a short, clean teaser while the full
+  text stays a scan away. An important announcement with nothing in the second
+  box prints in full, as before.
+
+The QR codes are generated on the page from a small library vendored into
+`js/qrcode.js` (MIT), rendered as inline SVG — no third-party QR service, in
+keeping with the assets-stay-local rule. Each code has a size floor so it stays
+scannable even when the fit pass shrinks the surrounding type.
+
+Data: an announcement item gains an optional `moreOnline` field (absent unless
+used, so other program sections are untouched). The website carries it through
+the existing rows conversion as a fifth field and shows it after the printed
+text.
+
+Seeded the Empty Bowls announcement and split the ward-history announcement into
+a printed teaser plus its online remainder.
+
 ## September 6, 2026 (part 8)
 
 ### Stake and Ward Recommend Interviews, Separately

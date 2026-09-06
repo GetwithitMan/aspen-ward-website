@@ -464,6 +464,39 @@
     widows: 2;
   }
 
+  /* An announcement with a QR sits text-left, code-right. The code has a floor
+     size (max) so it stays scannable even when the fit pass shrinks the type. */
+  .announcement-item.has-qr {
+    display: flex;
+    gap: calc(0.16in * var(--fit, 1));
+    align-items: flex-start;
+  }
+
+  .announcement-item.has-qr .announcement-main {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .announcement-qr {
+    flex: 0 0 auto;
+    text-align: center;
+    break-inside: avoid;
+  }
+
+  .announcement-qr .qr-svg {
+    width: max(0.62in, calc(0.9in * var(--fit, 1)));
+    height: max(0.62in, calc(0.9in * var(--fit, 1)));
+    display: block;
+  }
+
+  .announcement-qr .qr-caption {
+    font-size: calc(8pt * var(--fit, 1));
+    color: var(--ink-mid);
+    line-height: 1.2;
+    margin-top: 2px;
+    max-width: 1in;
+  }
+
   /* Program section (full right side) */
   .program-page {
     padding: 0.4in 0.5in;
@@ -756,6 +789,9 @@
 </div>
 </main>
 
+<!-- QR generator (vendored locally, MIT). Classic script runs before the
+     deferred module below, so the `qrcode` global is ready. -->
+<script src="/js/qrcode.js"></script>
 <script type="module">
 // Read-only page: plain database reads, no SDK bundle.
 import { readPath } from "/js/db-read.js";
@@ -931,14 +967,61 @@ function loadAnnouncements(announcements) {
 
   let html = '';
   validAnnouncements.forEach(item => {
+    // A QR prints when the announcement points somewhere: an explicit link
+    // (scan to open), or online-only overflow text (scan for the rest, which
+    // lives on the website's announcements section).
+    const link = (item.link || '').trim();
+    const more = (item.moreOnline || '').trim();
+    let qr = '';
+    if (link) {
+      qr = qrBlock(link, 'Scan to open');
+    } else if (more) {
+      qr = qrBlock('https://www.aspenward.com/#announcements', 'Scan for the rest');
+    }
+
+    const body = `
+        <div class="announcement-main">
+          <div class="announcement-title">${escapeHtml(item.label || 'Announcement')}</div>
+          <div class="announcement-description">${escapeHtml(item.details || '')}</div>
+        </div>`;
     html += `
-      <div class="announcement-item">
-        <div class="announcement-title">${escapeHtml(item.label || 'Announcement')}</div>
-        <div class="announcement-description">${escapeHtml(item.details || '')}</div>
+      <div class="announcement-item${qr ? ' has-qr' : ''}">
+        ${body}
+        ${qr}
       </div>`;
   });
 
   container.innerHTML = html;
+}
+
+// A captioned QR code for the printed program. The SVG is built from the code
+// matrix so it scales crisply and is styled by CSS.
+function qrBlock(url, caption) {
+  const svg = makeQrSvg(url);
+  if (!svg) return '';
+  return `<div class="announcement-qr">${svg}<div class="qr-caption">${escapeHtml(caption)}</div></div>`;
+}
+
+function makeQrSvg(text) {
+  try {
+    if (typeof qrcode !== 'function') return '';
+    const q = qrcode(0, 'M');
+    q.addData(String(text));
+    q.make();
+    const n = q.getModuleCount();
+    const margin = 2;
+    const dim = n + margin * 2;
+    let rects = '';
+    for (let r = 0; r < n; r++) {
+      for (let c = 0; c < n; c++) {
+        if (q.isDark(r, c)) rects += `<rect x="${c + margin}" y="${r + margin}" width="1" height="1"/>`;
+      }
+    }
+    return `<svg class="qr-svg" viewBox="0 0 ${dim} ${dim}" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges" role="img" aria-label="QR code"><rect width="${dim}" height="${dim}" fill="#ffffff"/><g fill="#000000">${rects}</g></svg>`;
+  } catch (error) {
+    console.error('QR generation failed:', error);
+    return '';
+  }
 }
 
 // Load events from Firebase

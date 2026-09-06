@@ -1160,6 +1160,27 @@ main {
   .temple-day-head { flex-wrap: wrap; }
   .temple-day-head .temple-cadence { flex: 1 1 auto; }
 }
+
+/* Announcement "online only" (Box 2) field */
+.more-online-row {
+  margin-top: 0.5rem;
+  padding: 0.6rem 0.75rem;
+  background: var(--surface-muted);
+  border-radius: var(--radius-sm);
+  border-left: 3px solid var(--accent, #2c5530);
+}
+
+.more-online-label {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--ink-muted);
+  margin-bottom: 0.3rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.more-online-row .item-more { width: 100%; }
 </style>
 <link rel="preload" as="font" type="font/woff2" crossorigin href="/public/assets/fonts/plus-jakarta-sans-var.woff2">
 <link rel="preload" as="font" type="font/woff2" crossorigin href="/public/assets/fonts/playfair-display-var.woff2">
@@ -2052,8 +2073,9 @@ function extractHymnNumber(details) {
 
 // === Program Item Templates ===
 function createProgramItemHTML(item, section) {
-  const { label = '', details = '', link = '' } = item;
+  const { label = '', details = '', link = '', moreOnline = '' } = item;
   const hasLink = link && link.trim() !== '';
+  const isAnnouncement = section === 'announcements';
   const isHymn = isHymnItem(label);
   const hymnNumber = isHymn ? extractHymnNumber(details) : '';
   const hymnUrl = hymnNumber ? getHymnUrl(hymnNumber) : null;
@@ -2084,6 +2106,11 @@ function createProgramItemHTML(item, section) {
       <input type="text" class="item-link" placeholder="https://..." value="${escapeHtml(link)}">
       <button type="button" class="remove-link-btn" title="Remove link">&times;</button>
     </div>
+    ${isAnnouncement ? `
+    <div class="more-online-row">
+      <label class="more-online-label">Online only — does not print</label>
+      <textarea class="item-more autogrow" rows="1" placeholder="Extra detail that stays on the website. When filled, the program prints the part above plus a &quot;scan for the rest&quot; QR code. Leave blank to print the whole announcement.">${escapeHtml(moreOnline)}</textarea>
+    </div>` : ''}
   `;
 
   // Event listeners
@@ -2619,7 +2646,10 @@ function collectProgramItems(container) {
       const hymnUrl = getHymnUrl(extractHymnNumber(details));
       if (hymnUrl) link = hymnUrl;
     }
-    if (label || details) out.push({ label, details, link });
+    // Online-only text (announcements only). Kept out of the object entirely
+    // when empty so other sections' items are unaffected.
+    const moreOnline = normalizeMultiline(item.querySelector('.item-more')?.value);
+    if (label || details) out.push({ label, details, link, ...(moreOnline ? { moreOnline } : {}) });
   });
   return out;
 }
