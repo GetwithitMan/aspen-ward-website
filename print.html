@@ -1264,18 +1264,23 @@ async function loadTemple() {
     const interviewBlock = (heading, block) => {
       if (!ivHas(block)) return '';
       const rows = templeList(block.rows);
-      const extra = [];
-      if (has(block.location)) extra.push(nl2br(block.location));
-      if (has(block.note)) extra.push(nl2br(block.note));
-      if (has(block.contact)) extra.push(nl2br(block.contact));
-      // No set schedule (e.g. the ward's "by appointment"): keep the heading
-      // and its detail on one line to save vertical space.
-      if (!rows.length && extra.length) {
-        return `<div class="temple-print-sub temple-print-sub-inline"><span class="sub-label">${escapeHtml(heading)}:</span> ${extra.join(' · ')}</div>`;
+      const location = has(block.location) ? nl2br(block.location) : '';
+      const below = [];
+      if (has(block.note)) below.push(nl2br(block.note));
+      if (has(block.contact)) below.push(nl2br(block.contact));
+      const inlineHead = (detail) =>
+        `<div class="temple-print-sub temple-print-sub-inline"><span class="sub-label">${escapeHtml(heading)}:</span> ${detail}</div>`;
+
+      // No set schedule (e.g. the ward's "by appointment"): heading and its
+      // detail share one line.
+      if (!rows.length) {
+        return inlineHead([location, ...below].filter(Boolean).join(' · '));
       }
-      let out = `<div class="temple-print-sub">${escapeHtml(heading)}</div>`;
+      // Scheduled block: the place (location) rides on the heading line, the
+      // times sit below it, and any note/contact follow.
+      let out = location ? inlineHead(location) : `<div class="temple-print-sub">${escapeHtml(heading)}</div>`;
       out += scheduleRows(rows);
-      if (extra.length) out += `<div class="temple-print-note">${extra.join('<br>')}</div>`;
+      if (below.length) out += `<div class="temple-print-note">${below.join('<br>')}</div>`;
       return out;
     };
     html += interviewBlock('Stake Recommend Interviews', iv.stake);
