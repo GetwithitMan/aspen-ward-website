@@ -972,11 +972,12 @@ function loadAnnouncements(announcements) {
     // lives on the website's announcements section).
     const link = (item.link || '').trim();
     const more = (item.moreOnline || '').trim();
+    const caption = (item.linkLabel || '').trim() || 'Scan for more info';
     let qr = '';
     if (link) {
-      qr = qrBlock(link, 'Scan to open');
+      qr = qrBlock(link, caption);
     } else if (more) {
-      qr = qrBlock('https://www.aspenward.com/#announcements', 'Scan for the rest');
+      qr = qrBlock('https://www.aspenward.com/#announcements', caption);
     }
 
     const body = `

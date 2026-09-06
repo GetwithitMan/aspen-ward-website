@@ -1181,6 +1181,24 @@ main {
 }
 
 .more-online-row .item-more { width: 100%; }
+
+.qr-label-row {
+  margin-top: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.qr-label-label {
+  flex: 0 0 auto;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--ink-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.qr-label-row .item-link-label { flex: 1 1 auto; min-width: 0; }
 </style>
 <link rel="preload" as="font" type="font/woff2" crossorigin href="/public/assets/fonts/plus-jakarta-sans-var.woff2">
 <link rel="preload" as="font" type="font/woff2" crossorigin href="/public/assets/fonts/playfair-display-var.woff2">
@@ -2073,7 +2091,7 @@ function extractHymnNumber(details) {
 
 // === Program Item Templates ===
 function createProgramItemHTML(item, section) {
-  const { label = '', details = '', link = '', moreOnline = '' } = item;
+  const { label = '', details = '', link = '', moreOnline = '', linkLabel = '' } = item;
   const hasLink = link && link.trim() !== '';
   const isAnnouncement = section === 'announcements';
   const isHymn = isHymnItem(label);
@@ -2107,6 +2125,10 @@ function createProgramItemHTML(item, section) {
       <button type="button" class="remove-link-btn" title="Remove link">&times;</button>
     </div>
     ${isAnnouncement ? `
+    <div class="qr-label-row">
+      <label class="qr-label-label">QR label</label>
+      <input type="text" class="item-link-label" placeholder="Scan for more info" value="${escapeHtml(linkLabel)}">
+    </div>
     <div class="more-online-row">
       <label class="more-online-label">Online only — does not print</label>
       <textarea class="item-more autogrow" rows="1" placeholder="Extra detail that stays on the website. When filled, the program prints the part above plus a &quot;scan for the rest&quot; QR code. Leave blank to print the whole announcement.">${escapeHtml(moreOnline)}</textarea>
@@ -2646,10 +2668,15 @@ function collectProgramItems(container) {
       const hymnUrl = getHymnUrl(extractHymnNumber(details));
       if (hymnUrl) link = hymnUrl;
     }
-    // Online-only text (announcements only). Kept out of the object entirely
-    // when empty so other sections' items are unaffected.
+    // Online-only text and QR caption (announcements only). Kept out of the
+    // object entirely when empty so other sections' items are unaffected.
     const moreOnline = normalizeMultiline(item.querySelector('.item-more')?.value);
-    if (label || details) out.push({ label, details, link, ...(moreOnline ? { moreOnline } : {}) });
+    const linkLabel = item.querySelector('.item-link-label')?.value?.trim() || '';
+    if (label || details) out.push({
+      label, details, link,
+      ...(moreOnline ? { moreOnline } : {}),
+      ...(linkLabel ? { linkLabel } : {})
+    });
   });
   return out;
 }

@@ -1,5 +1,15 @@
 # Changelog
 
+## September 6, 2026 (part 10)
+
+### A Label for the QR
+
+Announcements gained an optional **QR label** — the caption printed under the
+code — defaulting to **"Scan for more info."** Set it to "Scan to order," "Scan
+to RSVP," "Scan to donate," or anything else per announcement. The same label
+also names the link on the website (falling back to "Open details" there when
+unset). Stored as an optional `linkLabel` field, absent unless used.
+
 ## September 6, 2026 (part 9)
 
 ### QR Codes and Split Announcements

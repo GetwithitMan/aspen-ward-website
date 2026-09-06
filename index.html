@@ -772,8 +772,9 @@ function renderAnnouncements(items = []) {
       link.href = item.link;
       link.target = '_blank';
       link.rel = 'noopener';
-      link.setAttribute('aria-label', `Open details for ${item.title || 'announcement'}`);
-      link.innerHTML = 'Open details <span aria-hidden="true">↗</span>';
+      const linkText = (item.linkLabel && item.linkLabel.trim()) || 'Open details';
+      link.setAttribute('aria-label', `${linkText} for ${item.title || 'announcement'}`);
+      link.innerHTML = `${escapeHtml(linkText)} <span aria-hidden="true">↗</span>`;
       card.appendChild(link);
     }
     announcementsList.appendChild(card);
@@ -819,12 +820,13 @@ function renderProgram(rows) {
       } else if (sectionName === 'announcements') {
         let j = i + 1;
         while (rows[j] && !rows[j][0]?.startsWith('#SECTION:')) {
-          const [title, description, url, color, more] = rows[j];
+          const [title, description, url, color, more, lbl] = rows[j];
           const rawTitle = (title || '').trim();
           const trimmedDescription = (description || '').trim();
           const trimmedLink = (url || '').trim();
           const trimmedAccent = (color || accent || '').trim();
           const trimmedMore = (more || '').trim();
+          const trimmedLabel = (lbl || '').trim();
           if (!rawTitle && !trimmedDescription && !trimmedLink && !trimmedMore) {
             j++;
             continue;
@@ -835,6 +837,7 @@ function renderProgram(rows) {
             // and the online-only continuation together as the full announcement.
             description: [trimmedDescription, trimmedMore].filter(Boolean).join('\n\n'),
             link: trimmedLink,
+            linkLabel: trimmedLabel,
             accent: trimmedAccent
           });
           j++;
@@ -960,7 +963,8 @@ async function loadProgram() {
               item.details || '',
               item.link || '',
               item.accent || '',
-              item.moreOnline || ''
+              item.moreOnline || '',
+              item.linkLabel || ''
             ]);
           });
         }
