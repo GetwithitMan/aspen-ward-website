@@ -402,6 +402,21 @@
     margin-bottom: calc(0.06in * var(--fit, 1));
   }
 
+  /* Small QR to the temple schedule, centred under the temple name. Its size is
+     set on the SVG itself (module count x a safe per-module size). */
+  .temple-qr {
+    text-align: center;
+    margin: calc(0.02in * var(--fit, 1)) 0 calc(0.1in * var(--fit, 1));
+  }
+
+  .temple-qr .qr-svg { display: inline-block; }
+
+  .temple-qr-caption {
+    font-size: calc(8pt * var(--fit, 1));
+    color: var(--ink-muted);
+    margin-top: 2px;
+  }
+
   .temple-print-row {
     display: flex;
     justify-content: space-between;
@@ -1342,6 +1357,12 @@ async function loadTemple() {
 
     let html = '<div class="temple-print-header">Temple</div>';
     if (has(t.templeName)) html += `<div class="temple-print-name">${escapeHtml(t.templeName)}</div>`;
+    // A small QR to the temple's schedule (a short /t link that forwards to the
+    // schedule link set in the admin), shown only when that link is set.
+    if (has(t.scheduleUrl)) {
+      const qr = makeQrSvg('https://aspenward.com/t');
+      if (qr) html += `<div class="temple-qr">${qr}<div class="temple-qr-caption">Scan for the temple schedule</div></div>`;
+    }
     html += scheduleRows(hours);
 
     closures.forEach((c) => {

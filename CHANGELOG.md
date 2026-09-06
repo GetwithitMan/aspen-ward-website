@@ -1,5 +1,19 @@
 # Changelog
 
+## September 6, 2026 (part 20)
+
+### A QR to the Temple Schedule
+
+The printed Temple section now shows a small QR code under the temple name that
+takes people to the temple's schedule. It appears only when a schedule link is
+set in the admin (Temple → Official schedule link).
+
+To keep the code as small as possible, it does not encode the long
+ChurchofJesusChrist.org address directly — a long URL forces a bigger code.
+Instead it points at a short ward link, `aspenward.com/t`, which forwards to
+whatever schedule link is set in the admin (falling back to the ward site's
+temple section). Short link, small code, and it stays current without reprinting.
+
 ## September 6, 2026 (part 19)
 
 ### Bringing Today\'s Additions Into the System

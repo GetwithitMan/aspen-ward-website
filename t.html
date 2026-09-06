@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>Temple schedule — Aspen Ward</title>
+  <style>
+    body { font-family: system-ui, -apple-system, sans-serif; text-align: center;
+           color: #26251d; margin: 4rem 1.5rem; line-height: 1.5; }
+    a { color: #2c5530; }
+  </style>
+</head>
+<body>
+  <p>Taking you to the temple schedule…</p>
+  <p><a id="fallback" href="/#temple">Tap here if you are not redirected.</a></p>
+  <script type="module">
+    import { readPath } from '/js/db-read.js';
+    const isUrl = (u) => typeof u === 'string' && /^https?:\/\//i.test(u.trim());
+    let dest = '/#temple';
+    try {
+      const t = await readPath('temple');
+      if (t && isUrl(t.scheduleUrl)) dest = t.scheduleUrl.trim();
+    } catch (e) { /* fall back to the ward temple section */ }
+    document.getElementById('fallback').href = dest;
+    location.replace(dest);
+  </script>
+</body>
+</html>
