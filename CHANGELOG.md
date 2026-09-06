@@ -1,5 +1,18 @@
 # Changelog
 
+## September 6, 2026 (part 16)
+
+### Fine-Art Covers
+
+The Program Cover picker gained a library of fine-art covers: ten paintings by
+Carl Bloch — The Consolator, Sermon on the Mount, Christ and the Children, Woman
+at the Well, the Wedding at Cana, the Transfiguration, Gethsemane, the
+Resurrection, Doubting Thomas, and the Nativity. Bloch died in 1890, so the works
+are public domain; they are stored locally, converted to grayscale, and print
+beautifully in black and white, framed on the cover. The line-art emblems remain
+as simpler options (the three-crosses Easter emblem was dropped, since Latter-day
+Saints do not use the cross and the Resurrection painting covers Easter).
+
 ## September 6, 2026 (part 15)
 
 ### A Cover Image Picker

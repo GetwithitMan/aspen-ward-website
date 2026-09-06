@@ -267,6 +267,17 @@
     max-height: 2.5in;
   }
 
+  /* Fine-art pictures: framed, sized to fit whatever their aspect ratio is. */
+  .cover-logo.cover-art {
+    width: auto;
+    max-width: 3.4in;
+    height: auto;
+    max-height: 3.3in;
+    border: 1px solid #999;
+    padding: 5px;
+    background: #fff;
+  }
+
   .cover-logo-placeholder {
     width: 2.5in;
     height: 1.5in;
@@ -916,12 +927,23 @@ function createSectionHTML(title, items) {
 // Front-cover image options. 'logo' is the default Church logo; the rest are
 // black-and-white emblems under /public/assets/covers/.
 const COVER_IMAGES = {
-  logo: { src: '/public/assets/ward-logo.jpeg', alt: 'The Church of Jesus Christ of Latter-day Saints' },
-  temple: { src: '/public/assets/covers/temple.svg', alt: 'Temple' },
-  scriptures: { src: '/public/assets/covers/scriptures.svg', alt: 'Scriptures' },
-  christmas: { src: '/public/assets/covers/christmas.svg', alt: 'Star of Bethlehem' },
-  easter: { src: '/public/assets/covers/easter.svg', alt: 'Easter' },
-  chapel: { src: '/public/assets/covers/chapel.svg', alt: 'Chapel' }
+  logo: { src: '/public/assets/ward-logo.jpeg', alt: 'The Church of Jesus Christ of Latter-day Saints', type: 'logo' },
+  // Line-art emblems
+  temple: { src: '/public/assets/covers/temple.svg', alt: 'Temple', type: 'emblem' },
+  scriptures: { src: '/public/assets/covers/scriptures.svg', alt: 'Scriptures', type: 'emblem' },
+  chapel: { src: '/public/assets/covers/chapel.svg', alt: 'Chapel', type: 'emblem' },
+  christmas: { src: '/public/assets/covers/christmas.svg', alt: 'Star of Bethlehem', type: 'emblem' },
+  // Fine art — Carl Bloch, public domain
+  gethsemane: { src: '/public/assets/covers/gethsemane.jpg', alt: 'Christ in Gethsemane, by Carl Bloch', type: 'art' },
+  consolator: { src: '/public/assets/covers/consolator.jpg', alt: 'The Consolator, by Carl Bloch', type: 'art' },
+  sermon: { src: '/public/assets/covers/sermon.jpg', alt: 'Sermon on the Mount, by Carl Bloch', type: 'art' },
+  children: { src: '/public/assets/covers/children.jpg', alt: 'Christ and the Children, by Carl Bloch', type: 'art' },
+  womanwell: { src: '/public/assets/covers/womanwell.jpg', alt: 'Woman at the Well, by Carl Bloch', type: 'art' },
+  cana: { src: '/public/assets/covers/cana.jpg', alt: 'The Wedding at Cana, by Carl Bloch', type: 'art' },
+  transfiguration: { src: '/public/assets/covers/transfiguration.jpg', alt: 'The Transfiguration, by Carl Bloch', type: 'art' },
+  resurrection: { src: '/public/assets/covers/resurrection.jpg', alt: 'The Resurrection, by Carl Bloch', type: 'art' },
+  thomas: { src: '/public/assets/covers/thomas.jpg', alt: 'Doubting Thomas, by Carl Bloch', type: 'art' },
+  nativity: { src: '/public/assets/covers/nativity.jpg', alt: 'The Nativity, by Carl Bloch', type: 'art' }
 };
 
 function setCoverImage(key) {
@@ -930,8 +952,10 @@ function setCoverImage(key) {
   const choice = COVER_IMAGES[key] || COVER_IMAGES.logo;
   img.src = choice.src;
   img.alt = choice.alt;
-  // Emblems are line art; give them a touch more presence than the boxed logo.
-  img.classList.toggle('cover-emblem', key && key !== 'logo');
+  // Size the image by its kind: the boxed logo, a portrait line emblem, or a
+  // framed fine-art picture.
+  img.classList.toggle('cover-emblem', choice.type === 'emblem');
+  img.classList.toggle('cover-art', choice.type === 'art');
 }
 
 async function loadProgram() {

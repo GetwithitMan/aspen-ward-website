@@ -1455,12 +1455,26 @@ main {
             <label class="form-label" for="cover-image-select">Cover image</label>
             <select id="cover-image-select" class="form-input">
               <option value="logo">Church logo (default)</option>
-              <option value="temple">Temple</option>
-              <option value="scriptures">Scriptures</option>
-              <option value="christmas">Christmas — Star of Bethlehem</option>
-              <option value="easter">Easter — Three crosses</option>
-              <option value="chapel">Chapel</option>
+              <optgroup label="Fine art — Carl Bloch">
+                <option value="consolator">The Consolator</option>
+                <option value="sermon">Sermon on the Mount</option>
+                <option value="children">Christ and the Children</option>
+                <option value="womanwell">Woman at the Well</option>
+                <option value="cana">The Wedding at Cana</option>
+                <option value="transfiguration">The Transfiguration</option>
+                <option value="gethsemane">Gethsemane</option>
+                <option value="resurrection">The Resurrection (Easter)</option>
+                <option value="thomas">Doubting Thomas (Easter)</option>
+                <option value="nativity">The Nativity (Christmas)</option>
+              </optgroup>
+              <optgroup label="Emblems (line art)">
+                <option value="temple">Temple</option>
+                <option value="scriptures">Scriptures</option>
+                <option value="chapel">Chapel</option>
+                <option value="christmas">Star of Bethlehem (Christmas)</option>
+              </optgroup>
             </select>
+            <p class="form-hint" style="margin: 0.4rem 0 0;">Fine-art covers are public-domain paintings by Carl Bloch, printed in black and white.</p>
           </div>
           <div class="section-actions">
             <button type="button" class="btn success section-save-btn">Save Changes</button>
