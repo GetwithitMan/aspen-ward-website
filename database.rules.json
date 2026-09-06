@@ -1,0 +1,28 @@
+{
+  "rules": {
+    "sundayProgram": {
+      ".read": true,
+      ".write": true
+    },
+    "events": {
+      ".read": true,
+      ".write": true
+    },
+    "missionaries": {
+      ".read": true,
+      ".write": true
+    },
+    "classrooms": {
+      ".read": true,
+      ".write": true
+    },
+    "siteSettings": {
+      ".read": true,
+      ".write": true
+    },
+    "temple": {
+      ".read": true,
+      ".write": true
+    }
+  }
+}
