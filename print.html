@@ -321,7 +321,7 @@
   }
 
   .announcement-item {
-    margin-bottom: calc(0.18in * var(--fit, 1));
+    margin-bottom: calc(0.24in * var(--fit, 1));
     padding-bottom: calc(0.12in * var(--fit, 1));
     border-bottom: 1px solid #eee;
   }
@@ -331,16 +331,16 @@
   }
 
   .announcement-title {
-    font-size: calc(14pt * var(--fit, 1));
+    font-size: calc(14.5pt * var(--fit, 1));
     font-weight: 600;
-    color: #222;
+    color: #2c5530;
     margin-bottom: 2px;
   }
 
   .announcement-description {
     font-size: calc(12pt * var(--fit, 1));
-    color: #555;
-    line-height: 1.4;
+    color: #4a4a45;
+    line-height: 1.5;
     white-space: pre-wrap;
   }
 
@@ -394,9 +394,13 @@
     line-height: 1.35;
   }
 
+  /* The label is the question and the name is the answer, so they should not
+     compete. A smaller, softer label lets the eye run straight down the names,
+     which is what anyone is actually looking for. Size and weight do the work
+     here, not colour - the program is printed in greyscale. */
   .row-label {
-    font-size: calc(16pt * var(--fit, 1));
-    color: #333;
+    font-size: calc(13.5pt * var(--fit, 1));
+    color: #6a6c63;
     flex-shrink: 0;
     margin-right: 8px;
     min-width: 1.4in;
@@ -406,12 +410,26 @@
      long name wraps instead of being shrunk to fit one line. */
   .row-name {
     font-size: calc(16pt * var(--fit, 1));
-    color: #111;
+    color: #17170f;
     text-align: right;
     white-space: pre-wrap;
     overflow-wrap: break-word;
     flex: 1;
     max-width: 2.8in;
+  }
+
+  /* A row with no label - "Administration of the Sacrament" - is a moment in
+     the meeting, not a label/value pair. Right-aligned it read as an answer to
+     a missing question; centred and italic it reads as what it is. */
+  .program-row.is-standalone {
+    justify-content: center;
+  }
+
+  .program-row.is-standalone .row-name {
+    text-align: center;
+    font-style: italic;
+    color: #55564e;
+    max-width: none;
   }
 
   /* === HYMN ROWS ===
@@ -471,13 +489,13 @@
   .testimony-message {
     font-style: italic;
     text-align: center;
-    padding: 0.12in 0.15in;
     color: #444;
     font-size: calc(11pt * var(--fit, 1));
     line-height: 1.4;
-    background: #f9f9f9;
-    border-radius: 4px;
-    margin: 0.1in 0;
+    border-top: 1px solid #d8d9d0;
+    border-bottom: 1px solid #d8d9d0;
+    padding: 0.16in 0.2in;
+    margin: 0.14in 0;
     white-space: pre-wrap;
   }
 
@@ -687,8 +705,12 @@ function createSectionHTML(title, items) {
         `<span class="hymn-title">${escapeHtml(hymn.title)}</span>`
       : escapeHtml(details);
 
+    // No label means this is a moment in the meeting rather than a
+    // label/value pair, and it is centred instead of right-aligned.
+    const standalone = !label.trim();
+
     html += `
-      <div class="program-row">
+      <div class="program-row${standalone ? ' is-standalone' : ''}">
         <span class="row-label">${escapeHtml(label)}</span>
         <span class="row-name${hymn ? ' is-hymn' : ''}">${name}</span>
       </div>`;

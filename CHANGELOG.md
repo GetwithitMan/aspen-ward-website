@@ -1,5 +1,28 @@
 # Changelog
 
+## September 6, 2026 (part 2)
+
+### Easier to Read at a Glance
+
+The program was a grid of same-sized rows: "Presiding" and "Brother Hardee"
+were set in identical type, so nothing told the eye which was the question and
+which was the answer.
+
+- **Names lead, labels recede.** Labels are smaller and softer grey; the names
+  people are actually looking for stay full size and near-black. Size and
+  weight carry the hierarchy rather than colour, because the program is printed
+  in greyscale and the green reduces to grey on paper.
+- **No cost in type size.** The lighter labels open the page up on their own, so
+  the scale-to-fit pass still runs at 94% and the names print at the same size
+  as before.
+- **"Administration of the Sacrament" is centred and italic.** It has no label,
+  and right-aligned it read as an answer to a missing question.
+- **The testimony passage is framed by hairline rules** instead of a grey panel.
+  Browsers drop background fills when printing unless you tick "Background
+  graphics", so the panel was only ever visible on screen — the rules print.
+- **Announcement headings pick up the ward green**, with more space between
+  announcements and roomier line spacing on the long ones.
+
 ## September 6, 2026
 
 ### Long Hymn Titles Stay on One Line
