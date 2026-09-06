@@ -64,7 +64,9 @@ signups          # { "YYYY-M-D": { firstName, lastName, phone } }  (auth require
 Firebase returns an **object** rather than an array when keys are sparse, so any
 code reading `events` or `missionaries` must handle both. `admin.html` has a
 `toArray()` helper for this; skipping it caused the form to render empty and
-then save that emptiness over real data.
+then save that emptiness over real data. `print.html` made the same mistake
+independently — it required an array and printed "No upcoming events" for a full
+list whenever a middle event had been deleted.
 
 ## The printable program
 
@@ -74,14 +76,16 @@ half-pages, designed to be folded:
 - **Sheet 1** — left: events + missionaries (the back when folded); right: cover
 - **Sheet 2** — left: announcements; right: the program
 
+### Scaling each region to its box
+
 Every region is a fixed-height box with `overflow: hidden`, so content that is
 too tall would be silently cut off. Each region therefore scales as a unit:
 
 - All its font sizes and spacing are written as `calc(<base> * var(--fit, 1))`.
 - `fitRegion()` binary-searches the largest `--fit` (down to `MIN_FIT`, 0.55)
   at which the region still fits, checking **both** height and width — the
-  events and missionaries lists use `column-count`, so overflow there goes
-  sideways rather than down.
+  events, missionaries and announcements lists can all use `column-count`, so
+  overflow there goes sideways rather than down.
 - Refitting runs after load, after `document.fonts.ready` (web fonts change
   every measurement), on resize, and on `beforeprint`.
 - If a region still cannot fit at `MIN_FIT`, an on-screen banner says so. It is
@@ -90,6 +94,70 @@ too tall would be silently cut off. Each region therefore scales as a unit:
 
 **Do not add fixed `pt` font sizes to a fitted region** — express them against
 `var(--fit, 1)` or that element will not scale with the rest.
+
+`fitAllRegions()` wraps three further passes around that search. They exist
+because a single `--fit` per region cannot express everything the page needs.
+
+### Hymn titles: a second scale inside the row
+
+A hymn is entered as one string, `#62 - All Creatures Of Our God And King`, and
+is wider than the name column. Wrapping it put "And King" on a line of its own.
+
+`splitHymn()` divides the string into a number and a title at render time, and
+`fitHymnTitles()` gives the title its own `--name-fit` multiplier so the number
+keeps the row's full size while the title shrinks just enough to stay on one
+line. The scale is a direct ratio of available width to natural width — measured
+with a `Range` against a `nowrap` line — not a search.
+
+Two things to know before changing it:
+
+- The title must be re-fitted at **every** candidate `--fit`, which is why
+  `fitRegion()` calls it through its `applyFit()` helper rather than once at the
+  end. The column width is fixed in inches while the text scales, so the ratio
+  changes at every step.
+- Below `MIN_HYMN_FIT` (0.72) the title reverts to full size and wraps. Shrinking
+  a title that is going to wrap anyway just makes it small *and* wrapped.
+
+`createSectionHTML()` also marks a row with no label — "Administration of the
+Sacrament" — as `.is-standalone`, which centres it in italic. Right-aligned it
+read as an answer to a missing question.
+
+### The back page: events over missionaries
+
+`allocateBackPage()` divides the left half of sheet 1 between the events list and
+the missionaries list. It measures both at natural height and full size, then:
+
+- If both fit, events take the slack so missionaries stay against the bottom.
+- Otherwise each side gets a share of the column proportional to what it needs,
+  with a floor of `MIN_COLUMN_SHARE` (25%) so neither is pushed off the page. A
+  side allocated more than it has content for hands the surplus back rather than
+  printing a gap.
+
+This replaced a fixed `max-height: 45%` on the missionaries section, which shrank
+a long missionary list to fit 45% even when the events above it ended halfway
+down the page.
+
+### Announcements: two columns before small type
+
+`fitAnnouncements()` fits the announcements once in a single column and, if that
+lands below `ANNOUNCEMENT_COLUMN_THRESHOLD` (0.85), again in two, keeping
+whichever prints larger. A second column holds roughly twice the text at a given
+size, so a heavy week gets narrower measure instead of type at the 0.55 floor.
+An ordinary week never leaves a single column.
+
+### Line breaking
+
+`.announcement-description` and `.event-info` are the two prose blocks on the
+sheet. Both carry `hyphens: auto` (which needs the `lang` attribute on `<html>`)
+and `text-wrap: pretty`; the announcements add `orphans`/`widows` for the
+two-column case. Headings use `text-wrap: balance` and `break-after: avoid`.
+
+Hyphenating the announcements is what pays for itself: this week's copy sets in
+26 lines instead of 32, which the fit pass returns as larger type.
+
+Hyphenation is deliberately **confined to prose**. Do not extend it to
+`.row-name`, `.hymn-title` or `.missionary-contact` — people's names, hymn
+titles and email addresses should never be broken across lines.
 
 ## Saving in the admin panel
 
