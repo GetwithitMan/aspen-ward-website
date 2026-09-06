@@ -1344,6 +1344,56 @@ main {
             <label class="form-label">Welcome Message</label>
             <textarea id="intro-message" class="form-textarea" placeholder="Welcome message for the program..."></textarea>
           </div>
+
+          <div class="form-group">
+            <label class="form-label">Program cover image</label>
+            <p class="form-hint" style="margin: 0 0 0.6rem;">The image printed on the front of the program. Change it for a holiday or season — it prints in black and white.</p>
+            <div id="cover-thumb-grid" class="cover-thumb-grid"></div>
+            <select id="cover-image-select" class="form-input" style="display:none;">
+              <option value="logo">Church logo (default)</option>
+              <optgroup label="Fine art — Carl Bloch">
+                <option value="consolator">The Consolator</option>
+                <option value="sermon">Sermon on the Mount</option>
+                <option value="children">Christ and the Children</option>
+                <option value="womanwell">Woman at the Well</option>
+                <option value="cana">The Wedding at Cana</option>
+                <option value="transfiguration">The Transfiguration</option>
+                <option value="gethsemane">Gethsemane</option>
+                <option value="resurrection">The Resurrection (Easter)</option>
+                <option value="thomas">Doubting Thomas (Easter)</option>
+                <option value="nativity">The Nativity (Christmas)</option>
+              </optgroup>
+              <optgroup label="Fine art — Hofmann & Tissot">
+                <option value="headofchrist">Head of Christ (Hofmann)</option>
+                <option value="richyoungruler">Christ and the Rich Young Ruler (Hofmann)</option>
+                <option value="hofmann-gethsemane">Gethsemane (Hofmann)</option>
+                <option value="boyjesus">The Boy Jesus in the Temple (Hofmann)</option>
+                <option value="walkonwater">Jesus Walks on the Sea (Tissot)</option>
+                <option value="baptism">The Baptism of Jesus (Tissot)</option>
+              </optgroup>
+              <optgroup label="Latter-day Saint history &amp; art">
+                <option value="firstvision">The First Vision</option>
+                <option value="firstvision-grove">The First Vision (Sacred Grove)</option>
+                <option value="firstvision-linocut">The First Vision — linocut (Warren Luch)</option>
+                <option value="firstvision-linoleum">The First Vision — linoleum (Warren Luch)</option>
+                <option value="carthagejail">Carthage Jail</option>
+                <option value="libertyjail">The Prophet in Jail</option>
+                <option value="nauvoo">Joseph Smith &amp; the Nauvoo Temple</option>
+                <option value="whitmerfarm">Peter Whitmer Farm</option>
+                <option value="saltlaketemple">Salt Lake Temple</option>
+                <option value="goldplates">The Book of Mormon Plates</option>
+                <option value="eden">The Garden of Eden</option>
+                <option value="lightoftheworld">The Light of the World</option>
+              </optgroup>
+              <optgroup label="Emblems (line art)">
+                <option value="temple">Temple</option>
+                <option value="scriptures">Scriptures</option>
+                <option value="chapel">Chapel</option>
+                <option value="christmas">Star of Bethlehem (Christmas)</option>
+              </optgroup>
+            </select>
+          </div>
+
           <div class="section-actions">
             <button type="button" class="btn success section-save-btn">Save Changes</button>
           </div>
@@ -1492,68 +1542,6 @@ main {
           <div id="missionaries-items" class="program-items"></div>
           <div class="section-actions">
             <button type="button" class="add-btn" data-add="missionaries">+ Add Person</button>
-            <button type="button" class="btn success section-save-btn">Save Changes</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Site Settings Section -->
-      <div class="section-card collapsed" data-section="cover">
-        <div class="section-header">
-          <h2 class="section-title">Program Cover</h2>
-          <span class="section-toggle">▼</span>
-        </div>
-        <div class="section-content">
-          <p class="form-hint" style="margin-bottom: 1rem;">The image printed on the front of the program. Change it for a holiday or season — it prints in black and white.</p>
-          <div class="form-group">
-            <label class="form-label">Cover image</label>
-            <div id="cover-thumb-grid" class="cover-thumb-grid"></div>
-            <select id="cover-image-select" class="form-input" style="display:none;">
-              <option value="logo">Church logo (default)</option>
-              <optgroup label="Fine art — Carl Bloch">
-                <option value="consolator">The Consolator</option>
-                <option value="sermon">Sermon on the Mount</option>
-                <option value="children">Christ and the Children</option>
-                <option value="womanwell">Woman at the Well</option>
-                <option value="cana">The Wedding at Cana</option>
-                <option value="transfiguration">The Transfiguration</option>
-                <option value="gethsemane">Gethsemane</option>
-                <option value="resurrection">The Resurrection (Easter)</option>
-                <option value="thomas">Doubting Thomas (Easter)</option>
-                <option value="nativity">The Nativity (Christmas)</option>
-              </optgroup>
-              <optgroup label="Fine art — Hofmann & Tissot">
-                <option value="headofchrist">Head of Christ (Hofmann)</option>
-                <option value="richyoungruler">Christ and the Rich Young Ruler (Hofmann)</option>
-                <option value="hofmann-gethsemane">Gethsemane (Hofmann)</option>
-                <option value="boyjesus">The Boy Jesus in the Temple (Hofmann)</option>
-                <option value="walkonwater">Jesus Walks on the Sea (Tissot)</option>
-                <option value="baptism">The Baptism of Jesus (Tissot)</option>
-              </optgroup>
-              <optgroup label="Latter-day Saint history &amp; art">
-                <option value="firstvision">The First Vision</option>
-                <option value="firstvision-grove">The First Vision (Sacred Grove)</option>
-                <option value="firstvision-linocut">The First Vision — linocut (Warren Luch)</option>
-                <option value="firstvision-linoleum">The First Vision — linoleum (Warren Luch)</option>
-                <option value="carthagejail">Carthage Jail</option>
-                <option value="libertyjail">The Prophet in Jail</option>
-                <option value="nauvoo">Joseph Smith &amp; the Nauvoo Temple</option>
-                <option value="whitmerfarm">Peter Whitmer Farm</option>
-                <option value="saltlaketemple">Salt Lake Temple</option>
-                <option value="goldplates">The Book of Mormon Plates</option>
-                <option value="eden">The Garden of Eden</option>
-                <option value="lightoftheworld">The Light of the World</option>
-              </optgroup>
-              <optgroup label="Emblems (line art)">
-                <option value="temple">Temple</option>
-                <option value="scriptures">Scriptures</option>
-                <option value="chapel">Chapel</option>
-                <option value="christmas">Star of Bethlehem (Christmas)</option>
-              </optgroup>
-            </select>
-            <p class="form-hint" style="margin: 0.4rem 0 0;">Fine-art covers are public-domain paintings by Carl Bloch, printed in black and white.</p>
-          </div>
-          <div class="section-actions">
             <button type="button" class="btn success section-save-btn">Save Changes</button>
           </div>
         </div>
@@ -1814,7 +1802,7 @@ function normalizeMultiline(value = '') {
 // moment you expand that section.
 const SECTION_SPEC = {
   'banner':        { path: 'sundayProgram/sections/banner',        kind: 'items' },
-  'introduction':  { path: 'sundayProgram/introduction',           kind: 'text', field: 'intro-message' },
+  'introduction':  { path: 'sundayProgram',                        kind: 'intro', multi: true },
   'opening':       { path: 'sundayProgram/sections/opening',       kind: 'items' },
   'sacrament':     { path: 'sundayProgram/sections/sacrament',     kind: 'items' },
   'meeting-type':  { path: 'sundayProgram/isTestimonyMeeting',     kind: 'flag', field: 'testimony-toggle' },
@@ -1824,7 +1812,6 @@ const SECTION_SPEC = {
   'announcements': { path: 'sundayProgram/sections/announcements', kind: 'items' },
   'events':        { path: 'events',                               kind: 'events' },
   'missionaries':  { path: 'missionaries',                         kind: 'missionaries' },
-  'cover':         { path: 'sundayProgram/coverImage',             kind: 'select', field: 'cover-image-select' },
   'temple':        { path: 'temple',                               kind: 'temple' },
   'site-settings': { path: 'siteSettings/showClassroomsNav',       kind: 'flag', field: 'show-classrooms-toggle' }
 };
@@ -2827,6 +2814,13 @@ function collectSection(key) {
       return normalizeMultiline(document.getElementById(spec.field)?.value);
     case 'select':
       return document.getElementById(spec.field)?.value || '';
+    case 'intro':
+      // Merged welcome message + cover choice; returns deep-path updates so
+      // both are written without touching the rest of sundayProgram.
+      return {
+        'sundayProgram/introduction': normalizeMultiline(document.getElementById('intro-message')?.value),
+        'sundayProgram/coverImage': document.getElementById('cover-image-select')?.value || 'logo'
+      };
     case 'flag':
       return !!document.getElementById(spec.field)?.checked;
     case 'events':
@@ -3076,6 +3070,16 @@ function applySection(key, value) {
       if (typeof syncCoverThumbs === 'function') syncCoverThumbs();
       break;
     }
+    case 'intro': {
+      // `value` is the whole sundayProgram node.
+      const v = value || {};
+      const intro = document.getElementById('intro-message');
+      if (intro) { intro.value = v.introduction || ''; autosize(intro); }
+      const sel = document.getElementById('cover-image-select');
+      if (sel) sel.value = v.coverImage || 'logo';
+      if (typeof syncCoverThumbs === 'function') syncCoverThumbs();
+      break;
+    }
     case 'flag': {
       const box = document.getElementById(spec.field);
       if (box) box.checked = !!value;
@@ -3116,11 +3120,12 @@ async function saveSection(key) {
   showStatus(`Saving ${label}…`, 'info');
 
   try {
-    // Writes this one path only, so a colleague's other sections are untouched.
-    await update(ref(db), {
-      [spec.path]: collectSection(key),
-      'sundayProgram/lastUpdated': new Date().toISOString()
-    });
+    // Writes only this section's path(s), so a colleague's other sections are
+    // untouched. A `multi` section returns a set of deep-path updates itself.
+    const collected = collectSection(key);
+    const updates = spec.multi ? { ...collected } : { [spec.path]: collected };
+    updates['sundayProgram/lastUpdated'] = new Date().toISOString();
+    await update(ref(db), updates);
     markSectionClean(key);
     // Read back so what you see is what is actually stored.
     await refreshSection(key, { force: true });

@@ -1,5 +1,15 @@
 # Changelog
 
+## September 6, 2026 (part 18)
+
+### Cover Picker Folded into Introduction
+
+The Program Cover picker moved into the Introduction section, since both are the
+front of the program. The Introduction card now holds the welcome message and the
+cover thumbnail grid together, saved by one button. Under the hood the section
+writes two fields (introduction and coverImage) as a single deep-path update, so
+the rest of the program is untouched.
+
 ## September 6, 2026 (part 17)
 
 ### A Visual Cover Picker, and Latter-day Saint Images
