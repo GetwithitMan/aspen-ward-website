@@ -1120,7 +1120,7 @@ async function loadEvents() {
 }
 // Shared temple formatters. Firebase can hand back a sparse list as an object,
 // so every list is normalised through templeList() before it is read.
-const TEMPLE_ORDINALS = { '1st': '1st', '2nd': '2nd', '3rd': '3rd', '4th': '4th', 'last': 'Last' };
+const TEMPLE_ORDINALS = { '1st': '1st', '2nd': '2nd', '3rd': '3rd', '4th': '4th', 'last': 'Last', '2-5': '2nd–5th' };
 const templeList = (v) => Array.isArray(v) ? v.filter(Boolean)
   : (v && typeof v === 'object' ? Object.values(v).filter(Boolean) : []);
 
@@ -1183,10 +1183,10 @@ function renderTemple(t) {
   const has = (v) => typeof v === 'string' && v.trim().length > 0;
   const hours = templeList(temple.hours);
   const closures = templeList(temple.closures);
-  const interviews = templeList(temple.interviews);
+  const iv = temple.interviews || {};
+  const ivHas = (b) => b && (templeList(b.rows).length || has(b.location) || has(b.note) || has(b.contact));
   const meaningful = has(temple.templeName) || has(temple.address) || isSafeUrl(temple.scheduleUrl) ||
-    has(temple.notes) || has(temple.interviewsNote) || has(temple.interviewsContact) ||
-    hours.length || closures.length || interviews.length;
+    has(temple.notes) || hours.length || closures.length || ivHas(iv.stake) || ivHas(iv.ward);
 
   if (!temple.show || !meaningful) {
     templeSection.setAttribute('hidden', '');
@@ -1290,23 +1290,28 @@ function renderTemple(t) {
     templeBody.appendChild(el);
   }
 
-  // Card 4 — recommend interviews, with an optional note and contact line.
-  if (interviews.length || has(temple.interviewsNote) || has(temple.interviewsContact)) {
+  // Cards 4 & 5 — recommend interviews, stake and ward shown separately.
+  const interviewCard = (heading, block) => {
+    if (!ivHas(block)) return;
+    const rows = templeList(block.rows);
     const el = card();
-    el.appendChild(title('Temple recommend interviews'));
-    if (interviews.length) el.appendChild(scheduleRows(interviews));
+    el.appendChild(title(heading));
+    if (rows.length) el.appendChild(scheduleRows(rows));
     const extra = [];
-    if (has(temple.interviewsNote)) extra.push(temple.interviewsNote);
-    if (has(temple.interviewsContact)) extra.push(temple.interviewsContact);
+    if (has(block.location)) extra.push(block.location);
+    if (has(block.note)) extra.push(block.note);
+    if (has(block.contact)) extra.push(block.contact);
     if (extra.length) {
       const body = document.createElement('p');
       body.className = 'announcement-body';
-      body.style.marginTop = interviews.length ? '0.5rem' : '0';
+      body.style.marginTop = rows.length ? '0.5rem' : '0';
       body.innerHTML = extra.map((l) => formatMultiline(l)).join('<br>');
       el.appendChild(body);
     }
     templeBody.appendChild(el);
-  }
+  };
+  interviewCard('Stake temple recommend interviews', iv.stake);
+  interviewCard('Ward temple recommend interviews', iv.ward);
 
   templeSection.removeAttribute('hidden');
   templeSection.setAttribute('aria-hidden', 'false');

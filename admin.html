@@ -1140,6 +1140,22 @@ main {
 
 .temple-add-btn { margin-top: 0.25rem; }
 
+.temple-iv-block {
+  margin-top: 0.5rem;
+  padding: 0.75rem;
+  border: 1px solid var(--stroke);
+  border-radius: var(--radius-sm);
+}
+
+.temple-iv-block + .temple-iv-block { margin-top: 0.75rem; }
+
+.temple-iv-title {
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: var(--ink);
+  margin-bottom: 0.5rem;
+}
+
 @media (max-width: 640px) {
   .temple-day-head { flex-wrap: wrap; }
   .temple-day-head .temple-cadence { flex: 1 1 auto; }
@@ -1425,11 +1441,25 @@ main {
 
           <div class="form-group">
             <label class="form-label">Temple recommend interviews <span style="font-weight:400; color: var(--ink-muted);">(optional)</span></label>
-            <p class="form-hint" style="margin: 0 0 0.5rem;">The days and times the bishopric is available, entered the same way as hours.</p>
-            <div id="temple-interviews-list" class="temple-day-list"></div>
-            <button type="button" class="btn ghost temple-add-btn" data-temple-action="add-day" data-target="interviews">+ Add a day</button>
-            <input type="text" id="temple-interviews-note" class="form-input" style="margin-top: 0.5rem;" placeholder="e.g. and by appointment">
-            <input type="text" id="temple-interviews-contact" class="form-input" style="margin-top: 0.5rem;" placeholder="Contact, e.g. See the ward clerk to schedule">
+            <p class="form-hint" style="margin: 0 0 0.5rem;">Stake and ward interviews are shown separately. Add days and times where there is a set schedule; use the note line for "by appointment" cases.</p>
+
+            <div class="temple-iv-block">
+              <div class="temple-iv-title">Stake</div>
+              <div id="temple-stake-list" class="temple-day-list"></div>
+              <button type="button" class="btn ghost temple-add-btn" data-temple-action="add-day" data-target="stake">+ Add a day</button>
+              <input type="text" id="temple-stake-location" class="form-input" style="margin-top: 0.5rem;" placeholder="Location, e.g. Fruita Building Stake office">
+              <input type="text" id="temple-stake-note" class="form-input" style="margin-top: 0.5rem;" placeholder="Note (optional)">
+              <input type="text" id="temple-stake-contact" class="form-input" style="margin-top: 0.5rem;" placeholder="Contact (optional)">
+            </div>
+
+            <div class="temple-iv-block">
+              <div class="temple-iv-title">Ward</div>
+              <div id="temple-ward-list" class="temple-day-list"></div>
+              <button type="button" class="btn ghost temple-add-btn" data-temple-action="add-day" data-target="ward">+ Add a day</button>
+              <input type="text" id="temple-ward-location" class="form-input" style="margin-top: 0.5rem;" placeholder="Location (optional)">
+              <input type="text" id="temple-ward-note" class="form-input" style="margin-top: 0.5rem;" placeholder="Note, e.g. By scheduling with the executive secretary">
+              <input type="text" id="temple-ward-contact" class="form-input" style="margin-top: 0.5rem;" placeholder="Contact, e.g. name / phone / email">
+            </div>
           </div>
 
           <div class="form-group">
@@ -2619,7 +2649,7 @@ function collectSection(key) {
 // day/time-range shape; closures are date entries.
 const TEMPLE_DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 const TEMPLE_CADENCES = [
-  ['weekly', 'Every week'], ['1st', '1st'], ['2nd', '2nd'], ['3rd', '3rd'], ['4th', '4th'], ['last', 'Last']
+  ['weekly', 'Every week'], ['1st', '1st'], ['2nd', '2nd'], ['3rd', '3rd'], ['4th', '4th'], ['last', 'Last'], ['2-5', '2nd–5th']
 ];
 
 function collectTemple() {
@@ -2631,10 +2661,23 @@ function collectTemple() {
     scheduleUrl: val('temple-schedule-url'),
     hours: collectTempleDays('temple-hours-list'),
     closures: collectTempleClosures('temple-closures-list'),
-    interviews: collectTempleDays('temple-interviews-list'),
-    interviewsNote: val('temple-interviews-note'),
-    interviewsContact: val('temple-interviews-contact'),
+    interviews: {
+      stake: collectTempleInterviewBlock('stake'),
+      ward: collectTempleInterviewBlock('ward')
+    },
     notes: normalizeMultiline(document.getElementById('temple-notes')?.value)
+  };
+}
+
+// A recommend-interview block (stake or ward): scheduled day/time rows plus a
+// location, a note, and a contact line.
+function collectTempleInterviewBlock(prefix) {
+  const val = (id) => (document.getElementById(id)?.value || '').trim();
+  return {
+    rows: collectTempleDays(`temple-${prefix}-list`),
+    location: val(`temple-${prefix}-location`),
+    note: val(`temple-${prefix}-note`),
+    contact: val(`temple-${prefix}-contact`)
   };
 }
 
@@ -2672,12 +2715,21 @@ function applyTemple(value) {
   set('temple-name', t.templeName);
   set('temple-address', t.address);
   set('temple-schedule-url', t.scheduleUrl);
-  set('temple-interviews-note', t.interviewsNote);
-  set('temple-interviews-contact', t.interviewsContact);
   set('temple-notes', t.notes);
   renderTempleDays('temple-hours-list', toArray(t.hours));
-  renderTempleDays('temple-interviews-list', toArray(t.interviews));
   renderTempleClosures('temple-closures-list', toArray(t.closures));
+  const iv = t.interviews || {};
+  applyTempleInterviewBlock('stake', iv.stake);
+  applyTempleInterviewBlock('ward', iv.ward);
+}
+
+function applyTempleInterviewBlock(prefix, block) {
+  const b = block || {};
+  const set = (id, v) => { const el = document.getElementById(id); if (el) { el.value = v || ''; autosize(el); } };
+  set(`temple-${prefix}-location`, b.location);
+  set(`temple-${prefix}-note`, b.note);
+  set(`temple-${prefix}-contact`, b.contact);
+  renderTempleDays(`temple-${prefix}-list`, toArray(b.rows));
 }
 
 function renderTempleDays(listId, entries) {
@@ -2778,7 +2830,8 @@ function initTempleControls() {
     const action = btn.dataset.templeAction;
 
     if (action === 'add-day') {
-      const target = btn.dataset.target === 'interviews' ? 'temple-interviews-list' : 'temple-hours-list';
+      const lists = { stake: 'temple-stake-list', ward: 'temple-ward-list' };
+      const target = lists[btn.dataset.target] || 'temple-hours-list';
       document.getElementById(target)?.appendChild(createTempleDayRow());
     } else if (action === 'add-range') {
       btn.closest('.temple-day-row')?.querySelector('.temple-ranges')?.appendChild(createTempleRangeRow());

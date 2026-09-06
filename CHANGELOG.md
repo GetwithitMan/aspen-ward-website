@@ -1,5 +1,32 @@
 # Changelog
 
+## September 6, 2026 (part 8)
+
+### Stake and Ward Recommend Interviews, Separately
+
+Recommend interviews come from two places — the stake (a scheduled time and
+place) and the ward (usually by appointment) — and one combined list could not
+say which was which. The interviews section is now two labeled blocks, **Stake**
+and **Ward**, each with its own day/time rows plus a location, a note, and a
+contact line. A block appears only when it has something in it.
+
+- A new **2nd–5th** cadence was added for the common "every Sunday except fast
+  Sunday" pattern, so the stake's Sunday interviews read "2nd–5th Sunday" rather
+  than needing four separate rows.
+- The **location** line covers cases like the stake interviews being held at the
+  Fruita Building Stake office rather than the meetinghouse.
+- The **note** line carries the by-appointment case ("By scheduling with the
+  executive secretary") for a block with no fixed time, and the **contact** line
+  gives a place for a name or number.
+
+The `temple.interviews` field changed from a flat list to
+`{ stake: { rows[], location, note, contact }, ward: { … } }`. The website shows
+each as its own card; the printed program shows each as its own sub-heading under
+the Temple section.
+
+Seeded with the Grand Junction stake interviews (2nd–5th Sunday, 3:30–4:30 PM,
+Fruita Building Stake office) and the ward's by-appointment line.
+
 ## September 6, 2026 (part 7)
 
 ### Temple Hours: a Real Schedule Builder

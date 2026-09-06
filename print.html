@@ -1065,7 +1065,7 @@ async function loadMissionaries() {
 
 // Shared temple formatters. Firebase can hand back a sparse list as an object,
 // so every list is normalised through templeList() first.
-const TEMPLE_ORDINALS = { '1st': '1st', '2nd': '2nd', '3rd': '3rd', '4th': '4th', 'last': 'Last' };
+const TEMPLE_ORDINALS = { '1st': '1st', '2nd': '2nd', '3rd': '3rd', '4th': '4th', 'last': 'Last', '2-5': '2nd–5th' };
 const templeList = (v) => Array.isArray(v) ? v.filter(Boolean)
   : (v && typeof v === 'object' ? Object.values(v).filter(Boolean) : []);
 
@@ -1128,9 +1128,10 @@ async function loadTemple() {
     const has = (v) => typeof v === 'string' && v.trim().length > 0;
     const hours = templeList(t && t.hours);
     const closures = templeList(t && t.closures);
-    const interviews = templeList(t && t.interviews);
+    const iv = (t && t.interviews) || {};
+    const ivHas = (b) => b && (templeList(b.rows).length || has(b.location) || has(b.note) || has(b.contact));
     const meaningful = t && (has(t.templeName) || hours.length || closures.length ||
-      interviews.length || has(t.interviewsNote) || has(t.interviewsContact) || has(t.notes));
+      ivHas(iv.stake) || ivHas(iv.ward) || has(t.notes));
 
     if (!t || !t.show || !meaningful) {
       wrap.style.display = 'none';
@@ -1153,14 +1154,19 @@ async function loadTemple() {
       if (txt) html += `<div class="temple-print-closed">Closed: ${escapeHtml(txt)}</div>`;
     });
 
-    if (interviews.length || has(t.interviewsNote) || has(t.interviewsContact)) {
-      html += '<div class="temple-print-sub">Recommend Interviews</div>';
-      html += scheduleRows(interviews);
+    const interviewBlock = (heading, block) => {
+      if (!ivHas(block)) return '';
+      let out = `<div class="temple-print-sub">${escapeHtml(heading)}</div>`;
+      out += scheduleRows(templeList(block.rows));
       const extra = [];
-      if (has(t.interviewsNote)) extra.push(nl2br(t.interviewsNote));
-      if (has(t.interviewsContact)) extra.push(nl2br(t.interviewsContact));
-      if (extra.length) html += `<div class="temple-print-note">${extra.join('<br>')}</div>`;
-    }
+      if (has(block.location)) extra.push(nl2br(block.location));
+      if (has(block.note)) extra.push(nl2br(block.note));
+      if (has(block.contact)) extra.push(nl2br(block.contact));
+      if (extra.length) out += `<div class="temple-print-note">${extra.join('<br>')}</div>`;
+      return out;
+    };
+    html += interviewBlock('Stake Recommend Interviews', iv.stake);
+    html += interviewBlock('Ward Recommend Interviews', iv.ward);
 
     if (has(t.notes)) html += `<div class="temple-print-note">${nl2br(t.notes)}</div>`;
 
