@@ -8,6 +8,11 @@
       "source": "/missionary",
       "destination": "/",
       "permanent": false
+    },
+    {
+      "source": "/a",
+      "destination": "/#announcements",
+      "permanent": false
     }
   ],
   "headers": [

@@ -484,9 +484,11 @@
   }
 
   .announcement-qr .qr-svg {
-    width: max(0.62in, calc(0.9in * var(--fit, 1)));
-    height: max(0.62in, calc(0.9in * var(--fit, 1)));
+    /* Physical size comes from the width/height attributes on the SVG itself
+       (module count × a safe per-module size), so the code stays as small as
+       its data allows and never shrinks below scannable with the fit pass. */
     display: block;
+    margin: 0 auto;
   }
 
   .announcement-qr .qr-caption {
@@ -977,7 +979,9 @@ function loadAnnouncements(announcements) {
     if (link) {
       qr = qrBlock(link, caption);
     } else if (more) {
-      qr = qrBlock('https://www.aspenward.com/#announcements', caption);
+      // Short path (redirects to the announcements section) so the read-more
+      // code has fewer modules and can print smaller while staying scannable.
+      qr = qrBlock('https://aspenward.com/a', caption);
     }
 
     const body = `
@@ -1003,6 +1007,12 @@ function qrBlock(url, caption) {
   return `<div class="announcement-qr">${svg}<div class="qr-caption">${escapeHtml(caption)}</div></div>`;
 }
 
+// Each QR square (module) is printed at a fixed physical size, so a code is
+// exactly as small as its data allows: a short link prints tiny, a long one
+// grows to stay scannable. 0.5mm/module is the safe floor for scanning a
+// black-on-white laser print at arm's length.
+const QR_MODULE_MM = 0.5;
+
 function makeQrSvg(text) {
   try {
     if (typeof qrcode !== 'function') return '';
@@ -1010,7 +1020,7 @@ function makeQrSvg(text) {
     q.addData(String(text));
     q.make();
     const n = q.getModuleCount();
-    const margin = 2;
+    const margin = 2; // quiet zone, in modules
     const dim = n + margin * 2;
     let rects = '';
     for (let r = 0; r < n; r++) {
@@ -1018,7 +1028,8 @@ function makeQrSvg(text) {
         if (q.isDark(r, c)) rects += `<rect x="${c + margin}" y="${r + margin}" width="1" height="1"/>`;
       }
     }
-    return `<svg class="qr-svg" viewBox="0 0 ${dim} ${dim}" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges" role="img" aria-label="QR code"><rect width="${dim}" height="${dim}" fill="#ffffff"/><g fill="#000000">${rects}</g></svg>`;
+    const sizeMm = (dim * QR_MODULE_MM).toFixed(2);
+    return `<svg class="qr-svg" width="${sizeMm}mm" height="${sizeMm}mm" viewBox="0 0 ${dim} ${dim}" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges" role="img" aria-label="QR code"><rect width="${dim}" height="${dim}" fill="#ffffff"/><g fill="#000000">${rects}</g></svg>`;
   } catch (error) {
     console.error('QR generation failed:', error);
     return '';

@@ -1,5 +1,20 @@
 # Changelog
 
+## September 6, 2026 (part 11)
+
+### Smaller QR Codes
+
+The printed QR codes are now sized by their own data instead of a fixed box:
+each square (module) prints at a safe fixed size (0.5mm — the floor for scanning
+a laser print at arm's length), so a code is exactly as small as its content
+allows. A short link prints tiny; a long one grows just enough to stay scannable.
+
+To let the common "scan for the rest" code shrink, its link was shortened from
+`/#announcements` to a new `/a` path (a redirect to the announcements section) —
+fewer characters, fewer modules, a smaller code. The read-more code is now about
+0.57" (down from the old 0.62" floor); a typical order link lands near 0.73",
+a long tracked link near 0.81", each staying scannable.
+
 ## September 6, 2026 (part 10)
 
 ### A Label for the QR
