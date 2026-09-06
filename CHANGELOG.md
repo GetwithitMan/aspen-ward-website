@@ -1,5 +1,13 @@
 # Changelog
 
+## September 6, 2026 (part 12)
+
+### A Nudge to Shorten Links
+
+The announcement editor now carries a tip next to the QR label: a shorter link
+prints a smaller QR code, with a link to tinyurl.com to shorten a long one. Admin
+only.
+
 ## September 6, 2026 (part 11)
 
 ### Smaller QR Codes

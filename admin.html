@@ -1199,6 +1199,21 @@ main {
 }
 
 .qr-label-row .item-link-label { flex: 1 1 auto; min-width: 0; }
+
+.qr-hint {
+  margin: 0.35rem 0 0;
+  font-size: 0.78rem;
+  color: var(--ink-muted);
+  line-height: 1.4;
+}
+
+.qr-hint a {
+  color: var(--accent, #2c5530);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.qr-hint a:hover { text-decoration: underline; }
 </style>
 <link rel="preload" as="font" type="font/woff2" crossorigin href="/public/assets/fonts/plus-jakarta-sans-var.woff2">
 <link rel="preload" as="font" type="font/woff2" crossorigin href="/public/assets/fonts/playfair-display-var.woff2">
@@ -2129,6 +2144,7 @@ function createProgramItemHTML(item, section) {
       <label class="qr-label-label">QR label</label>
       <input type="text" class="item-link-label" placeholder="Scan for more info" value="${escapeHtml(linkLabel)}">
     </div>
+    <p class="qr-hint">Tip: a shorter link prints a smaller QR code — a long link makes a bigger one. Shorten a long link at <a href="https://tinyurl.com/" target="_blank" rel="noopener">tinyurl.com ↗</a>, then paste the short version above.</p>
     <div class="more-online-row">
       <label class="more-online-label">Online only — does not print</label>
       <textarea class="item-more autogrow" rows="1" placeholder="Extra detail that stays on the website. When filled, the program prints the part above plus a &quot;scan for the rest&quot; QR code. Leave blank to print the whole announcement.">${escapeHtml(moreOnline)}</textarea>
