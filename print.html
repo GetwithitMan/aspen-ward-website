@@ -1308,6 +1308,8 @@ const FIT_REGIONS = [
 ];
 
 const MIN_FIT = 0.55; // below this the print is too small to read
+const MAX_FIT = 1.4;  // grow a light week's text up to this to fill the page
+                      // (kept where body/titles stay under the fixed headers)
 
 // Height alone is not enough: the events list uses column-count, and content
 // that will not fit spills into an extra column sideways rather than growing
@@ -1373,14 +1375,22 @@ function fitRegion(box) {
   };
 
   applyFit(1);
-  if (!overflows(box)) return 1;
 
-  let low = MIN_FIT;
-  let high = 1;
-  let best = MIN_FIT;
+  // When the content already fits, grow it to fill the box (up to MAX_FIT) so a
+  // light week is not small text stranded on a half-empty page. When it does
+  // not fit, shrink it (down to MIN_FIT) as before.
+  let low, high;
+  if (!overflows(box)) {
+    low = 1;
+    high = MAX_FIT;
+  } else {
+    low = MIN_FIT;
+    high = 1;
+  }
+  let best = low;
 
-  // 10 iterations lands within ~0.05% of the largest scale that fits
-  for (let i = 0; i < 10; i++) {
+  // Binary-search the largest scale that still fits.
+  for (let i = 0; i < 12; i++) {
     const mid = (low + high) / 2;
     applyFit(mid);
     if (!overflows(box)) {

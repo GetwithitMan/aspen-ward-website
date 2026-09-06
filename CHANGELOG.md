@@ -1,5 +1,16 @@
 # Changelog
 
+## September 6, 2026 (part 14)
+
+### The Program Fills the Page
+
+The fit pass only ever shrank content to fit; on a light week that left small
+text stranded on a half-empty page. It now also **grows** the text to fill each
+region (up to 1.4×, kept where the body stays under the fixed section headers),
+so the program, announcements, and temple use the whole panel instead of
+floating at the top. Combined with the tighter spacing from part 13, a normal
+week now reads noticeably larger.
+
 ## September 6, 2026 (part 13)
 
 ### Tighter Printed Program
