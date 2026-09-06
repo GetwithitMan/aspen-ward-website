@@ -411,9 +411,14 @@
     margin-bottom: calc(0.02in * var(--fit, 1));
   }
 
-  /* A recommend-interview block with no schedule prints its heading and detail
-     on one line (heading in accent, detail in body colour). */
+  /* An inline recommend-interview heading: the label sits left, its detail is
+     pushed to the right edge with the space in the middle, matching the
+     day/time rows above it. */
   .temple-print-sub-inline {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 0.3in;
     font-weight: 400;
     color: var(--ink-mid);
   }
@@ -421,6 +426,11 @@
   .temple-print-sub-inline .sub-label {
     font-weight: 600;
     color: var(--accent);
+    flex: 0 0 auto;
+  }
+
+  .temple-print-sub-inline .sub-detail {
+    text-align: right;
   }
 
   .temple-print-closed {
@@ -1269,7 +1279,7 @@ async function loadTemple() {
       if (has(block.note)) below.push(nl2br(block.note));
       if (has(block.contact)) below.push(nl2br(block.contact));
       const inlineHead = (detail) =>
-        `<div class="temple-print-sub temple-print-sub-inline"><span class="sub-label">${escapeHtml(heading)}:</span> ${detail}</div>`;
+        `<div class="temple-print-sub temple-print-sub-inline"><span class="sub-label">${escapeHtml(heading)}</span><span class="sub-detail">${detail}</span></div>`;
 
       // No set schedule (e.g. the ward's "by appointment"): heading and its
       // detail share one line.
