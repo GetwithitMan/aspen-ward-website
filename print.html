@@ -1157,7 +1157,7 @@ async function loadMissionaries() {
           ${person.location ? `<div class="missionary-location">${escapeHtml(person.location)}</div>` : ''}
           <div class="missionary-contact">
             ${person.email ? `<div>Email: <a href="mailto:${encodeURIComponent(person.email)}">${escapeHtml(person.email)}</a></div>` : ''}
-            ${person.address ? `<div>${escapeHtml(person.address.replace(/\n/g, ', '))}</div>` : ''}
+            ${person.address ? `<div class="missionary-address">${escapeHtml(person.address).replace(/\n/g, '<br>')}</div>` : ''}
           </div>
         </div>`;
     });
