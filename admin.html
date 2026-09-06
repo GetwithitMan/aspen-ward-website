@@ -1214,6 +1214,60 @@ main {
 }
 
 .qr-hint a:hover { text-decoration: underline; }
+
+/* === Cover image thumbnail picker === */
+.cover-thumb-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-bottom: 0.5rem;
+}
+
+.cover-thumb-group {
+  width: 100%;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ink-muted);
+  margin: 0.5rem 0 0.1rem;
+}
+
+.cover-thumb {
+  width: 94px;
+  padding: 4px;
+  border: 2px solid var(--stroke);
+  border-radius: var(--radius-sm);
+  background: #fff;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  font: inherit;
+}
+
+.cover-thumb img {
+  width: 100%;
+  height: 84px;
+  object-fit: contain;
+}
+
+.cover-thumb span {
+  font-size: 0.62rem;
+  line-height: 1.15;
+  color: var(--ink-muted);
+  text-align: center;
+}
+
+.cover-thumb:hover { border-color: var(--ink-muted); }
+
+.cover-thumb.selected {
+  border-color: var(--accent, #2c5530);
+  box-shadow: 0 0 0 1px var(--accent, #2c5530);
+}
+
+.cover-thumb.selected span { color: var(--ink); font-weight: 600; }
 </style>
 <link rel="preload" as="font" type="font/woff2" crossorigin href="/public/assets/fonts/plus-jakarta-sans-var.woff2">
 <link rel="preload" as="font" type="font/woff2" crossorigin href="/public/assets/fonts/playfair-display-var.woff2">
@@ -1452,8 +1506,9 @@ main {
         <div class="section-content">
           <p class="form-hint" style="margin-bottom: 1rem;">The image printed on the front of the program. Change it for a holiday or season — it prints in black and white.</p>
           <div class="form-group">
-            <label class="form-label" for="cover-image-select">Cover image</label>
-            <select id="cover-image-select" class="form-input">
+            <label class="form-label">Cover image</label>
+            <div id="cover-thumb-grid" class="cover-thumb-grid"></div>
+            <select id="cover-image-select" class="form-input" style="display:none;">
               <option value="logo">Church logo (default)</option>
               <optgroup label="Fine art — Carl Bloch">
                 <option value="consolator">The Consolator</option>
@@ -1474,6 +1529,20 @@ main {
                 <option value="boyjesus">The Boy Jesus in the Temple (Hofmann)</option>
                 <option value="walkonwater">Jesus Walks on the Sea (Tissot)</option>
                 <option value="baptism">The Baptism of Jesus (Tissot)</option>
+              </optgroup>
+              <optgroup label="Latter-day Saint history &amp; art">
+                <option value="firstvision">The First Vision</option>
+                <option value="firstvision-grove">The First Vision (Sacred Grove)</option>
+                <option value="firstvision-linocut">The First Vision — linocut (Warren Luch)</option>
+                <option value="firstvision-linoleum">The First Vision — linoleum (Warren Luch)</option>
+                <option value="carthagejail">Carthage Jail</option>
+                <option value="libertyjail">The Prophet in Jail</option>
+                <option value="nauvoo">Joseph Smith &amp; the Nauvoo Temple</option>
+                <option value="whitmerfarm">Peter Whitmer Farm</option>
+                <option value="saltlaketemple">Salt Lake Temple</option>
+                <option value="goldplates">The Book of Mormon Plates</option>
+                <option value="eden">The Garden of Eden</option>
+                <option value="lightoftheworld">The Light of the World</option>
               </optgroup>
               <optgroup label="Emblems (line art)">
                 <option value="temple">Temple</option>
@@ -2497,6 +2566,7 @@ function renderStructuredData(data) {
   // Set cover image choice
   const coverSelect = document.getElementById('cover-image-select');
   if (coverSelect) coverSelect.value = data.coverImage || 'logo';
+  if (typeof syncCoverThumbs === 'function') syncCoverThumbs();
 
   // Set testimony meeting state
   isTestimonyMeeting = data.isTestimonyMeeting || false;
@@ -3003,6 +3073,7 @@ function applySection(key, value) {
     case 'select': {
       const sel = document.getElementById(spec.field);
       if (sel) sel.value = value || 'logo';
+      if (typeof syncCoverThumbs === 'function') syncCoverThumbs();
       break;
     }
     case 'flag': {
@@ -3125,12 +3196,77 @@ passwordInput.addEventListener('keypress', (e) => {
 logoutBtn.addEventListener('click', logout);
 saveBtn.addEventListener('click', saveDirtySections);
 
+// === Cover image thumbnail picker ===
+// The <select id="cover-image-select"> stays the source of truth (the section
+// engine reads/writes it); the grid is a visual front end built from its
+// options, so there is only one list to maintain.
+function coverThumbSrc(value) {
+  if (value === 'logo') return '/public/assets/ward-logo.jpeg';
+  const emblems = ['temple', 'scriptures', 'chapel', 'christmas'];
+  return emblems.includes(value)
+    ? `/public/assets/covers/${value}.svg`
+    : `/public/assets/covers/${value}.jpg`;
+}
+
+let syncCoverThumbs = () => {};
+
+function initCoverPicker() {
+  const select = document.getElementById('cover-image-select');
+  const grid = document.getElementById('cover-thumb-grid');
+  if (!select || !grid) return;
+
+  grid.innerHTML = '';
+  const addTile = (value, label) => {
+    const tile = document.createElement('button');
+    tile.type = 'button';
+    tile.className = 'cover-thumb';
+    tile.dataset.cover = value;
+    const img = document.createElement('img');
+    img.src = coverThumbSrc(value);
+    img.alt = '';
+    img.loading = 'lazy';
+    const span = document.createElement('span');
+    span.textContent = label;
+    tile.append(img, span);
+    tile.addEventListener('click', () => {
+      select.value = value;
+      select.dispatchEvent(new Event('change', { bubbles: true }));
+      syncCoverThumbs();
+    });
+    grid.appendChild(tile);
+  };
+  const addHeading = (text) => {
+    const h = document.createElement('div');
+    h.className = 'cover-thumb-group';
+    h.textContent = text;
+    grid.appendChild(h);
+  };
+
+  Array.from(select.children).forEach((child) => {
+    if (child.tagName === 'OPTION') {
+      addTile(child.value, child.textContent);
+    } else if (child.tagName === 'OPTGROUP') {
+      addHeading(child.label);
+      Array.from(child.children).forEach((opt) => addTile(opt.value, opt.textContent));
+    }
+  });
+
+  syncCoverThumbs = () => {
+    const current = select.value || 'logo';
+    grid.querySelectorAll('.cover-thumb').forEach((t) => {
+      t.classList.toggle('selected', t.dataset.cover === current);
+    });
+  };
+  syncCoverThumbs();
+}
+
 // === Initialize ===
 initTheme();
 initSectionToggles();
 initAddButtons();
 initSectionSaveButtons();
 initTempleControls();
+initCoverPicker();
 initUnsavedChangesGuard();
 
 // Check if already logged in

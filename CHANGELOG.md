@@ -1,5 +1,19 @@
 # Changelog
 
+## September 6, 2026 (part 17)
+
+### A Visual Cover Picker, and Latter-day Saint Images
+
+The cover picker is now a grid of thumbnails instead of a plain dropdown, so the
+right image is easy to see and choose. It is built from the same option list, so
+there is still one source of truth.
+
+Twelve ward-supplied Latter-day Saint images were added to the library: the First
+Vision (a painting, plus two Warren Luch relief prints), Carthage Jail, the
+Prophet in jail, Joseph Smith and the Nauvoo Temple, the Peter Whitmer farm, the
+Salt Lake Temple, the Book of Mormon plates, the Garden of Eden, and the Light of
+the World. The cover library now holds 33 options.
+
 ## September 6, 2026 (part 16)
 
 ### Fine-Art Covers
