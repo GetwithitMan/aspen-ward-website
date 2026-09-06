@@ -1,5 +1,20 @@
 # Changelog
 
+## September 6, 2026 (part 13)
+
+### Tighter Printed Program
+
+Squeezed vertical space out of the printed program so the fit pass can set the
+body text larger.
+
+- A recommend-interview block with no set schedule (the ward's "by appointment")
+  now prints its heading and detail on one line — "Ward Recommend Interviews: By
+  scheduling with the executive secretary" — instead of two.
+- Header, title, and separator spacing was cut across every fitted region
+  (announcements, program, temple, events, missionaries): the big section rules
+  lost about half their margins, and line spacing was reduced in the program
+  rows and announcement text. The cover is unchanged.
+
 ## September 6, 2026 (part 12)
 
 ### A Nudge to Shorten Links

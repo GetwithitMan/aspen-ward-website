@@ -194,8 +194,8 @@
     font-weight: 600;
     text-align: center;
     color: var(--accent);
-    margin-bottom: 0.25in;
-    padding-bottom: 8px;
+    margin-bottom: 0.1in;
+    padding-bottom: 4px;
     border-bottom: 2px solid var(--accent);
   }
 
@@ -203,8 +203,8 @@
   }
 
   .event-item {
-    margin-bottom: calc(0.18in * var(--fit, 1));
-    padding-bottom: calc(0.12in * var(--fit, 1));
+    margin-bottom: calc(0.1in * var(--fit, 1));
+    padding-bottom: calc(0.07in * var(--fit, 1));
     border-bottom: 1px solid #eee;
     break-inside: avoid;
     page-break-inside: avoid;
@@ -341,8 +341,8 @@
     font-weight: 600;
     text-align: center;
     color: var(--accent);
-    margin-bottom: 0.25in;
-    padding-bottom: 8px;
+    margin-bottom: 0.1in;
+    padding-bottom: 4px;
     border-bottom: 2px solid var(--accent);
   }
 
@@ -362,8 +362,8 @@
   /* Temple section — styled like Announcements and living in the same fitted
      region, so every size is calc(... * var(--fit)). */
   .temple-print {
-    margin-top: calc(0.3in * var(--fit, 1));
-    padding-top: calc(0.18in * var(--fit, 1));
+    margin-top: calc(0.16in * var(--fit, 1));
+    padding-top: calc(0.1in * var(--fit, 1));
     border-top: 2px solid var(--accent);
   }
 
@@ -374,14 +374,14 @@
     font-weight: 600;
     text-align: center;
     color: var(--accent);
-    margin-bottom: calc(0.1in * var(--fit, 1));
+    margin-bottom: calc(0.05in * var(--fit, 1));
   }
 
   .temple-print-name {
     text-align: center;
     font-size: calc(11pt * var(--fit, 1));
     color: var(--ink-soft);
-    margin-bottom: calc(0.12in * var(--fit, 1));
+    margin-bottom: calc(0.06in * var(--fit, 1));
   }
 
   .temple-print-row {
@@ -407,8 +407,20 @@
     font-size: calc(11pt * var(--fit, 1));
     font-weight: 600;
     color: var(--accent);
-    margin-top: calc(0.14in * var(--fit, 1));
-    margin-bottom: calc(0.04in * var(--fit, 1));
+    margin-top: calc(0.07in * var(--fit, 1));
+    margin-bottom: calc(0.02in * var(--fit, 1));
+  }
+
+  /* A recommend-interview block with no schedule prints its heading and detail
+     on one line (heading in accent, detail in body colour). */
+  .temple-print-sub-inline {
+    font-weight: 400;
+    color: var(--ink-mid);
+  }
+
+  .temple-print-sub-inline .sub-label {
+    font-weight: 600;
+    color: var(--accent);
   }
 
   .temple-print-closed {
@@ -425,8 +437,8 @@
   }
 
   .announcement-item {
-    margin-bottom: calc(0.24in * var(--fit, 1));
-    padding-bottom: calc(0.12in * var(--fit, 1));
+    margin-bottom: calc(0.13in * var(--fit, 1));
+    padding-bottom: calc(0.07in * var(--fit, 1));
     border-bottom: 1px solid #eee;
   }
 
@@ -449,7 +461,7 @@
   .announcement-description {
     font-size: calc(12pt * var(--fit, 1));
     color: var(--ink-mid);
-    line-height: 1.5;
+    line-height: 1.35;
     white-space: pre-wrap;
     /* The long announcements are the only real running prose on the sheet, and
        they were losing a third of their width to ragged line ends. Hyphenating
@@ -511,8 +523,8 @@
     font-weight: 600;
     text-align: center;
     color: var(--accent);
-    margin-bottom: 0.18in;
-    padding-bottom: 6px;
+    margin-bottom: 0.1in;
+    padding-bottom: 4px;
     border-bottom: 2px solid var(--accent);
   }
 
@@ -526,7 +538,7 @@
 
   /* === SECTION STYLING === */
   .section-block {
-    margin-bottom: calc(0.12in * var(--fit, 1));
+    margin-bottom: calc(0.08in * var(--fit, 1));
   }
 
   .section-header {
@@ -537,8 +549,8 @@
     letter-spacing: 1.5px;
     color: var(--accent);
     border-bottom: 1px solid var(--accent);
-    padding-bottom: 2px;
-    margin-bottom: 4px;
+    padding-bottom: 1px;
+    margin-bottom: 3px;
   }
 
   /* === PROGRAM ROWS === */
@@ -546,8 +558,8 @@
     display: flex;
     justify-content: space-between;
     align-items: baseline;
-    margin-bottom: calc(5px * var(--fit, 1));
-    line-height: 1.35;
+    margin-bottom: calc(3px * var(--fit, 1));
+    line-height: 1.25;
   }
 
   /* The label is the question and the name is the answer, so they should not
@@ -671,14 +683,14 @@
     font-weight: 600;
     text-align: center;
     color: var(--accent);
-    margin-bottom: 0.15in;
-    padding-bottom: 6px;
+    margin-bottom: 0.08in;
+    padding-bottom: 3px;
     border-bottom: 1px solid var(--accent);
   }
 
   .missionary-item {
-    margin-bottom: calc(0.12in * var(--fit, 1));
-    padding-bottom: calc(0.08in * var(--fit, 1));
+    margin-bottom: calc(0.07in * var(--fit, 1));
+    padding-bottom: calc(0.05in * var(--fit, 1));
     border-bottom: 1px solid #eee;
     break-inside: avoid;
   }
@@ -1251,12 +1263,18 @@ async function loadTemple() {
 
     const interviewBlock = (heading, block) => {
       if (!ivHas(block)) return '';
-      let out = `<div class="temple-print-sub">${escapeHtml(heading)}</div>`;
-      out += scheduleRows(templeList(block.rows));
+      const rows = templeList(block.rows);
       const extra = [];
       if (has(block.location)) extra.push(nl2br(block.location));
       if (has(block.note)) extra.push(nl2br(block.note));
       if (has(block.contact)) extra.push(nl2br(block.contact));
+      // No set schedule (e.g. the ward's "by appointment"): keep the heading
+      // and its detail on one line to save vertical space.
+      if (!rows.length && extra.length) {
+        return `<div class="temple-print-sub temple-print-sub-inline"><span class="sub-label">${escapeHtml(heading)}:</span> ${extra.join(' · ')}</div>`;
+      }
+      let out = `<div class="temple-print-sub">${escapeHtml(heading)}</div>`;
+      out += scheduleRows(rows);
       if (extra.length) out += `<div class="temple-print-note">${extra.join('<br>')}</div>`;
       return out;
     };
