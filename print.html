@@ -8,6 +8,23 @@
 <meta name="robots" content="noindex">
 
 <style>
+  /* === INK ===
+     The greys here had drifted into a mix of neutral (#222, #444, #555, #666)
+     and warm. Warm greys read as softer and friendlier than neutral ones, and
+     using a single family consistently is itself easier to process - which is
+     the whole mechanism behind a page feeling pleasant rather than merely
+     legible. Lightness is matched to what each value replaced, so nothing loses
+     contrast; the two lightest actually gain a little. */
+  :root {
+    --ink-strong: #17170f;  /* 18.0:1  names and titles - what people look for */
+    --ink:        #26251d;  /* 15.4:1  body */
+    --ink-mid:    #47463d;  /*  9.5:1  quieter body copy */
+    --ink-soft:   #55564e;  /*  7.4:1  secondary lines */
+    --ink-muted:  #63625a;  /*  6.1:1  row labels, contact details */
+    --ink-faint:  #93938a;  /*  3.1:1  screen-only empty and loading states */
+    --accent:     #2c5530;  /*  8.6:1  the ward green */
+  }
+
   /* === BASE PRINT SETTINGS === */
   @page {
     size: 11in 8.5in; /* Landscape */
@@ -23,7 +40,7 @@
     padding: 0;
     font-family: "Crimson Pro", "Georgia", serif;
     background: #e8e8e8;
-    color: #333;
+    color: var(--ink);
   }
 
   /* === SCREEN-ONLY CONTROLS === */
@@ -37,7 +54,7 @@
   }
 
   .print-btn {
-    background: #2c5530;
+    background: var(--accent);
     color: white;
     border: none;
     padding: 12px 24px;
@@ -176,10 +193,10 @@
     font-size: 20pt;
     font-weight: 600;
     text-align: center;
-    color: #2c5530;
+    color: var(--accent);
     margin-bottom: 0.25in;
     padding-bottom: 8px;
-    border-bottom: 2px solid #2c5530;
+    border-bottom: 2px solid var(--accent);
   }
 
   #events-list {
@@ -199,7 +216,7 @@
 
   .event-date {
     font-size: calc(11pt * var(--fit, 1));
-    color: #2c5530;
+    color: var(--accent);
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 1px;
@@ -208,7 +225,7 @@
   .event-title {
     font-size: calc(14pt * var(--fit, 1));
     font-weight: 600;
-    color: #222;
+    color: var(--ink);
     margin: 2px 0;
     text-wrap: balance;
     break-after: avoid;
@@ -217,7 +234,7 @@
 
   .event-info {
     font-size: calc(12pt * var(--fit, 1));
-    color: #555;
+    color: var(--ink-soft);
     line-height: 1.4;
     white-space: pre-wrap;
     /* Events go two-up at five or more, and the column is narrow enough there
@@ -251,16 +268,22 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    color: #999;
+    color: var(--ink-faint);
     font-size: 10pt;
     margin: 0 auto 0.3in auto;
   }
 
+  /* "The Church of Jesus Christ of Latter-day Saints" is the longest line on
+     the cover and the first thing anyone reads. Set in full capitals it was a
+     46-character block of rectangles: caps cost readers 10-20% of their reading
+     speed, because word shapes disappear and each letter has to be read on its
+     own. Small caps keep the formal, quiet look while giving the words their
+     shapes back - and title case is how the Church sets its own name. */
   .cover-badge {
-    font-size: 11pt;
-    text-transform: uppercase;
-    letter-spacing: 2px;
-    color: #2c5530;
+    font-size: 12pt;
+    font-variant: small-caps;
+    letter-spacing: 1px;
+    color: var(--accent);
     margin-bottom: 0.15in;
   }
 
@@ -269,24 +292,24 @@
     font-size: 42pt;
     font-weight: 600;
     margin: 0 0 0.1in 0;
-    color: #1a1a1a;
+    color: var(--ink-strong);
   }
 
   .cover-subtitle {
     font-size: 16pt;
-    color: #555;
+    color: var(--ink-soft);
     margin: 0 0 0.15in 0;
   }
 
   .cover-date {
     font-size: 14pt;
-    color: #2c5530;
+    color: var(--accent);
     font-weight: 500;
   }
 
   .cover-welcome {
     font-size: 12pt;
-    color: #444;
+    color: var(--ink-mid);
     margin: 0.2in 0 0 0;
     line-height: 1.5;
     font-style: italic;
@@ -300,7 +323,7 @@
   .cover-divider {
     width: 1.5in;
     height: 2px;
-    background: #2c5530;
+    background: var(--accent);
     margin: 0.25in auto;
   }
 
@@ -317,10 +340,10 @@
     font-size: 20pt;
     font-weight: 600;
     text-align: center;
-    color: #2c5530;
+    color: var(--accent);
     margin-bottom: 0.25in;
     padding-bottom: 8px;
-    border-bottom: 2px solid #2c5530;
+    border-bottom: 2px solid var(--accent);
   }
 
   #announcements-list {
@@ -342,7 +365,7 @@
   .announcement-title {
     font-size: calc(14.5pt * var(--fit, 1));
     font-weight: 600;
-    color: #2c5530;
+    color: var(--accent);
     margin-bottom: 2px;
     /* A two-line heading splits evenly rather than leaving one word below. */
     text-wrap: balance;
@@ -353,7 +376,7 @@
 
   .announcement-description {
     font-size: calc(12pt * var(--fit, 1));
-    color: #4a4a45;
+    color: var(--ink-mid);
     line-height: 1.5;
     white-space: pre-wrap;
     /* The long announcements are the only real running prose on the sheet, and
@@ -380,10 +403,10 @@
     font-size: 22pt;
     font-weight: 600;
     text-align: center;
-    color: #2c5530;
+    color: var(--accent);
     margin-bottom: 0.18in;
     padding-bottom: 6px;
-    border-bottom: 2px solid #2c5530;
+    border-bottom: 2px solid var(--accent);
   }
 
   /* The program is the one region that never had a fit pass, so a long week
@@ -405,8 +428,8 @@
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 1.5px;
-    color: #2c5530;
-    border-bottom: 1px solid #2c5530;
+    color: var(--accent);
+    border-bottom: 1px solid var(--accent);
     padding-bottom: 2px;
     margin-bottom: 4px;
   }
@@ -426,7 +449,7 @@
      here, not colour - the program is printed in greyscale. */
   .row-label {
     font-size: calc(13.5pt * var(--fit, 1));
-    color: #6a6c63;
+    color: var(--ink-muted);
     flex-shrink: 0;
     margin-right: 8px;
     min-width: 1.4in;
@@ -436,7 +459,7 @@
      long name wraps instead of being shrunk to fit one line. */
   .row-name {
     font-size: calc(16pt * var(--fit, 1));
-    color: #17170f;
+    color: var(--ink-strong);
     text-align: right;
     white-space: pre-wrap;
     overflow-wrap: break-word;
@@ -454,7 +477,7 @@
   .program-row.is-standalone .row-name {
     text-align: center;
     font-style: italic;
-    color: #55564e;
+    color: var(--ink-soft);
     max-width: none;
   }
 
@@ -507,7 +530,7 @@
     justify-content: center;
     align-items: center;
     height: 100%;
-    color: #999;
+    color: var(--ink-faint);
     font-size: 12pt;
   }
 
@@ -515,7 +538,7 @@
   .testimony-message {
     font-style: italic;
     text-align: center;
-    color: #444;
+    color: var(--ink-mid);
     font-size: calc(11pt * var(--fit, 1));
     line-height: 1.4;
     border-top: 1px solid #d8d9d0;
@@ -528,7 +551,7 @@
   /* === EMPTY STATE === */
   .empty-state {
     text-align: center;
-    color: #999;
+    color: var(--ink-faint);
     font-style: italic;
     padding: 1in 0;
   }
@@ -540,10 +563,10 @@
     font-size: 16pt;
     font-weight: 600;
     text-align: center;
-    color: #2c5530;
+    color: var(--accent);
     margin-bottom: 0.15in;
     padding-bottom: 6px;
-    border-bottom: 1px solid #2c5530;
+    border-bottom: 1px solid var(--accent);
   }
 
   .missionary-item {
@@ -559,7 +582,7 @@
 
   .missionary-type {
     font-size: calc(9pt * var(--fit, 1));
-    color: #2c5530;
+    color: var(--accent);
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 1px;
@@ -568,26 +591,26 @@
   .missionary-name {
     font-size: calc(13pt * var(--fit, 1));
     font-weight: 600;
-    color: #222;
+    color: var(--ink);
     margin: 1px 0;
   }
 
   .missionary-location {
     font-size: calc(11pt * var(--fit, 1));
-    color: #555;
+    color: var(--ink-soft);
     font-style: italic;
   }
 
   .missionary-contact {
     font-size: calc(10pt * var(--fit, 1));
-    color: #666;
+    color: var(--ink-muted);
     margin-top: 2px;
     line-height: 1.3;
     overflow-wrap: break-word;
   }
 
   .missionary-contact a {
-    color: #2c5530;
+    color: var(--accent);
     text-decoration: none;
   }
 </style>

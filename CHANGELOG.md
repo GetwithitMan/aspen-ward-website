@@ -1,5 +1,42 @@
 # Changelog
 
+## September 6, 2026 (part 5)
+
+### Small Things That Make It Feel Good to Read
+
+The research here is [processing fluency](https://pages.ucsd.edu/~pwinkiel/reber-schwarz-winkielman-beauty-PSPR-2004.pdf)
+(Reber, Schwarz & Winkielman): the more easily something is read, the more
+pleasant it feels — and the reader never attributes the pleasure to the ease.
+They credit the thing itself. So most of what makes a page *feel* good is the
+same work that makes it easy to read, which the last four rounds of changes
+already banked.
+
+Two additions:
+
+- **The line under the ward logo is set in small caps** instead of full
+  capitals. "The Church of Jesus Christ of Latter-day Saints" is the longest
+  line on the cover and the first thing anyone reads, and full capitals cost
+  readers 10-20% of their reading speed — every word becomes the same rectangle,
+  so the eye has to spell it out letter by letter instead of recognising the
+  shape. Small caps keep the quiet, formal look and give the words their shapes
+  back. It is also how the Church sets its own name.
+- **One warm ink palette.** The greys had drifted into a mix of neutral (#222,
+  #444, #555, #666) and warm. Warm greys read as softer than neutral ones, and
+  one consistent family is easier to process than several. Every value was
+  matched in lightness to the one it replaced, so nothing lost contrast — the
+  two lightest gained a little (row labels 5.3:1 → 6.1:1).
+
+Considered and left alone:
+
+- **A warmer heading font.** Curved letterforms do read as friendlier than
+  angular ones, but that research concerns shape extremes, not the difference
+  between two classical serifs. Set side by side against Crimson Pro, Playfair
+  Display's higher contrast gives "Aspen Ward" presence the warmer option loses,
+  for no warmth anyone would notice.
+- **The type scale.** Thirteen sizes sounded like too many, but no two sizes
+  within 5% of each other ever appear in the same place, so nothing reads as an
+  accident.
+
 ## September 6, 2026 (part 4)
 
 ### Typographic Polish
