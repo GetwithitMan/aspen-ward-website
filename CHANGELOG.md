@@ -1,5 +1,33 @@
 # Changelog
 
+## September 6, 2026
+
+### Long Hymn Titles Stay on One Line
+
+A hymn like `#62 - All Creatures Of Our God And King` was wider than the name
+column on the printed program, so it wrapped and left "And King" stranded on a
+line of its own.
+
+The number and the title are now sized separately. The number keeps the row's
+full size; the title shrinks only as far as it has to, so the hymn sits on one
+line:
+
+> Opening Hymn                #62 - All Creatures Of Our God And King
+
+- **Only the hymns that need it shrink.** In this week's program, `#1007 - As
+  Bread Is Broken` and `#134 - I Believe In Christ` already fit, and print
+  untouched at full size.
+- **The whole program gets bigger.** Recovering that wrapped line let the
+  scale-to-fit pass raise the program from 92% to 97%, so every other row —
+  speakers, presiding, benediction — prints slightly larger too.
+- **A title too long to rescue wraps as before.** Below about three quarters of
+  full size the title would be too small to read next to a full-size number, so
+  it goes back to wrapping at full size rather than printing tiny *and*
+  wrapped.
+- Rows that are not hymns are untouched. A row only counts as a hymn if it
+  starts with `#` and a number, or the label says hymn/song/musical — so
+  `2 Nephi 2:25 - Men are that they might have joy` is left alone.
+
 ## August 18, 2026 (part 3)
 
 ### Prompt to Save When Leaving a Section

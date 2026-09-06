@@ -414,6 +414,49 @@
     max-width: 2.8in;
   }
 
+  /* === HYMN ROWS ===
+     A hymn prints as "#62 - All Creatures Of Our God And King", which is wider
+     than the name column and used to wrap under itself. The number stays at the
+     row's full size; only the title shrinks, and only as far as it has to, so
+     the whole hymn sits on one line. */
+  .row-name.is-hymn {
+    display: flex;
+    justify-content: flex-end;
+    align-items: baseline;
+    white-space: nowrap;
+    /* A single line can use the slack the wrapped two-line version never
+       needed, which is often enough to avoid shrinking at all. */
+    max-width: 3in;
+  }
+
+  .hymn-number {
+    flex: 0 0 auto;
+    margin-right: 0.06in;
+  }
+
+  /* min-width:0 lets the title shrink below its text width, so its own box
+     width is exactly the space left for it. overflow:hidden means a bad
+     measurement clips instead of bleeding into the label. */
+  .hymn-title {
+    flex: 0 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    font-size: calc(16pt * var(--fit, 1) * var(--name-fit, 1));
+  }
+
+  /* No readable size gets this title onto one line. Drop back to plain inline
+     flow so the number and title wrap together as one right-aligned block -
+     byte for byte how every hymn printed before. */
+  .row-name.is-hymn.wraps {
+    display: block;
+    white-space: normal;
+  }
+
+  .row-name.is-hymn.wraps .hymn-title {
+    overflow: visible;
+    overflow-wrap: break-word;
+  }
+
   /* === LOADING STATE === */
   .loading {
     display: flex;
@@ -598,6 +641,31 @@ function getCurrentSunday() {
   });
 }
 
+// Hymns are entered as "#62 - All Creatures Of Our God And King". Splitting the
+// number off the title lets the printed row keep the number at full size and
+// shrink only the title, instead of wrapping the whole thing onto two lines.
+//
+// Group 1 is the number and its separator; group 2 is the title.
+const HYMN_PATTERN = /^(#?\s*\d{1,4}\s*(?:[-–—:]\s*)?)(\S.*)$/;
+
+function splitHymn(label = '', details = '') {
+  // Multi-line details are deliberate formatting, not a hymn - leave them be.
+  if (details.includes('\n')) return null;
+
+  const match = details.match(HYMN_PATTERN);
+  if (!match) return null;
+
+  // A bare leading number could be anything ("2 Nephi 2:25"), so require either
+  // a "#" or a label that says this row is music.
+  const looksMusical = /hymn|song|musical/i.test(label);
+  if (!details.trimStart().startsWith('#') && !looksMusical) return null;
+
+  // The title has to contain letters - "#5 - 10" is not a hymn title.
+  if (!/[A-Za-z]/.test(match[2])) return null;
+
+  return { number: match[1].trim(), title: match[2].trim() };
+}
+
 // Render a section block for the program
 function createSectionHTML(title, items) {
   if (!items || items.length === 0) return '';
@@ -610,10 +678,19 @@ function createSectionHTML(title, items) {
     <div class="section-header">${escapeHtml(title)}</div>`;
 
   validItems.forEach(item => {
+    const label = item.label || '';
+    const details = item.details || '';
+    const hymn = splitHymn(label, details);
+
+    const name = hymn
+      ? `<span class="hymn-number">${escapeHtml(hymn.number)}</span>` +
+        `<span class="hymn-title">${escapeHtml(hymn.title)}</span>`
+      : escapeHtml(details);
+
     html += `
       <div class="program-row">
-        <span class="row-label">${escapeHtml(item.label || '')}</span>
-        <span class="row-name">${escapeHtml(item.details || '')}</span>
+        <span class="row-label">${escapeHtml(label)}</span>
+        <span class="row-name${hymn ? ' is-hymn' : ''}">${name}</span>
       </div>`;
   });
 
@@ -857,10 +934,62 @@ function overflows(box) {
   return box.scrollHeight > box.clientHeight || box.scrollWidth > box.clientWidth;
 }
 
+// Below this a hymn title is too small to sit next to a full-size number, so it
+// is allowed to wrap instead.
+const MIN_HYMN_FIT = 0.72;
+
+// Titles are laid out nowrap, so the browser puts the text on one line at its
+// natural width whatever the column can hold. The ratio of the two is the exact
+// scale that makes it fit - no search needed, unlike the region pass.
+const measureRange = document.createRange();
+
+function fitHymnTitles(box) {
+  const titles = box.querySelectorAll('.hymn-title');
+  if (!titles.length) return;
+
+  // Write every reset first, then read every measurement, so the browser lays
+  // out once per pass instead of once per row.
+  titles.forEach(title => {
+    title.style.setProperty('--name-fit', '1');
+    title.parentElement.classList.remove('wraps');
+  });
+
+  const scales = Array.from(titles, title => {
+    const available = title.getBoundingClientRect().width;
+    measureRange.selectNodeContents(title);
+    const natural = measureRange.getBoundingClientRect().width;
+    if (!natural || natural <= available) return 1;
+    // 0.995 keeps the last glyph clear of the clip edge.
+    return (available / natural) * 0.995;
+  });
+
+  titles.forEach((title, i) => {
+    if (scales[i] >= 1) return;
+
+    // Past the floor there is no size that gets this title onto one line, and
+    // shrinking a title that is going to wrap anyway just makes it small AND
+    // wrapped. Leave it full size and let it wrap, exactly as it always has.
+    if (scales[i] < MIN_HYMN_FIT) {
+      title.parentElement.classList.add('wraps');
+      return;
+    }
+
+    title.style.setProperty('--name-fit', String(scales[i]));
+  });
+}
+
 function fitRegion(box) {
   if (!box || !box.children.length) return 1;
 
-  box.style.setProperty('--fit', '1');
+  // Hymn titles are measured against a column whose width is fixed in inches
+  // while the text scales with --fit, so they have to be re-fitted at every
+  // candidate scale before the region's height means anything.
+  const applyFit = (scale) => {
+    box.style.setProperty('--fit', String(scale));
+    fitHymnTitles(box);
+  };
+
+  applyFit(1);
   if (!overflows(box)) return 1;
 
   let low = MIN_FIT;
@@ -870,7 +999,7 @@ function fitRegion(box) {
   // 10 iterations lands within ~0.05% of the largest scale that fits
   for (let i = 0; i < 10; i++) {
     const mid = (low + high) / 2;
-    box.style.setProperty('--fit', String(mid));
+    applyFit(mid);
     if (!overflows(box)) {
       best = mid;
       low = mid;
@@ -879,7 +1008,7 @@ function fitRegion(box) {
     }
   }
 
-  box.style.setProperty('--fit', String(best));
+  applyFit(best);
   return best;
 }
 
