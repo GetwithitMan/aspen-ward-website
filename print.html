@@ -172,6 +172,7 @@
 
   .events-header {
     font-family: "Playfair Display", serif;
+    text-wrap: balance;
     font-size: 20pt;
     font-weight: 600;
     text-align: center;
@@ -209,6 +210,9 @@
     font-weight: 600;
     color: #222;
     margin: 2px 0;
+    text-wrap: balance;
+    break-after: avoid;
+    page-break-after: avoid;
   }
 
   .event-info {
@@ -216,6 +220,10 @@
     color: #555;
     line-height: 1.4;
     white-space: pre-wrap;
+    /* Events go two-up at five or more, and the column is narrow enough there
+       for hyphenation to earn its keep. */
+    hyphens: auto;
+    text-wrap: pretty;
   }
 
   /* Front cover with logo */
@@ -305,6 +313,7 @@
 
   .announcements-header {
     font-family: "Playfair Display", serif;
+    text-wrap: balance;
     font-size: 20pt;
     font-weight: 600;
     text-align: center;
@@ -335,6 +344,11 @@
     font-weight: 600;
     color: #2c5530;
     margin-bottom: 2px;
+    /* A two-line heading splits evenly rather than leaving one word below. */
+    text-wrap: balance;
+    /* Never let the heading sit alone at the foot of a column. */
+    break-after: avoid;
+    page-break-after: avoid;
   }
 
   .announcement-description {
@@ -342,6 +356,17 @@
     color: #4a4a45;
     line-height: 1.5;
     white-space: pre-wrap;
+    /* The long announcements are the only real running prose on the sheet, and
+       they were losing a third of their width to ragged line ends. Hyphenating
+       packs the same text into 26 lines instead of 32, which the fit pass hands
+       straight back as larger type. Needs <html lang> to know the language. */
+    hyphens: auto;
+    /* Only acts when a paragraph would otherwise end on a stranded word. */
+    text-wrap: pretty;
+    /* Keeps a lone line of a paragraph off the bottom or top of a column when
+       a heavy week falls back to two columns. */
+    orphans: 2;
+    widows: 2;
   }
 
   /* Program section (full right side) */
@@ -351,6 +376,7 @@
 
   .program-header {
     font-family: "Playfair Display", serif;
+    text-wrap: balance;
     font-size: 22pt;
     font-weight: 600;
     text-align: center;
@@ -510,6 +536,7 @@
   /* === MISSIONARIES & MILITARY SECTION === */
   .missionaries-header {
     font-family: "Playfair Display", serif;
+    text-wrap: balance;
     font-size: 16pt;
     font-weight: 600;
     text-align: center;

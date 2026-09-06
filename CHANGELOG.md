@@ -1,5 +1,38 @@
 # Changelog
 
+## September 6, 2026 (part 4)
+
+### Typographic Polish
+
+Small print-typography wins, each measured against the real program rather than
+taken on faith:
+
+- **Long announcements are hyphenated.** They were the only real running prose
+  on the sheet and were losing a third of their width to ragged line ends. The
+  same text now sets in 26 lines instead of 32, which the fit pass hands
+  straight back as larger type (91.7% → 93.3%). Only three hyphens appear in
+  this week's copy, so there is no ladder down the margin.
+- **Paragraphs never end on a stranded word** (`text-wrap: pretty`), and a
+  two-line heading splits evenly instead of dropping one word onto its own line
+  (`text-wrap: balance`).
+- **A heading can no longer be left at the foot of a column**, and a lone line
+  of a paragraph cannot be stranded at the top or bottom of one, for the weeks
+  when announcements fall back to two columns.
+
+Two things were tested and deliberately **not** adopted:
+
+- **Tabular figures.** The hope was that they would line up the temple hours.
+  Measured, they move the columns by about 2px — the misalignment comes from the
+  spaces typed into the admin panel, not from digit widths, so this would have
+  been change for its own sake.
+- **A different body font.** Crimson Pro has a smaller x-height than Georgia or
+  Charter, which at first looks like a legibility argument for switching. But it
+  is also proportionally narrower, and on a page that scales type to fill a
+  fixed box what matters is x-height per unit of width. By that measure Crimson
+  Pro (0.978) sits level with Charter (0.981) and ahead of Georgia (0.964).
+  Switching would trade a bigger x-height for a smaller point size and gain
+  nothing.
+
 ## September 6, 2026 (part 3)
 
 ### Three Fixes to the Printed Program
