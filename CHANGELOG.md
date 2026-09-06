@@ -1,5 +1,28 @@
 # Changelog
 
+## September 6, 2026 (part 3)
+
+### Three Fixes to the Printed Program
+
+**Events could vanish entirely.** The print page only accepted the events list
+as an array, but Firebase hands back an object whenever the keys are sparse —
+delete the middle one of three events and the rest arrive as `{0:…, 2:…}`. A
+page full of events then printed "No upcoming events." The home page and the
+missionaries list already allowed for both shapes; the print page now does too.
+
+**Missionaries were capped at 45% of the back page.** A long missionary list was
+shrunk to fit that 45% even when the events above it ended halfway down and the
+space was going spare. The column is now divided by what each side actually
+needs — with nine missionaries and one event they get 78% of it instead of 45%,
+and a side that needs less than its share hands the surplus back rather than
+printing a gap. Neither side can be squeezed below a quarter of the column.
+
+**A heavy announcements week only had one answer: shrink the type.** Announcements
+now fall back to two columns, which hold roughly twice the text at a given size
+— the same trick the events list already uses. Both layouts are measured and the
+one that prints larger wins, so a normal week is untouched and stays in a single
+column.
+
 ## September 6, 2026 (part 2)
 
 ### Easier to Read at a Glance

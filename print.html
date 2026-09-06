@@ -136,8 +136,9 @@
     flex-direction: column;
   }
 
-  /* Missionaries take only what they need (up to 45%); events get the rest.
-     A fixed 2:1 split wasted space whenever one side was short. */
+  /* Events sit above missionaries & military on the back page. allocateBackPage()
+     divides the column between them by what each side actually needs; the values
+     here are only the starting point it measures from. */
   .events-container {
     flex: 1 1 auto;
     min-height: 0;
@@ -155,7 +156,6 @@
   .missionaries-section {
     flex: 0 1 auto;
     min-height: 0;
-    max-height: 45%;
     overflow: hidden;
     margin-top: 0;
     padding-top: 0.2in;
@@ -826,13 +826,21 @@ async function loadEvents() {
 
     loading.style.display = 'none';
 
-    if (!data || !Array.isArray(data) || data.length === 0) {
+    // Firebase hands back an object rather than an array whenever the keys are
+    // sparse - delete the second of three events and the rest arrive as
+    // {0:…, 2:…}. Insisting on an array printed "No upcoming events" for a page
+    // full of them. The home page and loadMissionaries() both allow for it.
+    const events = Array.isArray(data)
+      ? data
+      : (data && typeof data === 'object' ? Object.values(data) : []);
+
+    if (events.length === 0) {
       container.innerHTML = '<p class="empty-state">No upcoming events.</p>';
       return;
     }
 
     // Filter out empty events
-    const validEvents = data.filter(e => e.title || e.info);
+    const validEvents = events.filter(e => e && (e.title || e.info));
 
     if (validEvents.length === 0) {
       container.innerHTML = '<p class="empty-state">No upcoming events.</p>';
@@ -1034,13 +1042,114 @@ function fitRegion(box) {
   return best;
 }
 
+// === SHARE THE BACK PAGE BETWEEN EVENTS AND MISSIONARIES ===
+//
+// Missionaries used to be capped at 45% of the column. A long missionary list
+// was therefore shrunk to fit that 45% even when the events above it ended
+// halfway down the page and the space was going spare. Each side now gets the
+// share of the column its content actually needs.
+
+// Neither side is squeezed below this, so one very long list cannot push the
+// other off the page entirely.
+const MIN_COLUMN_SHARE = 0.25;
+
+function allocateBackPage() {
+  const events = document.querySelector('.events-container');
+  const missionaries = document.getElementById('missionaries-section');
+  if (!events) return;
+
+  const page = events.parentElement;
+
+  // No missionaries this week: events get the whole column.
+  if (!missionaries || missionaries.style.display === 'none') {
+    events.style.flex = '1 1 auto';
+    events.style.height = '';
+    return;
+  }
+
+  // Measure at full size and at natural height, or we would be dividing the
+  // column according to how small the last pass happened to squeeze things.
+  ['.events-content', '.missionaries-content'].forEach(sel => {
+    const box = page.querySelector(sel);
+    if (box) box.style.setProperty('--fit', '1');
+  });
+
+  const sections = [events, missionaries];
+  sections.forEach(section => {
+    section.style.flex = '0 0 auto';
+    section.style.height = 'auto';
+  });
+
+  const pad = getComputedStyle(page);
+  const available = page.clientHeight
+    - parseFloat(pad.paddingTop) - parseFloat(pad.paddingBottom);
+
+  const natural = sections.map(s => s.getBoundingClientRect().height);
+  const total = natural[0] + natural[1];
+
+  // It all fits at full size. Let events absorb the slack so the missionaries
+  // block still sits against the bottom of the page, as it always has.
+  if (total <= available) {
+    events.style.flex = '1 1 auto';
+    events.style.height = '';
+    return;
+  }
+
+  // Otherwise divide in proportion to need, so both sides end up shrunk by
+  // roughly the same amount instead of one carrying all of it.
+  const floor = available * MIN_COLUMN_SHARE;
+  let eventsHeight = Math.min(Math.max(available * (natural[0] / total), floor),
+                              available - floor);
+
+  // The floor can hand a side more room than it has content to fill - one short
+  // event against a long missionary list. That surplus is worth more to the
+  // side that is actually short, so pass it over rather than print a gap.
+  if (eventsHeight > natural[0]) eventsHeight = natural[0];
+  else if (available - eventsHeight > natural[1]) eventsHeight = available - natural[1];
+
+  events.style.height = `${eventsHeight}px`;
+  missionaries.style.height = `${available - eventsHeight}px`;
+}
+
+// === ANNOUNCEMENTS: TWO COLUMNS BEFORE TINY TYPE ===
+//
+// A heavy announcements week had only one answer - shrink the type until it
+// fit. A second column holds roughly twice the text at a given size, which is
+// the same trick the events list already uses. Try both and keep whichever
+// prints larger.
+
+// Above this the single column is comfortable and a second one would only make
+// the lines needlessly narrow.
+const ANNOUNCEMENT_COLUMN_THRESHOLD = 0.85;
+
+function fitAnnouncements(box) {
+  box.style.columnCount = '1';
+  const single = fitRegion(box);
+  if (single > ANNOUNCEMENT_COLUMN_THRESHOLD) return single;
+
+  box.style.columnCount = '2';
+  box.style.columnGap = '0.25in';
+  const double = fitRegion(box);
+  if (double > single) return double;
+
+  // Two columns did not help - a single very long announcement, most likely.
+  box.style.columnCount = '1';
+  return fitRegion(box);
+}
+
 function fitAllRegions() {
   const tooSmall = [];
+
+  // Divide the back page before measuring anything on it: the events and
+  // missionaries boxes have no fixed height until this has run.
+  allocateBackPage();
 
   FIT_REGIONS.forEach(({ name, box: selector }) => {
     const box = document.querySelector(selector);
     if (!box) return;
-    const scale = fitRegion(box);
+    const scale = selector === '#announcements-list'
+      ? fitAnnouncements(box)
+      : fitRegion(box);
     // Report anything that still does not fit even at the floor, so a genuinely
     // overloaded week is visible rather than quietly truncated.
     if (scale <= MIN_FIT + 0.001 && overflows(box)) {
