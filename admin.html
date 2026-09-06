@@ -2217,9 +2217,16 @@ async function loadProgram() {
     missionariesData = toArray(missionariesSnapshot.val());
     renderMissionaries();
 
-    // Load temple info
-    const templeSnapshot = await get(ref(db, 'temple'));
-    applyTemple(templeSnapshot.val());
+    // Load temple info. Isolated so that, until the `temple` node has a rule in
+    // the database, a permission-denied read here does not abort loading the
+    // rest of the program.
+    try {
+      const templeSnapshot = await get(ref(db, 'temple'));
+      applyTemple(templeSnapshot.val());
+    } catch (templeError) {
+      console.warn('Temple node not readable yet (add a rule for it):', templeError?.message || templeError);
+      applyTemple(null);
+    }
 
     // Load site settings
     const siteSettingsSnapshot = await get(ref(db, 'siteSettings'));
