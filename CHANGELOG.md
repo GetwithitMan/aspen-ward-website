@@ -1,5 +1,15 @@
 # Changelog
 
+## October 18, 2026
+
+### Camera Controls Link in Site Settings
+
+Admin → Site Settings now has an **Open Camera Controls** button. It opens the
+Bitfocus Companion button emulator on the chapel camera PC
+(`192.168.109.110:8000`) in a new tab. It only works on the church Wi-Fi, since
+Companion lives on the private network over plain HTTP — which is also why it
+opens in a tab instead of being embedded in the (HTTPS) admin page.
+
 ## September 6, 2026 (part 22)
 
 ### Announcements Collapse to Titles
