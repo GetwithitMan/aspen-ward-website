@@ -20,6 +20,7 @@ everyone else sees who is teaching each class each week.
 - **Passwords are stored as SHA-256 hashes**, not plain text. Like the rest of the database, writes are open.
 - `scripts/seed-teaching.mjs` loads the 6 class groups and 22 teachers once and
   writes logins to `../teacher-logins.csv` (outside the repo).
+- `/admin` has a new **Primary** section linking to the teaching admin and the public calendar.
 - Database rules gained a `teaching` path; `index.html` nav gained a Teaching link.
 
 ## October 18, 2026
