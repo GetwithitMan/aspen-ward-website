@@ -2,8 +2,8 @@
 //
 // Database shape, all under /teaching:
 //   classes/{classId}  { name, order, teams: { t1: { label, members[], pattern } } }
-//   people/{username}  { name, classId, teamId, hash }
-//   sundays/{YYYY-MM-DD}/{classId}  { teamId, by, swap }
+//   people/{username}  { name, classId?, teamId?, role?, hash }   role 'presidency' = admin; class optional
+//   sundays/{YYYY-MM-DD}/{classId}  { teamId | sub, by, swap }   sub = typed-in substitute name
 //
 // `pattern` on a team is { nth: [1, 2] } (those Sundays of the month),
 // { every: true }, or empty when the team just alternates weeks by agreement.
@@ -74,6 +74,12 @@ export function makePassword(fullName) {
   const parts = fullName.trim().split(/\s+/);
   const last = parts.length > 1 ? parts[parts.length - 1] : '';
   return (parts[0] + (last ? last[0] : '')).toLowerCase().replace(/[^a-z]/g, '');
+}
+
+// Who a Sunday's claim shows as: a team's label, or a typed-in sub's name.
+export function claimLabel(classes, classId, claim) {
+  if (claim.sub) return `${claim.sub} (sub)`;
+  return classes?.[classId]?.teams?.[claim.teamId]?.label || 'Unknown';
 }
 
 export function fmtSunday(d) {

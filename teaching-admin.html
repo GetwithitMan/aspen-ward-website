@@ -19,7 +19,7 @@ body { margin: 0; background: var(--bg); color: var(--ink); line-height: 1.45; }
 .wrap { width: min(860px, 92vw); margin: 0 auto; padding: 24px 0 64px; }
 h1 { margin: 0 0 4px; } h2 { margin: 32px 0 10px; font-size: 1.15rem; }
 .hint { color: var(--ink-muted); font-size: .9rem; }
-button, select, input { font: inherit; min-height: 40px; border-radius: 10px; border: 1px solid var(--stroke); padding: 8px 12px; background: var(--surface); color: var(--ink); }
+button, select, input[type=text], input[type=password] { font: inherit; min-height: 40px; border-radius: 10px; border: 1px solid var(--stroke); padding: 8px 12px; background: var(--surface); color: var(--ink); }
 button { cursor: pointer; } button:hover { background: var(--surface-muted); }
 button.primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
 button.danger { color: var(--error); }
@@ -30,31 +30,48 @@ button.danger { color: var(--error); }
 .cls-head { background: var(--surface-muted); font-weight: 700; padding: 8px 14px; border-top: 1px solid var(--stroke); }
 code { background: var(--surface-muted); padding: 2px 6px; border-radius: 6px; }
 .notice { background: var(--swap); border: 1px solid #f0b429; border-radius: 12px; padding: 12px 14px; margin: 12px 0; }
-.form { display: flex; flex-wrap: wrap; gap: 8px; padding: 14px; }
-.form input { flex: 1 1 180px; }
+.badge { display: inline-block; font-size: .72rem; font-weight: 700; text-transform: uppercase; background: var(--accent); color: #fff; border-radius: 6px; padding: 1px 6px; margin-left: 6px; }
+.form { display: flex; flex-wrap: wrap; gap: 8px; padding: 14px; align-items: center; }
+.form input[type=text], .form input[type=password] { flex: 1 1 180px; }
+.err { color: var(--error); min-height: 1.3em; margin: 4px 0 0; }
+.sub-in { flex: 1 1 160px; }
 </style>
 </head>
 <body>
 <div class="wrap">
   <h1>Teaching calendar admin</h1>
-  <p class="hint"><a href="/teaching">View the calendar</a> · <a href="/admin">Ward admin</a></p>
-  <div id="gate" hidden><div class="notice">Sign in on the <a href="/admin">ward admin page</a> first, then come back here.</div></div>
+  <p class="hint"><a href="/teaching">View the calendar</a> · <a href="/admin">Ward admin</a> <span id="who"></span></p>
+
+  <div id="gate" hidden>
+    <div class="notice">Sign in with your Primary presidency login, or sign in on the <a href="/admin">ward admin page</a> first.</div>
+    <div class="panel"><form class="form" id="gate-form">
+      <input type="text" id="g-u" placeholder="Username" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" required>
+      <input type="password" id="g-p" placeholder="Password" autocomplete="current-password" required>
+      <button class="primary" type="submit">Sign in</button>
+    </form></div>
+    <p class="err" id="g-err" role="alert"></p>
+  </div>
+
   <div id="app" hidden>
     <div id="creds"></div>
 
-    <h2>Teachers</h2>
-    <p class="hint">A password is the teacher's first name plus last initial (Kitrick Galloway: <code>kitrickg</code>). Reset puts it back to that.</p>
+    <h2>People</h2>
+    <p class="hint">A password is the person's first name plus last initial (Kitrick Galloway: <code>kitrickg</code>). Reset puts it back to that.</p>
     <div class="panel" id="people"></div>
 
-    <h2>Add a teacher</h2>
+    <h2>Add a person</h2>
+    <p class="hint">Teachers, substitutes and Primary presidency. Presidency members can manage this page.</p>
     <div class="panel"><form class="form" id="add">
-      <input id="add-name" placeholder="Full name" required>
-      <select id="add-team" required></select>
+      <input type="text" id="add-name" placeholder="Full name" required>
+      <select id="add-class"></select>
+      <select id="add-team"></select>
+      <label><input type="checkbox" id="add-pres"> Primary presidency</label>
       <button class="primary" type="submit">Add</button>
     </form></div>
+    <p class="err" id="add-err" role="alert"></p>
 
     <h2>Change a Sunday</h2>
-    <p class="hint">Assign or clear any class on any Sunday, for example to settle a swap yourself.</p>
+    <p class="hint">Assign any team to any Sunday, or type in a sub's name. Clear it to make it open.</p>
     <p><select id="sun-class"></select></p>
     <div class="panel" id="sundays"></div>
   </div>
@@ -65,107 +82,185 @@ import { db } from '/js/firebase.js';
 import { ref, onValue, set, update } from 'https://www.gstatic.com/firebasejs/11.7.3/firebase-database.js';
 import { upcomingSundays, dateKey, fmtSunday, hashLogin, makeUsername, makePassword } from '/js/teaching.js';
 
+const SESSION_KEY = 'teaching-login'; // shared with /teaching, so one sign-in covers both
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
-if (sessionStorage.getItem('admin-auth') !== 'true') {
-  $('gate').hidden = false;
-} else {
-  $('app').hidden = false;
-  start();
+const sundays = upcomingSundays();
+let data = { classes: {}, people: {}, sundays: {} };
+let selClass = null;
+let actor = sessionStorage.getItem('admin-auth') === 'true' ? 'admin' : null;
+let loaded = false;
+
+const classList = () => Object.entries(data.classes).map(([id, c]) => ({ id, ...c })).sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+
+// Ward admin (from /admin) or a Primary presidency login may use this page.
+function resolveActor() {
+  if (sessionStorage.getItem('admin-auth') === 'true') { actor = 'admin'; return; }
+  actor = null;
+  try {
+    const saved = JSON.parse(localStorage.getItem(SESSION_KEY) || 'null');
+    const p = saved && data.people[saved.u];
+    if (p && p.hash === saved.h && p.role === 'presidency') actor = saved.u;
+  } catch { /* storage blocked or corrupt: stay signed out */ }
 }
 
-function start() {
-  let data = { classes: {}, people: {}, sundays: {} };
-  let selClass = null;
-  const sundays = upcomingSundays();
-  const classList = () => Object.entries(data.classes).map(([id, c]) => ({ id, ...c })).sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+$('gate-form').addEventListener('submit', async e => {
+  e.preventDefault();
+  const u = $('g-u').value.trim().toLowerCase();
+  const p = data.people[u];
+  const h = p ? await hashLogin(u, $('g-p').value) : null;
+  if (!p || p.hash !== h) { $('g-err').textContent = 'That username or password is not right.'; return; }
+  if (p.role !== 'presidency') { $('g-err').textContent = 'That login does not have admin access.'; return; }
+  try { localStorage.setItem(SESSION_KEY, JSON.stringify({ u, h })); } catch {}
+  resolveActor();
+  render();
+});
 
-  const showCreds = (name, username, password) => {
-    $('creds').innerHTML = `<div class="notice"><strong>${esc(name)}</strong> — username <code>${esc(username)}</code> password <code>${esc(password)}</code><br><span class="hint">Capitals do not matter when signing in.</span></div>`;
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+const showCreds = (name, username, password) => {
+  $('creds').innerHTML = `<div class="notice"><strong>${esc(name)}</strong> — username <code>${esc(username)}</code> password <code>${esc(password)}</code><br><span class="hint">Capitals do not matter when signing in.</span></div>`;
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+};
+
+async function savePerson(username, person, password) {
+  await set(ref(db, `teaching/people/${username}`), { ...person, hash: await hashLogin(username, password) });
+}
+
+function render() {
+  if (!loaded) return;
+  $('gate').hidden = !!actor;
+  $('app').hidden = !actor;
+  $('who').textContent = actor && actor !== 'admin' ? `· signed in as ${data.people[actor]?.name || actor}` : '';
+  if (!actor) return;
+
+  // people, grouped by class; presidency members with no class go last
+  let html = '';
+  const row = ([u, p]) => {
+    const team = data.classes[p.classId]?.teams?.[p.teamId];
+    const pres = p.role === 'presidency';
+    return `<div class="row"><span class="grow"><strong>${esc(p.name)}</strong>${pres ? '<span class="badge">Presidency</span>' : ''}<br><span class="hint">${esc(team?.label || '')}</span></span><code>${esc(u)}</code><button data-reset="${esc(u)}">Reset password</button><button data-role="${esc(u)}">${pres ? 'Remove presidency' : 'Make presidency'}</button><button class="danger" data-remove="${esc(u)}">Remove</button></div>`;
   };
-
-  async function savePerson(username, person, password) {
-    await set(ref(db, `teaching/people/${username}`), { ...person, hash: await hashLogin(username, password) });
+  for (const c of classList()) {
+    html += `<div class="cls-head">${esc(c.name)}</div>`;
+    const members = Object.entries(data.people).filter(([, p]) => p.classId === c.id);
+    html += members.length ? members.map(row).join('') : '<div class="row hint">No one yet.</div>';
   }
+  const noClass = Object.entries(data.people).filter(([, p]) => !data.classes[p.classId]);
+  if (noClass.length) html += `<div class="cls-head">No class</div>` + noClass.map(row).join('');
+  $('people').innerHTML = html;
 
-  function render() {
-    // people grouped by class
-    let html = '';
-    for (const c of classList()) {
-      html += `<div class="cls-head">${esc(c.name)}</div>`;
-      const members = Object.entries(data.people).filter(([, p]) => p.classId === c.id);
-      if (!members.length) html += '<div class="row hint">No teachers yet.</div>';
-      for (const [u, p] of members) {
-        html += `<div class="row"><span class="grow"><strong>${esc(p.name)}</strong><br><span class="hint">${esc(c.teams?.[p.teamId]?.label || '')}</span></span><code>${esc(u)}</code><button data-reset="${esc(u)}">Reset password</button><button class="danger" data-remove="${esc(u)}">Remove</button></div>`;
-      }
-    }
-    $('people').innerHTML = html;
+  const prevClass = $('add-class').value;
+  $('add-class').innerHTML = '<option value="">No class (presidency only)</option>' +
+    classList().map(c => `<option value="${esc(c.id)}"${c.id === prevClass ? ' selected' : ''}>${esc(c.name)}</option>`).join('');
+  renderTeamOptions();
 
-    $('add-team').innerHTML = classList().flatMap(c => Object.entries(c.teams || {}).map(([tid, t]) =>
-      `<option value="${esc(c.id)}|${esc(tid)}">${esc(c.name)} — ${esc(t.label)}</option>`)).join('');
-
-    $('sun-class').innerHTML = classList().map(c => `<option value="${esc(c.id)}"${c.id === selClass ? ' selected' : ''}>${esc(c.name)}</option>`).join('');
-    renderSundays();
-  }
-
-  function renderSundays() {
-    const c = data.classes[selClass];
-    if (!c) { $('sundays').innerHTML = ''; return; }
-    $('sundays').innerHTML = sundays.map(d => {
-      const key = dateKey(d);
-      const cl = data.sundays?.[key]?.[selClass];
-      const opts = ['<option value="">Open</option>'].concat(Object.entries(c.teams || {}).map(([tid, t]) =>
-        `<option value="${esc(tid)}"${cl?.teamId === tid ? ' selected' : ''}>${esc(t.label)}</option>`)).join('');
-      return `<div class="row"><strong style="flex:0 0 90px">${fmtSunday(d)}</strong><select data-sun="${key}">${opts}</select><label><input type="checkbox" data-swap="${key}"${cl?.swap ? ' checked' : ''}${cl ? '' : ' disabled'}> needs swap</label></div>`;
-    }).join('');
-  }
-
-  $('people').addEventListener('click', async e => {
-    const reset = e.target.dataset.reset, remove = e.target.dataset.remove;
-    if (reset) {
-      const p = data.people[reset], password = makePassword(p.name);
-      await savePerson(reset, { name: p.name, classId: p.classId, teamId: p.teamId }, password);
-      showCreds(p.name, reset, password);
-    } else if (remove && confirm(`Remove ${data.people[remove].name}? Their Sundays stay on the calendar.`)) {
-      await set(ref(db, `teaching/people/${remove}`), null);
-    }
-  });
-
-  $('add').addEventListener('submit', async e => {
-    e.preventDefault();
-    const name = $('add-name').value.trim();
-    const [classId, teamId] = $('add-team').value.split('|');
-    let username = makeUsername(name);
-    // Two people can share an initial and surname (Devin and Dana Reed): use two letters.
-    if (data.people[username]) username = (name[0] + name[1] + name.trim().split(/\s+/).pop()).toLowerCase().replace(/[^a-z]/g, '');
-    if (data.people[username]) { alert(`The username ${username} is already taken. Add a middle initial to the name.`); return; }
-    const password = makePassword(name);
-    await savePerson(username, { name, classId, teamId }, password);
-    $('add').reset();
-    showCreds(name, username, password);
-  });
-
-  $('sun-class').addEventListener('change', e => { selClass = e.target.value; renderSundays(); });
-
-  $('sundays').addEventListener('change', async e => {
-    const path = k => ref(db, `teaching/sundays/${k}/${selClass}`);
-    if (e.target.dataset.sun) {
-      const k = e.target.dataset.sun, teamId = e.target.value;
-      await set(path(k), teamId ? { teamId, by: 'admin' } : null);
-    } else if (e.target.dataset.swap) {
-      await update(path(e.target.dataset.swap), { swap: e.target.checked ? true : null });
-    }
-  });
-
-  onValue(ref(db, 'teaching'), snap => {
-    const v = snap.val() || {};
-    data = { classes: v.classes || {}, people: v.people || {}, sundays: v.sundays || {} };
-    if (!selClass || !data.classes[selClass]) selClass = classList()[0]?.id ?? null;
-    render();
-  });
+  $('sun-class').innerHTML = classList().map(c => `<option value="${esc(c.id)}"${c.id === selClass ? ' selected' : ''}>${esc(c.name)}</option>`).join('');
+  renderSundays();
 }
+
+// Joining a team shares its Sundays; "Own slot" makes a team of one (a regular sub).
+function renderTeamOptions() {
+  const c = data.classes[$('add-class').value];
+  const keep = $('add-team').value;
+  $('add-team').hidden = !c;
+  $('add-team').innerHTML = c ? Object.entries(c.teams || {}).map(([tid, t]) =>
+    `<option value="${esc(tid)}"${tid === keep ? ' selected' : ''}>Join ${esc(t.label)}</option>`).join('') + '<option value="__own">Own slot (substitute)</option>' : '';
+}
+$('add-class').addEventListener('change', renderTeamOptions);
+
+function renderSundays() {
+  const c = data.classes[selClass];
+  if (!c) { $('sundays').innerHTML = ''; return; }
+  $('sundays').innerHTML = sundays.map(d => {
+    const key = dateKey(d);
+    const cl = data.sundays?.[key]?.[selClass];
+    const isSub = cl && cl.sub !== undefined;
+    const val = isSub ? '__sub' : (cl?.teamId || '');
+    const opts = ['<option value="">Open</option>'].concat(Object.entries(c.teams || {}).map(([tid, t]) =>
+      `<option value="${esc(tid)}"${val === tid ? ' selected' : ''}>${esc(t.label)}</option>`),
+      `<option value="__sub"${isSub ? ' selected' : ''}>Sub (type a name)…</option>`).join('');
+    return `<div class="row"><strong style="flex:0 0 90px">${fmtSunday(d)}</strong><select data-sun="${key}">${opts}</select>` +
+      `<input type="text" class="sub-in" data-subname="${key}" placeholder="Sub's name" value="${esc(cl?.sub || '')}"${isSub ? '' : ' hidden'}>` +
+      `<label><input type="checkbox" data-swap="${key}"${cl?.swap ? ' checked' : ''}${cl ? '' : ' disabled'}> needs swap</label></div>`;
+  }).join('');
+}
+
+$('people').addEventListener('click', async e => {
+  const { reset, remove, role } = e.target.dataset;
+  const people = data.people;
+  if (reset) {
+    const p = people[reset], password = makePassword(p.name);
+    await savePerson(reset, withoutHash(p), password);
+    showCreds(p.name, reset, password);
+  } else if (role) {
+    const p = people[role];
+    if (p.role === 'presidency' && role === actor) { alert('You cannot remove your own presidency access.'); return; }
+    await update(ref(db, `teaching/people/${role}`), { role: p.role === 'presidency' ? null : 'presidency' });
+  } else if (remove) {
+    if (remove === actor) { alert('You cannot remove yourself.'); return; }
+    if (confirm(`Remove ${people[remove].name}? Their Sundays stay on the calendar.`)) await set(ref(db, `teaching/people/${remove}`), null);
+  }
+});
+const withoutHash = ({ hash, ...rest }) => rest;
+
+$('add').addEventListener('submit', async e => {
+  e.preventDefault();
+  const err = $('add-err'); err.textContent = '';
+  const name = $('add-name').value.trim();
+  const classId = $('add-class').value;
+  const pres = $('add-pres').checked;
+  if (!classId && !pres) { err.textContent = 'Pick a class, or tick Primary presidency.'; return; }
+  const words = name.split(/\s+/);
+  if (words.length < 2) { err.textContent = 'Please enter a first and last name.'; return; }
+
+  let username = makeUsername(name);
+  // Two people can share an initial and surname (Devin and Dana Reed): use two letters.
+  if (data.people[username]) username = (name.slice(0, 2) + words.pop()).toLowerCase().replace(/[^a-z]/g, '');
+  if (data.people[username]) { err.textContent = `The username ${username} is already taken. Add a middle initial to the name.`; return; }
+
+  const person = { name };
+  if (pres) person.role = 'presidency';
+  if (classId) {
+    let teamId = $('add-team').value;
+    if (teamId === '__own') {
+      teamId = `s-${username}`;
+      await set(ref(db, `teaching/classes/${classId}/teams/${teamId}`), { label: name, members: [name] });
+    }
+    person.classId = classId; person.teamId = teamId;
+  }
+  const password = makePassword(name);
+  await savePerson(username, person, password);
+  $('add').reset(); renderTeamOptions();
+  showCreds(name, username, password);
+});
+
+$('sun-class').addEventListener('change', e => { selClass = e.target.value; renderSundays(); });
+
+$('sundays').addEventListener('change', async e => {
+  const t = e.target;
+  const path = k => ref(db, `teaching/sundays/${k}/${selClass}`);
+  if (t.dataset.sun) {
+    const k = t.dataset.sun, v = t.value;
+    const input = $('sundays').querySelector(`[data-subname="${k}"]`);
+    input.hidden = v !== '__sub';
+    if (v === '__sub') { input.focus(); return; }        // saved once a name is typed
+    await set(path(k), v ? { teamId: v, by: actor } : null);
+  } else if (t.dataset.subname) {
+    const name = t.value.trim();
+    if (name) await set(path(t.dataset.subname), { sub: name, by: actor });
+  } else if (t.dataset.swap) {
+    await update(path(t.dataset.swap), { swap: t.checked ? true : null });
+  }
+});
+
+onValue(ref(db, 'teaching'), snap => {
+  const v = snap.val() || {};
+  data = { classes: v.classes || {}, people: v.people || {}, sundays: v.sundays || {} };
+  if (!selClass || !data.classes[selClass]) selClass = classList()[0]?.id ?? null;
+  loaded = true;
+  resolveActor();
+  render();
+});
 </script>
 </body>
 </html>

@@ -123,7 +123,7 @@ input { font: inherit; width: 100%; padding: 11px 12px; border: 1px solid var(--
 <script type="module">
 import { db } from '/js/firebase.js';
 import { ref, onValue, update, set, runTransaction } from 'https://www.gstatic.com/firebasejs/11.7.3/firebase-database.js';
-import { upcomingSundays, dateKey, fmtSunday, fmtMonth, toArray, hashLogin, isPatternSunday } from '/js/teaching.js';
+import { upcomingSundays, dateKey, fmtSunday, fmtMonth, hashLogin, isPatternSunday, claimLabel } from '/js/teaching.js';
 
 const SESSION_KEY = 'teaching-login';
 const VISIBLE_STEP = 12;
@@ -142,7 +142,6 @@ const todayKey = dateKey(sundays[0]);
 const classList = () => Object.entries(data.classes || {})
   .map(([id, c]) => ({ id, ...c }))
   .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
-const teamLabel = (classId, teamId) => data.classes?.[classId]?.teams?.[teamId]?.label || 'Unknown';
 const claim = (key, classId) => data.sundays?.[key]?.[classId] || null;
 const claimPath = (key, classId) => ref(db, `teaching/sundays/${key}/${classId}`);
 
@@ -153,7 +152,7 @@ async function resolveSession() {
     const saved = JSON.parse(localStorage.getItem(SESSION_KEY) || 'null');
     const person = saved && data.people?.[saved.u];
     if (person && person.hash === saved.h) {
-      me = { username: saved.u, name: person.name, classId: person.classId, teamId: person.teamId };
+      me = { username: saved.u, name: person.name, classId: person.classId, teamId: person.teamId, role: person.role };
     }
   } catch { /* storage blocked or corrupt: stay signed out */ }
 }
@@ -170,7 +169,7 @@ $('login-form').addEventListener('submit', async e => {
   try { localStorage.setItem(SESSION_KEY, JSON.stringify({ u, h })); } catch { /* still signed in this visit */ }
   $('login').close();
   await resolveSession();
-  view = 'mine';
+  view = me?.classId ? 'mine' : 'all';
   render();
 });
 $('login-cancel').addEventListener('click', () => $('login').close());
@@ -212,18 +211,18 @@ async function fillPattern() {
 // ---------- rendering ----------
 function renderChrome() {
   $('auth-slot').innerHTML = me
-    ? `<span class="hint">${esc(me.name)}</span> <button class="link" id="signout">Sign out</button>`
+    ? `<span class="hint">${esc(me.name)}</span> ${me.role === 'presidency' ? '<a href="/teaching-admin">Manage</a>' : ''} <button class="link" id="signout">Sign out</button>`
     : `<button id="signin">Teacher sign in</button>`;
   $('signout')?.addEventListener('click', signOut);
   $('signin')?.addEventListener('click', () => { $('login-err').textContent = ''; $('login').showModal(); $('u').focus(); });
 
-  $('bar').innerHTML = me
+  $('bar').innerHTML = me && me.classId
     ? `<div class="tabs"><button data-v="mine" aria-pressed="${view === 'mine'}">My class</button><button data-v="all" aria-pressed="${view === 'all'}">Everyone</button></div>`
     : '';
   $('bar').querySelectorAll('[data-v]').forEach(b => b.addEventListener('click', () => { view = b.dataset.v; render(); }));
 
   const swapKey = `<span><i style="background:var(--swap);border-color:var(--swap-stroke)"></i>Needs a swap</span>`;
-  $('legend').innerHTML = view === 'mine' && me
+  $('legend').innerHTML = view === 'mine' && me?.classId
     ? `<span><i style="background:var(--mine)"></i>Your Sunday</span>${swapKey}<span>★ In your usual pattern</span>`
     : swapKey + `<span>“Open” = nobody has signed up yet</span>`;
 }
@@ -242,7 +241,7 @@ function renderAll() {
     html += `<div class="card${key === todayKey ? ' today' : ''}"><h3>${fmtSunday(d)}</h3>`;
     for (const c of classes) {
       const cl = claim(key, c.id);
-      const who = cl ? esc(teamLabel(c.id, cl.teamId)) : 'Open';
+      const who = cl ? esc(claimLabel(data.classes, c.id, cl)) : 'Open';
       html += `<div class="line${cl ? '' : ' open'}${cl?.swap ? ' swap' : ''}"><span class="cls">${esc(c.name)}</span><span class="who">${who}${cl?.swap ? '<span class="badge">Swap</span>' : ''}</span></div>`;
     }
     html += '</div>';
@@ -281,7 +280,7 @@ function renderMine() {
         : `<button class="warn" data-a="swap" data-k="${key}">Need a swap</button><button class="link" data-a="give" data-k="${key}">Give up</button>`;
     } else {
       cls_ += cl.swap ? ' swap' : '';
-      state = `${esc(teamLabel(me.classId, cl.teamId))}${cl.swap ? '<span class="badge">Needs cover</span>' : ''}`;
+      state = `${esc(claimLabel(data.classes, me.classId, cl))}${cl.swap ? '<span class="badge">Needs cover</span>' : ''}`;
       if (cl.swap) acts = `<button class="primary" data-a="cover" data-k="${key}">I’ll cover it</button>`;
     }
     if (suggest) cls_ += ' suggest';
@@ -292,9 +291,9 @@ function renderMine() {
 
 function render() {
   if (!loaded) return;
-  if (!me) view = 'all';
+  if (!me || !me.classId) view = 'all';
   renderChrome();
-  $('view').innerHTML = view === 'mine' && me ? renderMine() : renderAll();
+  $('view').innerHTML = view === 'mine' && me?.classId ? renderMine() : renderAll();
 
   $('more')?.addEventListener('click', () => { shown += VISIBLE_STEP; render(); });
   $('fill')?.addEventListener('click', () => fillPattern().catch(fail));

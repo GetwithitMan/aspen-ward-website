@@ -20,6 +20,10 @@ everyone else sees who is teaching each class each week.
 - **Passwords are stored as SHA-256 hashes**, not plain text. Like the rest of the database, writes are open.
 - `scripts/seed-teaching.mjs` loads the 6 class groups and 22 teachers once and
   writes logins to `../teacher-logins.csv` (outside the repo).
+- **Primary presidency:** a person can be marked Presidency (admin). They sign in
+  to `/teaching-admin` with their own login (no ward admin password), can also
+  teach, add people and subs, reset passwords, and assign any team, or a typed-in
+  sub's name, to any Sunday. A person can have no class at all.
 - `/admin` has a new **Primary** section linking to the teaching admin and the public calendar.
 - Database rules gained a `teaching` path; `index.html` nav gained a Teaching link.
 
