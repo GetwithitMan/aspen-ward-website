@@ -43,7 +43,7 @@ code { background: var(--surface-muted); padding: 2px 6px; border-radius: 6px; }
     <div id="creds"></div>
 
     <h2>Teachers</h2>
-    <p class="hint">Passwords are not stored anywhere, so they cannot be looked up. If someone forgets theirs, press Reset and give them the new one.</p>
+    <p class="hint">A password is the teacher's first name plus last initial (Kitrick Galloway: <code>kitrickg</code>). Reset puts it back to that.</p>
     <div class="panel" id="people"></div>
 
     <h2>Add a teacher</h2>
@@ -82,7 +82,7 @@ function start() {
   const classList = () => Object.entries(data.classes).map(([id, c]) => ({ id, ...c })).sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
 
   const showCreds = (name, username, password) => {
-    $('creds').innerHTML = `<div class="notice"><strong>${esc(name)}</strong> — username <code>${esc(username)}</code> password <code>${esc(password)}</code><br><span class="hint">Write this down now. It will not be shown again.</span></div>`;
+    $('creds').innerHTML = `<div class="notice"><strong>${esc(name)}</strong> — username <code>${esc(username)}</code> password <code>${esc(password)}</code><br><span class="hint">Capitals do not matter when signing in.</span></div>`;
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -125,7 +125,7 @@ function start() {
   $('people').addEventListener('click', async e => {
     const reset = e.target.dataset.reset, remove = e.target.dataset.remove;
     if (reset) {
-      const p = data.people[reset], password = makePassword();
+      const p = data.people[reset], password = makePassword(p.name);
       await savePerson(reset, { name: p.name, classId: p.classId, teamId: p.teamId }, password);
       showCreds(p.name, reset, password);
     } else if (remove && confirm(`Remove ${data.people[remove].name}? Their Sundays stay on the calendar.`)) {
@@ -141,7 +141,7 @@ function start() {
     // Two people can share an initial and surname (Devin and Dana Reed): use two letters.
     if (data.people[username]) username = (name[0] + name[1] + name.trim().split(/\s+/).pop()).toLowerCase().replace(/[^a-z]/g, '');
     if (data.people[username]) { alert(`The username ${username} is already taken. Add a middle initial to the name.`); return; }
-    const password = makePassword();
+    const password = makePassword(name);
     await savePerson(username, { name, classId, teamId }, password);
     $('add').reset();
     showCreds(name, username, password);

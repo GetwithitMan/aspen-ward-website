@@ -55,8 +55,9 @@ export function toArray(v) {
 
 // Passwords are never stored. The database keeps only this hash, so a teacher
 // reading /teaching/people cannot see anyone else's password.
+// Case and surrounding spaces are ignored: phones capitalize the first letter.
 export async function hashLogin(username, password) {
-  const bytes = new TextEncoder().encode(`${username.toLowerCase()}:${password}`);
+  const bytes = new TextEncoder().encode(`${username.trim().toLowerCase()}:${password.trim().toLowerCase()}`);
   const digest = await crypto.subtle.digest('SHA-256', bytes);
   return Array.from(new Uint8Array(digest), b => b.toString(16).padStart(2, '0')).join('');
 }
@@ -68,12 +69,11 @@ export function makeUsername(fullName) {
   return (parts[0][0] + last).toLowerCase().replace(/[^a-z]/g, '');
 }
 
-// Easy to read aloud over the phone: word + 4 digits.
-export function makePassword() {
-  const words = ['aspen', 'teach', 'sunday', 'class', 'lesson', 'maple'];
-  const word = words[Math.floor(Math.random() * words.length)];
-  const n = crypto.getRandomValues(new Uint32Array(1))[0] % 10000;
-  return word + String(n).padStart(4, '0');
+// Full first name + last initial, lowercase: "Kitrick Galloway" -> "kitrickg".
+export function makePassword(fullName) {
+  const parts = fullName.trim().split(/\s+/);
+  const last = parts.length > 1 ? parts[parts.length - 1] : '';
+  return (parts[0] + (last ? last[0] : '')).toLowerCase().replace(/[^a-z]/g, '');
 }
 
 export function fmtSunday(d) {

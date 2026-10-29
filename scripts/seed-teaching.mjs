@@ -4,8 +4,8 @@
 //
 //   node scripts/seed-teaching.mjs
 //
-// Passwords are random and only written to the CSV below (kept OUTSIDE the
-// repo); the database stores just a hash of each one.
+// Password = first name + last initial. The CSV below (kept OUTSIDE the repo)
+// lists them; the database stores just a hash of each one.
 import { writeFileSync } from 'node:fs';
 import { firebaseConfig } from '../js/config.js';
 import { hashLogin, makeUsername, makePassword } from '../js/teaching.js';
@@ -52,7 +52,7 @@ for (const c of CLASSES) for (const [ti, t] of c.teams.entries()) for (const nam
   let username = makeUsername(name);
   // Devin and Dana Reed would both be "dreed": the later one gets two letters.
   if (people[username]) username = (name.slice(0, 2) + name.split(' ').pop()).toLowerCase();
-  const password = makePassword();
+  const password = makePassword(name);
   people[username] = { name, classId: c.id, teamId: `t${ti + 1}`, hash: await hashLogin(username, password) };
   csv.push([name, c.name, username, password].map(v => `"${v}"`).join(','));
 }

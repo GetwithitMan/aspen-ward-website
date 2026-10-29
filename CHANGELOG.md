@@ -10,15 +10,14 @@ everyone else sees who is teaching each class each week.
 - **Public view:** one card per Sunday listing every class and its teachers
   ("Open" when nobody has signed up). Sundays needing a swap are highlighted.
 - **Teacher sign in:** username is first initial + last name (`kgalloway`), plus a
-  simple password. A signed-in teacher sees only their own class: tap a Sunday to
+  simple password: first name + last initial (`kitrickg`), capitals ignored. A signed-in teacher sees only their own class: tap a Sunday to
   take it, **Need a swap** to flag it, **Give up** to release it. Someone else in
   the class can tap **I'll cover it** on a flagged Sunday. Teams with a set
   pattern (1st & 2nd Sundays, every week, etc.) get a **Sign up my usual
   Sundays** button.
 - **Admin:** `/teaching-admin` (uses the existing admin sign-in) resets
   passwords, adds/removes teachers, and assigns or clears any Sunday.
-- **Passwords are stored as SHA-256 hashes**, not plain text, so one teacher
-  cannot read another's. Like the rest of the database, writes are open.
+- **Passwords are stored as SHA-256 hashes**, not plain text. Like the rest of the database, writes are open.
 - `scripts/seed-teaching.mjs` loads the 6 class groups and 22 teachers once and
   writes logins to `../teacher-logins.csv` (outside the repo).
 - Database rules gained a `teaching` path; `index.html` nav gained a Teaching link.
