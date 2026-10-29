@@ -17,8 +17,8 @@
   --stroke: rgba(41, 61, 21, 0.14);
   --ink: #1c2f11; --ink-soft: rgba(28, 47, 17, 0.78); --ink-muted: rgba(28, 47, 17, 0.58);
   --accent: #4f7942; --accent-strong: #3d5e32; --accent-soft: rgba(79, 121, 66, 0.16);
-  --swap: #fff1cc; --swap-ink: #7a4b00; --swap-stroke: #f0b429;
-  --mine: #dff0d8; --error: #b42318;
+  --swap: #ffddb0; --swap-ink: #7a3a00; --swap-stroke: #f08a1c;
+  --filled: #e1f2d8; --covered: #c9ecdc; --error: #b42318;
   --radius: 16px;
 }
 * { box-sizing: border-box; }
@@ -61,6 +61,8 @@ button.link { border: 0; background: none; color: var(--accent-strong); text-dec
 .line .cls { color: var(--ink-muted); flex: 0 0 42%; }
 .line .who { text-align: right; flex: 1; }
 .line.open .who { color: var(--ink-muted); font-style: italic; }
+.line.filled { background: var(--filled); }
+.line.covered { background: var(--covered); }
 .line.swap { background: var(--swap); color: var(--swap-ink); }
 .badge { display: inline-block; font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; background: var(--swap-stroke); color: #3d2600; border-radius: 6px; padding: 1px 6px; margin-left: 6px; }
 
@@ -71,7 +73,8 @@ button.link { border: 0; background: none; color: var(--accent-strong); text-dec
 .row .date { flex: 0 0 90px; font-weight: 600; }
 .row .state { flex: 1 1 160px; }
 .row .acts { display: flex; gap: 8px; flex-wrap: wrap; }
-.row.mine { background: var(--mine); }
+.row.filled { background: var(--filled); }
+.row.covered { background: var(--covered); }
 .row.swap { background: var(--swap); }
 .row.suggest .date::after { content: ' ★'; color: var(--accent); }
 .hint { color: var(--ink-muted); font-size: .88rem; }
@@ -201,7 +204,7 @@ async function setSwap(key, on) {
 }
 async function coverSunday(key) {
   await runTransaction(claimPath(key, me.classId), cur =>
-    cur && cur.swap ? { teamId: me.teamId, by: me.username } : undefined);
+    cur && cur.swap ? { teamId: me.teamId, by: me.username, covered: true } : undefined);
 }
 async function fillPattern() {
   const team = data.classes[me.classId].teams[me.teamId];
@@ -228,10 +231,18 @@ function renderChrome() {
     : '';
   $('bar').querySelectorAll('[data-v]').forEach(b => b.addEventListener('click', () => { view = b.dataset.v; render(); }));
 
-  const swapKey = `<span><i style="background:var(--swap);border-color:var(--swap-stroke)"></i>Needs a swap</span>`;
-  $('legend').innerHTML = view === 'mine' && me?.classId
-    ? `<span><i style="background:var(--mine)"></i>Your Sunday</span>${swapKey}<span>★ In your usual pattern</span>`
-    : swapKey + `<span>“Open” = nobody has signed up yet</span>`;
+  const key = (c, label) => `<span><i style="background:${c}"></i>${label}</span>`;
+  $('legend').innerHTML = key('var(--filled)', 'Filled') + key('var(--covered)', 'Covered after a swap, or by a sub') +
+    key('var(--swap)', 'Needs a swap') + key('#fff', 'Open') +
+    (view === 'mine' && me?.classId ? '<span>★ In your usual pattern</span>' : '');
+}
+
+// Open = white. Filled = green. Filled by a cover or a sub = a slightly different
+// green. A swap request stays orange until someone fills it.
+function lineState(cl) {
+  if (!cl) return ' open';
+  if (cl.swap) return ' swap';
+  return cl.covered || cl.sub ? ' covered' : ' filled';
 }
 
 function renderAll() {
@@ -255,7 +266,7 @@ function renderAll() {
     for (const c of classes) {
       const cl = claim(key, c.id);
       const who = cl ? esc(claimLabel(data.classes, c.id, cl)) : 'Open';
-      html += `<div class="line${cl ? '' : ' open'}${cl?.swap ? ' swap' : ''}"><span class="cls">${esc(c.name)}</span><span class="who">${who}${cl?.swap ? '<span class="badge">Swap</span>' : ''}</span></div>`;
+      html += `<div class="line${lineState(cl)}"><span class="cls">${esc(c.name)}</span><span class="who">${who}${cl?.swap ? '<span class="badge">Swap</span>' : ''}</span></div>`;
     }
     html += '</div>';
   }
@@ -291,13 +302,13 @@ function renderMine() {
       state = '<span class="hint">Open</span>';
       acts = `<button class="primary" data-a="take" data-k="${key}">Take this Sunday</button>`;
     } else if (cl.teamId === me.teamId) {
-      cls_ += cl.swap ? ' swap' : ' mine';
+      cls_ += lineState(cl);
       state = cl.swap ? '<strong>Swap requested</strong> <span class="hint">waiting for someone to cover</span>' : '<strong>You’re teaching</strong>';
       acts = cl.swap
         ? `<button data-a="unswap" data-k="${key}">Cancel swap</button>`
         : `<button class="warn" data-a="swap" data-k="${key}">Need a swap</button><button class="link" data-a="give" data-k="${key}">Give up</button>`;
     } else {
-      cls_ += cl.swap ? ' swap' : '';
+      cls_ += lineState(cl);
       state = `${esc(claimLabel(data.classes, me.classId, cl))}${cl.swap ? '<span class="badge">Needs cover</span>' : ''}`;
       if (cl.swap) acts = `<button class="primary" data-a="cover" data-k="${key}">I’ll cover it</button>`;
     }

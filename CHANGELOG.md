@@ -24,6 +24,9 @@ everyone else sees who is teaching each class each week.
   to `/teaching-admin` with their own login (no ward admin password), can also
   teach, add people and subs, reset passwords, and assign any team, or a typed-in
   sub's name, to any Sunday. A person can have no class at all.
+- **Colours:** open classes are white, filled ones green, ones covered after a
+  swap (or by a sub) a slightly different green, and a swap request stays orange
+  until someone fills it.
 - **Sunday notes:** the admin can put a note on any Sunday (shown on the public
   calendar and in teachers' lists) and tick **No classes** (stake conference, etc.)
   to grey the day out so nobody can sign up for it.
