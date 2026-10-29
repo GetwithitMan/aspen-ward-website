@@ -24,6 +24,9 @@ everyone else sees who is teaching each class each week.
   to `/teaching-admin` with their own login (no ward admin password), can also
   teach, add people and subs, reset passwords, and assign any team, or a typed-in
   sub's name, to any Sunday. A person can have no class at all.
+- **Sunday notes:** the admin can put a note on any Sunday (shown on the public
+  calendar and in teachers' lists) and tick **No classes** (stake conference, etc.)
+  to grey the day out so nobody can sign up for it.
 - `/admin` has a new **Primary** section linking to the teaching admin and the public calendar.
 - Database rules gained a `teaching` path; `index.html` nav gained a Teaching link.
 

@@ -83,6 +83,12 @@ label { display: block; font-size: .9rem; font-weight: 600; margin: 12px 0 4px; 
 input { font: inherit; width: 100%; padding: 11px 12px; border: 1px solid var(--stroke); border-radius: 10px; min-height: 44px; }
 .err { color: var(--error); min-height: 1.3em; margin: 8px 0 0; font-size: .9rem; }
 .dlg-acts { display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px; }
+/* A note on a Sunday (stake conference etc.); "off" means no classes that day */
+.note { font-size: .9rem; font-style: italic; color: var(--ink-soft); margin: 0 0 8px; }
+.card.off { background: var(--surface-muted); }
+.card.off .note { font-style: normal; font-weight: 600; margin: 0; }
+.row.off { background: var(--surface-muted); color: var(--ink-muted); }
+.row .note { margin: 2px 0 0; }
 .empty { padding: 24px; color: var(--ink-muted); text-align: center; }
 </style>
 </head>
@@ -128,7 +134,7 @@ import { upcomingSundays, dateKey, fmtSunday, fmtMonth, hashLogin, isPatternSund
 const SESSION_KEY = 'teaching-login';
 const VISIBLE_STEP = 12;
 
-let data = { classes: {}, people: {}, sundays: {} };
+let data = { classes: {}, people: {}, sundays: {}, notes: {} };
 let me = null;            // { username, name, classId, teamId }
 let view = 'mine';        // 'mine' | 'all'
 let shown = VISIBLE_STEP; // Sundays visible in the Everyone view
@@ -142,6 +148,7 @@ const todayKey = dateKey(sundays[0]);
 const classList = () => Object.entries(data.classes || {})
   .map(([id, c]) => ({ id, ...c }))
   .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+const noteFor = key => data.notes?.[key] || null;
 const claim = (key, classId) => data.sundays?.[key]?.[classId] || null;
 const claimPath = (key, classId) => ref(db, `teaching/sundays/${key}/${classId}`);
 
@@ -201,7 +208,7 @@ async function fillPattern() {
   const writes = {};
   for (const d of sundays) {
     const key = dateKey(d);
-    if (isPatternSunday(team, d) && !claim(key, me.classId)) {
+    if (isPatternSunday(team, d) && !claim(key, me.classId) && !noteFor(key)?.noClass) {
       writes[`${key}/${me.classId}`] = { teamId: me.teamId, by: me.username };
     }
   }
@@ -238,7 +245,13 @@ function renderAll() {
     const key = dateKey(d);
     const m = fmtMonth(d);
     if (m !== month) { if (month) html += '</div>'; html += `<h2 class="month">${m}</h2><div class="cards">`; month = m; }
+    const note = noteFor(key);
+    if (note?.noClass) {
+      html += `<div class="card off${key === todayKey ? ' today' : ''}"><h3>${fmtSunday(d)}</h3><p class="note">${esc(note.text || 'No classes')}</p></div>`;
+      continue;
+    }
     html += `<div class="card${key === todayKey ? ' today' : ''}"><h3>${fmtSunday(d)}</h3>`;
+    if (note?.text) html += `<p class="note">${esc(note.text)}</p>`;
     for (const c of classes) {
       const cl = claim(key, c.id);
       const who = cl ? esc(claimLabel(data.classes, c.id, cl)) : 'Open';
@@ -268,7 +281,12 @@ function renderMine() {
     const key = dateKey(d);
     const cl = claim(key, me.classId);
     const suggest = isPatternSunday(team, d);
+    const note = noteFor(key);
     let cls_ = 'row', state = '', acts = '';
+    if (note?.noClass) {
+      html += `<div class="row off"><span class="date">${fmtSunday(d)}</span><span class="state"><strong>${esc(note.text || 'No classes')}</strong></span></div>`;
+      continue;
+    }
     if (!cl) {
       state = '<span class="hint">Open</span>';
       acts = `<button class="primary" data-a="take" data-k="${key}">Take this Sunday</button>`;
@@ -284,6 +302,7 @@ function renderMine() {
       if (cl.swap) acts = `<button class="primary" data-a="cover" data-k="${key}">I’ll cover it</button>`;
     }
     if (suggest) cls_ += ' suggest';
+    if (note?.text) state += `<p class="note">${esc(note.text)}</p>`;
     html += `<div class="${cls_}"><span class="date">${fmtSunday(d)}</span><span class="state">${state}</span><span class="acts">${acts}</span></div>`;
   }
   return html + '</div>';
@@ -315,7 +334,7 @@ function fail(err) {
 // ---------- live data ----------
 onValue(ref(db, 'teaching'), async snap => {
   const v = snap.val() || {};
-  data = { classes: v.classes || {}, people: v.people || {}, sundays: v.sundays || {} };
+  data = { classes: v.classes || {}, people: v.people || {}, sundays: v.sundays || {}, notes: v.notes || {} };
   for (const c of Object.values(data.classes)) c.teams = c.teams || {};
   await resolveSession();
   loaded = true;

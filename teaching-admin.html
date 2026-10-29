@@ -70,6 +70,10 @@ code { background: var(--surface-muted); padding: 2px 6px; border-radius: 6px; }
     </form></div>
     <p class="err" id="add-err" role="alert"></p>
 
+    <h2>Notes for a Sunday</h2>
+    <p class="hint">A note shows on the public calendar for that Sunday (“Ward conference — lessons are short”). Tick <strong>No classes</strong> for a Sunday with no teaching, such as stake conference; the day is greyed out and teachers cannot sign up.</p>
+    <div class="panel" id="notes"></div>
+
     <h2>Change a Sunday</h2>
     <p class="hint">Assign any team to any Sunday, or type in a sub's name. Clear it to make it open.</p>
     <p><select id="sun-class"></select></p>
@@ -87,7 +91,7 @@ const $ = id => document.getElementById(id);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
 const sundays = upcomingSundays();
-let data = { classes: {}, people: {}, sundays: {} };
+let data = { classes: {}, people: {}, sundays: {}, notes: {} };
 let selClass = null;
 let actor = sessionStorage.getItem('admin-auth') === 'true' ? 'admin' : null;
 let loaded = false;
@@ -156,6 +160,7 @@ function render() {
 
   $('sun-class').innerHTML = classList().map(c => `<option value="${esc(c.id)}"${c.id === selClass ? ' selected' : ''}>${esc(c.name)}</option>`).join('');
   renderSundays();
+  renderNotes();
 }
 
 // Joining a team shares its Sundays; "Own slot" makes a team of one (a regular sub).
@@ -167,6 +172,25 @@ function renderTeamOptions() {
     `<option value="${esc(tid)}"${tid === keep ? ' selected' : ''}>Join ${esc(t.label)}</option>`).join('') + '<option value="__own">Own slot (substitute)</option>' : '';
 }
 $('add-class').addEventListener('change', renderTeamOptions);
+
+function renderNotes() {
+  $('notes').innerHTML = sundays.map(d => {
+    const key = dateKey(d), n = data.notes[key] || {};
+    return `<div class="row"><strong style="flex:0 0 90px">${fmtSunday(d)}</strong><input type="text" class="sub-in" data-note="${key}" placeholder="Note (optional)" maxlength="140" value="${esc(n.text || '')}"><label><input type="checkbox" data-noclass="${key}"${n.noClass ? ' checked' : ''}> No classes</label></div>`;
+  }).join('');
+}
+
+// Saves one Sunday's note from its row; an empty note with the box unticked removes it.
+async function saveNote(key) {
+  const row = $('notes').querySelector(`[data-note="${key}"]`).closest('.row');
+  const text = row.querySelector('[data-note]').value.trim();
+  const noClass = row.querySelector('[data-noclass]').checked;
+  await set(ref(db, `teaching/notes/${key}`), text || noClass ? { text, noClass: noClass || null } : null);
+}
+$('notes').addEventListener('change', e => {
+  const key = e.target.dataset.note || e.target.dataset.noclass;
+  if (key) saveNote(key);
+});
 
 function renderSundays() {
   const c = data.classes[selClass];
@@ -255,7 +279,7 @@ $('sundays').addEventListener('change', async e => {
 
 onValue(ref(db, 'teaching'), snap => {
   const v = snap.val() || {};
-  data = { classes: v.classes || {}, people: v.people || {}, sundays: v.sundays || {} };
+  data = { classes: v.classes || {}, people: v.people || {}, sundays: v.sundays || {}, notes: v.notes || {} };
   if (!selClass || !data.classes[selClass]) selClass = classList()[0]?.id ?? null;
   loaded = true;
   resolveActor();
