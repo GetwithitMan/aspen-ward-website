@@ -23,6 +23,10 @@
     "temple": {
       ".read": true,
       ".write": true
+    },
+    "teaching": {
+      ".read": true,
+      ".write": true
     }
   }
 }

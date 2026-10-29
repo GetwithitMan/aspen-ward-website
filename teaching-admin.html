@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Aspen Ward – Teaching Admin</title>
+<meta name="robots" content="noindex, nofollow" />
+<link rel="icon" href="/public/assets/favicon.svg" type="image/svg+xml" />
+<link rel="stylesheet" href="/public/assets/fonts/fonts.css">
+<style>
+:root {
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --bg: #f8faf5; --surface: #fff; --surface-muted: #f5f9f0; --stroke: rgba(41,61,21,.14);
+  --ink: #1c2f11; --ink-muted: rgba(28,47,17,.58); --accent: #4f7942; --accent-strong: #3d5e32;
+  --swap: #fff1cc; --error: #b42318;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); line-height: 1.45; }
+.wrap { width: min(860px, 92vw); margin: 0 auto; padding: 24px 0 64px; }
+h1 { margin: 0 0 4px; } h2 { margin: 32px 0 10px; font-size: 1.15rem; }
+.hint { color: var(--ink-muted); font-size: .9rem; }
+button, select, input { font: inherit; min-height: 40px; border-radius: 10px; border: 1px solid var(--stroke); padding: 8px 12px; background: var(--surface); color: var(--ink); }
+button { cursor: pointer; } button:hover { background: var(--surface-muted); }
+button.primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+button.danger { color: var(--error); }
+.panel { background: var(--surface); border: 1px solid var(--stroke); border-radius: 14px; overflow: hidden; }
+.row { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; padding: 10px 14px; border-top: 1px solid var(--stroke); }
+.row:first-child { border-top: 0; }
+.row .grow { flex: 1 1 180px; }
+.cls-head { background: var(--surface-muted); font-weight: 700; padding: 8px 14px; border-top: 1px solid var(--stroke); }
+code { background: var(--surface-muted); padding: 2px 6px; border-radius: 6px; }
+.notice { background: var(--swap); border: 1px solid #f0b429; border-radius: 12px; padding: 12px 14px; margin: 12px 0; }
+.form { display: flex; flex-wrap: wrap; gap: 8px; padding: 14px; }
+.form input { flex: 1 1 180px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Teaching calendar admin</h1>
+  <p class="hint"><a href="/teaching">View the calendar</a> · <a href="/admin">Ward admin</a></p>
+  <div id="gate" hidden><div class="notice">Sign in on the <a href="/admin">ward admin page</a> first, then come back here.</div></div>
+  <div id="app" hidden>
+    <div id="creds"></div>
+
+    <h2>Teachers</h2>
+    <p class="hint">Passwords are not stored anywhere, so they cannot be looked up. If someone forgets theirs, press Reset and give them the new one.</p>
+    <div class="panel" id="people"></div>
+
+    <h2>Add a teacher</h2>
+    <div class="panel"><form class="form" id="add">
+      <input id="add-name" placeholder="Full name" required>
+      <select id="add-team" required></select>
+      <button class="primary" type="submit">Add</button>
+    </form></div>
+
+    <h2>Change a Sunday</h2>
+    <p class="hint">Assign or clear any class on any Sunday, for example to settle a swap yourself.</p>
+    <p><select id="sun-class"></select></p>
+    <div class="panel" id="sundays"></div>
+  </div>
+</div>
+
+<script type="module">
+import { db } from '/js/firebase.js';
+import { ref, onValue, set, update } from 'https://www.gstatic.com/firebasejs/11.7.3/firebase-database.js';
+import { upcomingSundays, dateKey, fmtSunday, hashLogin, makeUsername, makePassword } from '/js/teaching.js';
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+if (sessionStorage.getItem('admin-auth') !== 'true') {
+  $('gate').hidden = false;
+} else {
+  $('app').hidden = false;
+  start();
+}
+
+function start() {
+  let data = { classes: {}, people: {}, sundays: {} };
+  let selClass = null;
+  const sundays = upcomingSundays();
+  const classList = () => Object.entries(data.classes).map(([id, c]) => ({ id, ...c })).sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+
+  const showCreds = (name, username, password) => {
+    $('creds').innerHTML = `<div class="notice"><strong>${esc(name)}</strong> — username <code>${esc(username)}</code> password <code>${esc(password)}</code><br><span class="hint">Write this down now. It will not be shown again.</span></div>`;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  async function savePerson(username, person, password) {
+    await set(ref(db, `teaching/people/${username}`), { ...person, hash: await hashLogin(username, password) });
+  }
+
+  function render() {
+    // people grouped by class
+    let html = '';
+    for (const c of classList()) {
+      html += `<div class="cls-head">${esc(c.name)}</div>`;
+      const members = Object.entries(data.people).filter(([, p]) => p.classId === c.id);
+      if (!members.length) html += '<div class="row hint">No teachers yet.</div>';
+      for (const [u, p] of members) {
+        html += `<div class="row"><span class="grow"><strong>${esc(p.name)}</strong><br><span class="hint">${esc(c.teams?.[p.teamId]?.label || '')}</span></span><code>${esc(u)}</code><button data-reset="${esc(u)}">Reset password</button><button class="danger" data-remove="${esc(u)}">Remove</button></div>`;
+      }
+    }
+    $('people').innerHTML = html;
+
+    $('add-team').innerHTML = classList().flatMap(c => Object.entries(c.teams || {}).map(([tid, t]) =>
+      `<option value="${esc(c.id)}|${esc(tid)}">${esc(c.name)} — ${esc(t.label)}</option>`)).join('');
+
+    $('sun-class').innerHTML = classList().map(c => `<option value="${esc(c.id)}"${c.id === selClass ? ' selected' : ''}>${esc(c.name)}</option>`).join('');
+    renderSundays();
+  }
+
+  function renderSundays() {
+    const c = data.classes[selClass];
+    if (!c) { $('sundays').innerHTML = ''; return; }
+    $('sundays').innerHTML = sundays.map(d => {
+      const key = dateKey(d);
+      const cl = data.sundays?.[key]?.[selClass];
+      const opts = ['<option value="">Open</option>'].concat(Object.entries(c.teams || {}).map(([tid, t]) =>
+        `<option value="${esc(tid)}"${cl?.teamId === tid ? ' selected' : ''}>${esc(t.label)}</option>`)).join('');
+      return `<div class="row"><strong style="flex:0 0 90px">${fmtSunday(d)}</strong><select data-sun="${key}">${opts}</select><label><input type="checkbox" data-swap="${key}"${cl?.swap ? ' checked' : ''}${cl ? '' : ' disabled'}> needs swap</label></div>`;
+    }).join('');
+  }
+
+  $('people').addEventListener('click', async e => {
+    const reset = e.target.dataset.reset, remove = e.target.dataset.remove;
+    if (reset) {
+      const p = data.people[reset], password = makePassword();
+      await savePerson(reset, { name: p.name, classId: p.classId, teamId: p.teamId }, password);
+      showCreds(p.name, reset, password);
+    } else if (remove && confirm(`Remove ${data.people[remove].name}? Their Sundays stay on the calendar.`)) {
+      await set(ref(db, `teaching/people/${remove}`), null);
+    }
+  });
+
+  $('add').addEventListener('submit', async e => {
+    e.preventDefault();
+    const name = $('add-name').value.trim();
+    const [classId, teamId] = $('add-team').value.split('|');
+    let username = makeUsername(name);
+    // Two people can share an initial and surname (Devin and Dana Reed): use two letters.
+    if (data.people[username]) username = (name[0] + name[1] + name.trim().split(/\s+/).pop()).toLowerCase().replace(/[^a-z]/g, '');
+    if (data.people[username]) { alert(`The username ${username} is already taken. Add a middle initial to the name.`); return; }
+    const password = makePassword();
+    await savePerson(username, { name, classId, teamId }, password);
+    $('add').reset();
+    showCreds(name, username, password);
+  });
+
+  $('sun-class').addEventListener('change', e => { selClass = e.target.value; renderSundays(); });
+
+  $('sundays').addEventListener('change', async e => {
+    const path = k => ref(db, `teaching/sundays/${k}/${selClass}`);
+    if (e.target.dataset.sun) {
+      const k = e.target.dataset.sun, teamId = e.target.value;
+      await set(path(k), teamId ? { teamId, by: 'admin' } : null);
+    } else if (e.target.dataset.swap) {
+      await update(path(e.target.dataset.swap), { swap: e.target.checked ? true : null });
+    }
+  });
+
+  onValue(ref(db, 'teaching'), snap => {
+    const v = snap.val() || {};
+    data = { classes: v.classes || {}, people: v.people || {}, sundays: v.sundays || {} };
+    if (!selClass || !data.classes[selClass]) selClass = classList()[0]?.id ?? null;
+    render();
+  });
+}
+</script>
+</body>
+</html>

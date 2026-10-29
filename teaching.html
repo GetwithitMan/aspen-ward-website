@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Aspen Ward – Teaching Calendar</title>
+<meta name="description" content="Who is teaching each class at Aspen Ward, week by week." />
+<meta name="theme-color" content="#4f7942" />
+<link rel="icon" href="/public/assets/favicon.svg" type="image/svg+xml" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="/public/assets/fonts/plus-jakarta-sans-var.woff2">
+<link rel="stylesheet" href="/public/assets/fonts/fonts.css">
+<style>
+:root {
+  color-scheme: light;
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --bg: #f8faf5; --surface: #ffffff; --surface-muted: #f5f9f0;
+  --stroke: rgba(41, 61, 21, 0.14);
+  --ink: #1c2f11; --ink-soft: rgba(28, 47, 17, 0.78); --ink-muted: rgba(28, 47, 17, 0.58);
+  --accent: #4f7942; --accent-strong: #3d5e32; --accent-soft: rgba(79, 121, 66, 0.16);
+  --swap: #fff1cc; --swap-ink: #7a4b00; --swap-stroke: #f0b429;
+  --mine: #dff0d8; --error: #b42318;
+  --radius: 16px;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); line-height: 1.45; }
+.wrap { width: min(960px, 92vw); margin: 0 auto; }
+header.top { background: var(--surface); border-bottom: 1px solid var(--stroke); }
+header.top .wrap { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 0; }
+.brand { display: flex; align-items: center; gap: 12px; text-decoration: none; color: inherit; }
+.brand-icon { background: var(--accent); color: #fff; font-weight: 700; border-radius: 12px; width: 40px; height: 40px; display: grid; place-items: center; }
+.brand-title { font-weight: 700; display: block; }
+.brand-sub { font-size: .85rem; color: var(--ink-muted); }
+main { padding: 24px 0 64px; }
+h1 { font-size: 1.6rem; margin: 0 0 4px; }
+.lede { color: var(--ink-soft); margin: 0 0 20px; }
+
+button { font: inherit; cursor: pointer; border-radius: 12px; border: 1px solid var(--stroke); background: var(--surface); color: var(--ink); padding: 10px 16px; min-height: 44px; }
+button:hover { background: var(--surface-muted); }
+button.primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+button.primary:hover { background: var(--accent-strong); }
+button.warn { background: var(--swap); border-color: var(--swap-stroke); color: var(--swap-ink); }
+button.link { border: 0; background: none; color: var(--accent-strong); text-decoration: underline; padding: 6px; min-height: 0; }
+
+.bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
+.tabs { display: inline-flex; border: 1px solid var(--stroke); border-radius: 12px; overflow: hidden; }
+.tabs button { border: 0; border-radius: 0; background: var(--surface); }
+.tabs button[aria-pressed="true"] { background: var(--accent); color: #fff; font-weight: 600; }
+
+.legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: .88rem; color: var(--ink-soft); margin-bottom: 16px; }
+.legend i { display: inline-block; width: 14px; height: 14px; border-radius: 4px; border: 1px solid var(--stroke); vertical-align: -2px; margin-right: 6px; }
+
+.month { margin: 28px 0 10px; font-size: 1.05rem; color: var(--accent-strong); }
+
+/* Everyone view: one card per Sunday */
+.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 12px; }
+.card { background: var(--surface); border: 1px solid var(--stroke); border-radius: var(--radius); padding: 14px 16px; }
+.card h3 { margin: 0 0 8px; font-size: 1rem; }
+.card.today { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
+.line { display: flex; justify-content: space-between; gap: 10px; padding: 5px 8px; border-radius: 8px; font-size: .9rem; }
+.line + .line { margin-top: 2px; }
+.line .cls { color: var(--ink-muted); flex: 0 0 42%; }
+.line .who { text-align: right; flex: 1; }
+.line.open .who { color: var(--ink-muted); font-style: italic; }
+.line.swap { background: var(--swap); color: var(--swap-ink); }
+.badge { display: inline-block; font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; background: var(--swap-stroke); color: #3d2600; border-radius: 6px; padding: 1px 6px; margin-left: 6px; }
+
+/* My class view: one row per Sunday */
+.rows { background: var(--surface); border: 1px solid var(--stroke); border-radius: var(--radius); overflow: hidden; }
+.row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; padding: 12px 16px; border-top: 1px solid var(--stroke); }
+.row:first-child { border-top: 0; }
+.row .date { flex: 0 0 90px; font-weight: 600; }
+.row .state { flex: 1 1 160px; }
+.row .acts { display: flex; gap: 8px; flex-wrap: wrap; }
+.row.mine { background: var(--mine); }
+.row.swap { background: var(--swap); }
+.row.suggest .date::after { content: ' ★'; color: var(--accent); }
+.hint { color: var(--ink-muted); font-size: .88rem; }
+
+dialog { border: 1px solid var(--stroke); border-radius: var(--radius); padding: 24px; width: min(380px, 92vw); }
+dialog::backdrop { background: rgba(20, 30, 15, .45); }
+dialog h2 { margin: 0 0 12px; }
+label { display: block; font-size: .9rem; font-weight: 600; margin: 12px 0 4px; }
+input { font: inherit; width: 100%; padding: 11px 12px; border: 1px solid var(--stroke); border-radius: 10px; min-height: 44px; }
+.err { color: var(--error); min-height: 1.3em; margin: 8px 0 0; font-size: .9rem; }
+.dlg-acts { display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px; }
+.empty { padding: 24px; color: var(--ink-muted); text-align: center; }
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="/">
+      <span class="brand-icon">AW</span>
+      <span><span class="brand-title">Aspen Ward</span><span class="brand-sub">Teaching Calendar</span></span>
+    </a>
+    <div id="auth-slot"></div>
+  </div>
+</header>
+
+<main class="wrap">
+  <h1 id="title">Who's teaching</h1>
+  <p class="lede" id="lede">Every class, every Sunday.</p>
+  <div class="bar" id="bar"></div>
+  <div class="legend" id="legend"></div>
+  <div id="view"><p class="empty">Loading…</p></div>
+</main>
+
+<dialog id="login">
+  <form method="dialog" id="login-form">
+    <h2>Teacher sign in</h2>
+    <label for="u">Username</label>
+    <input id="u" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="first initial + last name">
+    <label for="p">Password</label>
+    <input id="p" type="password" autocomplete="current-password">
+    <p class="err" id="login-err" role="alert"></p>
+    <div class="dlg-acts">
+      <button type="button" id="login-cancel">Cancel</button>
+      <button type="submit" class="primary">Sign in</button>
+    </div>
+  </form>
+</dialog>
+
+<script type="module">
+import { db } from '/js/firebase.js';
+import { ref, onValue, update, set, runTransaction } from 'https://www.gstatic.com/firebasejs/11.7.3/firebase-database.js';
+import { upcomingSundays, dateKey, fmtSunday, fmtMonth, toArray, hashLogin, isPatternSunday } from '/js/teaching.js';
+
+const SESSION_KEY = 'teaching-login';
+const VISIBLE_STEP = 12;
+
+let data = { classes: {}, people: {}, sundays: {} };
+let me = null;            // { username, name, classId, teamId }
+let view = 'mine';        // 'mine' | 'all'
+let shown = VISIBLE_STEP; // Sundays visible in the Everyone view
+let loaded = false;
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const sundays = upcomingSundays();
+const todayKey = dateKey(sundays[0]);
+
+const classList = () => Object.entries(data.classes || {})
+  .map(([id, c]) => ({ id, ...c }))
+  .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+const teamLabel = (classId, teamId) => data.classes?.[classId]?.teams?.[teamId]?.label || 'Unknown';
+const claim = (key, classId) => data.sundays?.[key]?.[classId] || null;
+const claimPath = (key, classId) => ref(db, `teaching/sundays/${key}/${classId}`);
+
+// ---------- sign in ----------
+async function resolveSession() {
+  me = null;
+  try {
+    const saved = JSON.parse(localStorage.getItem(SESSION_KEY) || 'null');
+    const person = saved && data.people?.[saved.u];
+    if (person && person.hash === saved.h) {
+      me = { username: saved.u, name: person.name, classId: person.classId, teamId: person.teamId };
+    }
+  } catch { /* storage blocked or corrupt: stay signed out */ }
+}
+
+$('login-form').addEventListener('submit', async e => {
+  e.preventDefault();
+  const u = $('u').value.trim().toLowerCase();
+  const person = data.people?.[u];
+  const h = person ? await hashLogin(u, $('p').value) : null;
+  if (!person || person.hash !== h) {
+    $('login-err').textContent = 'That username or password is not right.';
+    return;
+  }
+  try { localStorage.setItem(SESSION_KEY, JSON.stringify({ u, h })); } catch { /* still signed in this visit */ }
+  $('login').close();
+  await resolveSession();
+  view = 'mine';
+  render();
+});
+$('login-cancel').addEventListener('click', () => $('login').close());
+
+function signOut() {
+  try { localStorage.removeItem(SESSION_KEY); } catch {}
+  me = null;
+  view = 'all';
+  render();
+}
+
+// ---------- actions ----------
+// Claims go through a transaction so two people tapping the same Sunday at once
+// cannot both win; the loser's tap is simply a no-op and the page updates.
+async function takeSunday(key) {
+  await runTransaction(claimPath(key, me.classId), cur =>
+    cur === null ? { teamId: me.teamId, by: me.username } : undefined);
+}
+async function giveUp(key) { await set(claimPath(key, me.classId), null); }
+async function setSwap(key, on) {
+  await update(claimPath(key, me.classId), { swap: on ? true : null });
+}
+async function coverSunday(key) {
+  await runTransaction(claimPath(key, me.classId), cur =>
+    cur && cur.swap ? { teamId: me.teamId, by: me.username } : undefined);
+}
+async function fillPattern() {
+  const team = data.classes[me.classId].teams[me.teamId];
+  const writes = {};
+  for (const d of sundays) {
+    const key = dateKey(d);
+    if (isPatternSunday(team, d) && !claim(key, me.classId)) {
+      writes[`${key}/${me.classId}`] = { teamId: me.teamId, by: me.username };
+    }
+  }
+  if (Object.keys(writes).length) await update(ref(db, 'teaching/sundays'), writes);
+}
+
+// ---------- rendering ----------
+function renderChrome() {
+  $('auth-slot').innerHTML = me
+    ? `<span class="hint">${esc(me.name)}</span> <button class="link" id="signout">Sign out</button>`
+    : `<button id="signin">Teacher sign in</button>`;
+  $('signout')?.addEventListener('click', signOut);
+  $('signin')?.addEventListener('click', () => { $('login-err').textContent = ''; $('login').showModal(); $('u').focus(); });
+
+  $('bar').innerHTML = me
+    ? `<div class="tabs"><button data-v="mine" aria-pressed="${view === 'mine'}">My class</button><button data-v="all" aria-pressed="${view === 'all'}">Everyone</button></div>`
+    : '';
+  $('bar').querySelectorAll('[data-v]').forEach(b => b.addEventListener('click', () => { view = b.dataset.v; render(); }));
+
+  const swapKey = `<span><i style="background:var(--swap);border-color:var(--swap-stroke)"></i>Needs a swap</span>`;
+  $('legend').innerHTML = view === 'mine' && me
+    ? `<span><i style="background:var(--mine)"></i>Your Sunday</span>${swapKey}<span>★ In your usual pattern</span>`
+    : swapKey + `<span>“Open” = nobody has signed up yet</span>`;
+}
+
+function renderAll() {
+  $('title').textContent = "Who's teaching";
+  $('lede').textContent = 'Every class, every Sunday.';
+  const classes = classList();
+  if (!classes.length) return '<p class="empty">The calendar has not been set up yet.</p>';
+
+  let html = '', month = '';
+  for (const d of sundays.slice(0, shown)) {
+    const key = dateKey(d);
+    const m = fmtMonth(d);
+    if (m !== month) { if (month) html += '</div>'; html += `<h2 class="month">${m}</h2><div class="cards">`; month = m; }
+    html += `<div class="card${key === todayKey ? ' today' : ''}"><h3>${fmtSunday(d)}</h3>`;
+    for (const c of classes) {
+      const cl = claim(key, c.id);
+      const who = cl ? esc(teamLabel(c.id, cl.teamId)) : 'Open';
+      html += `<div class="line${cl ? '' : ' open'}${cl?.swap ? ' swap' : ''}"><span class="cls">${esc(c.name)}</span><span class="who">${who}${cl?.swap ? '<span class="badge">Swap</span>' : ''}</span></div>`;
+    }
+    html += '</div>';
+  }
+  html += '</div>';
+  if (shown < sundays.length) html += `<p style="text-align:center;margin-top:20px"><button id="more">Show more Sundays</button></p>`;
+  return html;
+}
+
+function renderMine() {
+  const cls = data.classes?.[me.classId];
+  if (!cls) return '<p class="empty">Your class could not be found. Please tell the ward clerk.</p>';
+  const team = cls.teams[me.teamId];
+  $('title').textContent = cls.name;
+  $('lede').textContent = `Signed in as ${me.name}. You teach with ${team.label}.`;
+
+  const canFill = team.pattern && (team.pattern.every || team.pattern.nth);
+  let html = '';
+  if (canFill) html += `<p><button class="primary" id="fill">Sign up my usual Sundays</button> <span class="hint">Takes every open ★ Sunday below for your team.</span></p>`;
+  else html += `<p class="hint">Tap a Sunday to take it. If you need someone to cover, tap “Need a swap” and the others in your class will see it.</p>`;
+
+  html += '<div class="rows">';
+  for (const d of sundays) {
+    const key = dateKey(d);
+    const cl = claim(key, me.classId);
+    const suggest = isPatternSunday(team, d);
+    let cls_ = 'row', state = '', acts = '';
+    if (!cl) {
+      state = '<span class="hint">Open</span>';
+      acts = `<button class="primary" data-a="take" data-k="${key}">Take this Sunday</button>`;
+    } else if (cl.teamId === me.teamId) {
+      cls_ += cl.swap ? ' swap' : ' mine';
+      state = cl.swap ? '<strong>Swap requested</strong> <span class="hint">waiting for someone to cover</span>' : '<strong>You’re teaching</strong>';
+      acts = cl.swap
+        ? `<button data-a="unswap" data-k="${key}">Cancel swap</button>`
+        : `<button class="warn" data-a="swap" data-k="${key}">Need a swap</button><button class="link" data-a="give" data-k="${key}">Give up</button>`;
+    } else {
+      cls_ += cl.swap ? ' swap' : '';
+      state = `${esc(teamLabel(me.classId, cl.teamId))}${cl.swap ? '<span class="badge">Needs cover</span>' : ''}`;
+      if (cl.swap) acts = `<button class="primary" data-a="cover" data-k="${key}">I’ll cover it</button>`;
+    }
+    if (suggest) cls_ += ' suggest';
+    html += `<div class="${cls_}"><span class="date">${fmtSunday(d)}</span><span class="state">${state}</span><span class="acts">${acts}</span></div>`;
+  }
+  return html + '</div>';
+}
+
+function render() {
+  if (!loaded) return;
+  if (!me) view = 'all';
+  renderChrome();
+  $('view').innerHTML = view === 'mine' && me ? renderMine() : renderAll();
+
+  $('more')?.addEventListener('click', () => { shown += VISIBLE_STEP; render(); });
+  $('fill')?.addEventListener('click', () => fillPattern().catch(fail));
+  $('view').querySelectorAll('[data-a]').forEach(b => b.addEventListener('click', () => {
+    const k = b.dataset.k;
+    const act = { take: () => takeSunday(k), give: () => giveUp(k), swap: () => setSwap(k, true),
+                  unswap: () => setSwap(k, false), cover: () => coverSunday(k) }[b.dataset.a];
+    b.disabled = true;
+    act().catch(fail);
+  }));
+}
+
+function fail(err) {
+  console.error(err);
+  alert('That did not save. Check your connection and try again.');
+  render();
+}
+
+// ---------- live data ----------
+onValue(ref(db, 'teaching'), async snap => {
+  const v = snap.val() || {};
+  data = { classes: v.classes || {}, people: v.people || {}, sundays: v.sundays || {} };
+  for (const c of Object.values(data.classes)) c.teams = c.teams || {};
+  await resolveSession();
+  loaded = true;
+  render();
+}, err => {
+  console.error(err);
+  $('view').innerHTML = '<p class="empty">The calendar could not be loaded. Please try again later.</p>';
+});
+</script>
+</body>
+</html>
