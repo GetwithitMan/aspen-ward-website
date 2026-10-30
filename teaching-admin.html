@@ -27,7 +27,12 @@ button.danger { color: var(--error); }
 .row { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; padding: 10px 14px; border-top: 1px solid var(--stroke); }
 .row:first-child { border-top: 0; }
 .row .grow { flex: 1 1 180px; }
-.cls-head { background: var(--surface-muted); font-weight: 700; padding: 8px 14px; border-top: 1px solid var(--stroke); }
+.cls-head { background: var(--surface-muted); font-weight: 700; padding: 10px 14px; border-top: 1px solid var(--stroke); cursor: pointer; list-style: none; display: flex; align-items: center; gap: 8px; }
+.cls-head::-webkit-details-marker { display: none; }
+.cls-head::before { content: '▶'; font-size: .7rem; color: var(--ink-muted); transition: transform .15s; }
+details[open] > .cls-head::before { transform: rotate(90deg); }
+.cls-head .count { font-weight: 400; color: var(--ink-muted); font-size: .9rem; }
+details:first-child > .cls-head { border-top: 0; }
 code { background: var(--surface-muted); padding: 2px 6px; border-radius: 6px; }
 .notice { background: var(--swap); border: 1px solid #f0b429; border-radius: 12px; padding: 12px 14px; margin: 12px 0; }
 .badge { display: inline-block; font-size: .72rem; font-weight: 700; text-transform: uppercase; background: var(--accent); color: #fff; border-radius: 6px; padding: 1px 6px; margin-left: 6px; }
@@ -95,6 +100,7 @@ let data = { classes: {}, people: {}, sundays: {}, notes: {} };
 let selClass = null;
 let actor = sessionStorage.getItem('admin-auth') === 'true' ? 'admin' : null;
 let loaded = false;
+const openGroups = new Set();   // class ids expanded in the People list; all start collapsed
 
 const classList = () => Object.entries(data.classes).map(([id, c]) => ({ id, ...c })).sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
 
@@ -144,13 +150,11 @@ function render() {
     const pres = p.role === 'presidency';
     return `<div class="row"><span class="grow"><strong>${esc(p.name)}</strong>${pres ? '<span class="badge">Presidency</span>' : ''}<br><span class="hint">${esc(team?.label || '')}</span></span><code>${esc(u)}</code><button data-reset="${esc(u)}">Reset password</button><button data-role="${esc(u)}">${pres ? 'Remove presidency' : 'Make presidency'}</button><button class="danger" data-remove="${esc(u)}">Remove</button></div>`;
   };
-  for (const c of classList()) {
-    html += `<div class="cls-head">${esc(c.name)}</div>`;
-    const members = Object.entries(data.people).filter(([, p]) => p.classId === c.id);
-    html += members.length ? members.map(row).join('') : '<div class="row hint">No one yet.</div>';
-  }
+  const group = (id, title, members) => `<details data-group="${esc(id)}"${openGroups.has(id) ? ' open' : ''}><summary class="cls-head">${esc(title)} <span class="count">${members.length}</span></summary>` +
+    (members.length ? members.map(row).join('') : '<div class="row hint">No one yet.</div>') + '</details>';
+  for (const c of classList()) html += group(c.id, c.name, Object.entries(data.people).filter(([, p]) => p.classId === c.id));
   const noClass = Object.entries(data.people).filter(([, p]) => !data.classes[p.classId]);
-  if (noClass.length) html += `<div class="cls-head">No class</div>` + noClass.map(row).join('');
+  if (noClass.length) html += group('__none', 'No class', noClass);
   $('people').innerHTML = html;
 
   const prevClass = $('add-class').value;
@@ -208,6 +212,13 @@ function renderSundays() {
       `<label><input type="checkbox" data-swap="${key}"${cl?.swap ? ' checked' : ''}${cl ? '' : ' disabled'}> needs swap</label></div>`;
   }).join('');
 }
+
+// `toggle` does not bubble, so listen in the capture phase to remember what is open
+// (the list is rebuilt whenever anything changes in the database).
+$('people').addEventListener('toggle', e => {
+  const id = e.target.dataset.group;
+  if (id) e.target.open ? openGroups.add(id) : openGroups.delete(id);
+}, true);
 
 $('people').addEventListener('click', async e => {
   const { reset, remove, role } = e.target.dataset;
