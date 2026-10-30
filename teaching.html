@@ -79,6 +79,8 @@ button.link { border: 0; background: none; color: var(--accent-strong); text-dec
 .row.suggest .date::after { content: ' ★'; color: var(--accent); }
 .hint { color: var(--ink-muted); font-size: .88rem; }
 .lastbtn { margin: 0 0 12px; }
+.subbtn { margin-left: 8px; min-height: 32px; padding: 2px 10px; font-size: .85rem; }
+dialog .field-row { display: flex; gap: 8px; }
 .card.past, .row.past { opacity: .6; }
 .ok { color: #166534; font-weight: 700; white-space: nowrap; }
 
@@ -152,6 +154,22 @@ input { font: inherit; width: 100%; padding: 11px 12px; border: 1px solid var(--
   <div id="view"><p class="empty">Loading…</p></div>
 </main>
 
+<dialog id="sub-dlg">
+  <form method="dialog" id="sub-form">
+    <h2 id="sub-title">I can sub</h2>
+    <p class="hint">No sign-in needed. Type your name and you’re on the calendar for this Sunday.</p>
+    <label for="sub-first">First name</label>
+    <input id="sub-first" autocomplete="given-name" maxlength="30">
+    <label for="sub-last">Last name</label>
+    <input id="sub-last" autocomplete="family-name" maxlength="30">
+    <p class="err" id="sub-err" role="alert"></p>
+    <div class="dlg-acts">
+      <button type="button" id="sub-cancel">Cancel</button>
+      <button type="submit" class="primary">Sign me up</button>
+    </div>
+  </form>
+</dialog>
+
 <dialog id="day-dlg">
   <div id="day-body"></div>
   <div class="dlg-acts"><button type="button" id="day-close">Close</button></div>
@@ -175,7 +193,7 @@ input { font: inherit; width: 100%; padding: 11px 12px; border: 1px solid var(--
 <script type="module">
 import { db } from '/js/firebase.js';
 import { ref, onValue, update, set, runTransaction } from 'https://www.gstatic.com/firebasejs/11.7.3/firebase-database.js';
-import { upcomingSundays, dateKey, fmtSunday, fmtMonth, hashLogin, isPatternSunday, claimLabel, swapKind, firstName, isFifth, holidaysFor, parseKey, membershipsOf } from '/js/teaching.js';
+import { upcomingSundays, dateKey, fmtSunday, fmtMonth, hashLogin, isPatternSunday, claimLabel, swapKind, firstName, isFifth, holidaysFor, parseKey, membershipsOf, toArray } from '/js/teaching.js';
 
 const SESSION_KEY = 'teaching-login';
 const VISIBLE_STEP = 12;
@@ -352,12 +370,70 @@ function lineState(cl) {
   return cl.covered || cl.sub ? ' covered' : ' filled';
 }
 
-function swapBadge(cl) {
+// How many subs a request needs: one for a single teacher, one per teacher for a whole-team request.
+function neededFor(classId, cl) {
+  if (swapKind(cl) !== 'full') return 1;
+  return Math.max(1, toArray(data.classes?.[classId]?.teams?.[cl.teamId]?.members).length);
+}
+function swapBadge(cl, classId) {
   const kind = swapKind(cl);
   if (!kind) return '';
-  const text = kind === 'partial' ? `Needs a sub${cl.swapFor ? ` for ${firstName(cl.swapFor)}` : ''}` : 'Needs a sub for the whole class';
-  return `<span class="badge">${esc(text)}</span>`;
+  const need = neededFor(classId, cl), subs = toArray(cl.subs);
+  let text;
+  if (kind === 'partial') text = `Needs a sub${cl.swapFor ? ` for ${firstName(cl.swapFor)}` : ''}`;
+  else if (need === 1) text = 'Needs a sub for the whole class';
+  else text = subs.length ? `Sub ${subs.length} of ${need} signed up, ${need - subs.length} more needed` : `Needs ${need} subs`;
+  const names = kind === 'full' && subs.length ? ` <span class="hint">${esc(subs.join(' & '))}</span>` : '';
+  return `<span class="badge">${esc(text)}</span>${names}`;
 }
+
+// Anyone (no login) can offer to sub on a Sunday that has a sub request. The transaction means the
+// first person to tap a spot gets it; later taps find it already filled.
+let subTarget = null;     // "date|classId" of the spot being signed up for
+let subSaved = null;      // the line that just got a sub: keeps a green “signed up”
+let dayKey = null;        // the Sunday open in the month pop-up
+async function signUpSub(key, classId, name) {
+  const need = neededFor(classId, claim(key, classId));
+  return runTransaction(claimPath(key, classId), existing => {
+    const kind = swapKind(existing);
+    if (!kind) return undefined;
+    if (kind === 'partial') {
+      const { swap, swapFor, ...rest } = existing;
+      return { ...rest, coverName: name, coverFor: swapFor || '', covered: true, guest: true };
+    }
+    const subs = toArray(existing.subs);
+    if (subs.length >= need || subs.some(n => n.toLowerCase() === name.toLowerCase())) return undefined;
+    const all = [...subs, name];
+    if (all.length >= need) return { sub: all.join(' & '), subs: all, by: 'guest', covered: true };
+    return { ...existing, subs: all };
+  });
+}
+function bindSubButtons(root) {
+  root.querySelectorAll('[data-subfor]').forEach(b => b.addEventListener('click', () => {
+    subTarget = b.dataset.subfor;
+    const [key, cid] = subTarget.split('|');
+    $('sub-title').textContent = `Sub for ${data.classes[cid]?.name || 'this class'}, ${fmtSunday(parseKey(key))}`;
+    $('sub-err').textContent = ''; $('sub-first').value = ''; $('sub-last').value = '';
+    $('sub-dlg').showModal(); $('sub-first').focus();
+  }));
+}
+$('sub-cancel').addEventListener('click', () => $('sub-dlg').close());
+$('sub-form').addEventListener('submit', async e => {
+  e.preventDefault();
+  const clean = v => v.trim().replace(/\s+/g, ' ').slice(0, 30);
+  const first = clean($('sub-first').value), last = clean($('sub-last').value);
+  if (!first || !last) { $('sub-err').textContent = 'Please type your first name AND your last name.'; return; }
+  const [key, cid] = subTarget.split('|');
+  const name = `${first} ${last}`;
+  let res;
+  try { res = await signUpSub(key, cid, name); }
+  catch (err) { console.error(err); $('sub-err').textContent = 'That did not save. Check your connection and try again.'; return; }
+  if (!res.committed) { $('sub-err').textContent = 'Sorry, that spot was just filled, or you are already on it. Close this and look at the calendar.'; return; }
+  $('sub-dlg').close();
+  subSaved = subTarget;
+  if ($('day-dlg').open && dayKey) { $('day-body').innerHTML = sundayCard(parseKey(dayKey), classList()); bindSubButtons($('day-body')); }
+  render();
+});
 
 // One Sunday as a card: used by the list view and the month view's pop-up.
 function sundayCard(d, classes) {
@@ -371,7 +447,10 @@ function sundayCard(d, classes) {
   for (const c of classes) {
     const cl = claim(key, c.id);
     const who = cl ? esc(claimLabel(data.classes, c.id, cl)) : 'Open';
-    html += `<div class="line${lineState(cl)}"><span class="cls">${esc(c.name)}</span><span class="who">${who}${swapBadge(cl)}</span></div>`;
+    const lineId = `${key}|${c.id}`;
+    const subBtn = swapKind(cl) && !isPast(d) ? `<button class="subbtn" data-subfor="${lineId}">I can sub</button>` : '';
+    const done = subSaved === lineId ? ' <span class="ok">✓ You’re signed up</span>' : '';
+    html += `<div class="line${lineState(cl)}"><span class="cls">${esc(c.name)}</span><span class="who">${who}${swapBadge(cl, c.id)}${subBtn}${done}</span></div>`;
   }
   return html + '</div>';
 }
@@ -468,7 +547,7 @@ function renderMine() {
       const kind = swapKind(cl);
       const pair = (team.members || []).length > 1;
       state = kind
-        ? `<strong>${kind === 'partial' ? `Sub needed for ${esc(firstName(cl.swapFor) || 'one of you')}` : 'Sub needed for the whole class'}</strong> <span class="hint">waiting for someone to cover</span>`
+        ? `<strong>${kind === 'partial' ? `Sub needed for ${esc(firstName(cl.swapFor) || 'one of you')}` : 'Sub needed for the whole class'}</strong> <span class="hint">${kind === 'full' && toArray(cl.subs).length ? `Sub ${toArray(cl.subs).length} of ${neededFor(classId, cl)} signed up: ${esc(toArray(cl.subs).join(' & '))}` : 'waiting for someone to cover'}</span>`
         : `<strong>You’re teaching</strong>${cl.coverName ? ` <span class="hint">${esc(firstName(cl.coverName))} covering for ${esc(firstName(cl.coverFor))}</span>` : ''}`;
       acts = kind
         ? `<button data-a="unswap" data-k="${key}">${kind === 'partial' && cl.swapFor && cl.swapFor !== me.name ? `Cancel ${esc(firstName(cl.swapFor))}’s sub request` : 'Cancel sub request'}</button>`
@@ -479,8 +558,8 @@ function renderMine() {
     } else {
       cls_ += lineState(cl);
       const kind = swapKind(cl);
-      state = `${esc(claimLabel(data.classes, classId, cl))}${swapBadge(cl)}${kind ? '' : cl.coverName === me.name ? ' <span class="hint">you are covering</span>' : ' <span class="hint">taken by another team</span>'}`;
-      if (kind) acts = `<button class="primary" data-a="cover" data-k="${key}">${kind === 'partial' ? `I’ll cover ${esc(firstName(cl.swapFor) || 'them')}` : 'I’ll cover it'}</button>`;
+      state = `${esc(claimLabel(data.classes, classId, cl))}${swapBadge(cl, classId)}${kind || cl.sub ? '' : cl.coverName === me.name ? ' <span class="hint">you are covering</span>' : ' <span class="hint">taken by another team</span>'}`;
+      if (kind && !(kind === 'full' && toArray(cl.subs).length)) acts = `<button class="primary" data-a="cover" data-k="${key}">${kind === 'partial' ? `I’ll cover ${esc(firstName(cl.swapFor) || 'them')}` : 'I’ll cover it'}</button>`;
     }
     if (key === savedKey) state += ' <span class="ok">✓ Saved</span>';
     if (suggest) cls_ += ' suggest';
@@ -496,6 +575,7 @@ function render() {
   renderChrome();
   $('view').innerHTML = view === 'mine' && hasClass() ? renderMine() : renderAll();
 
+  bindSubButtons($('view'));
   $('last-toggle')?.addEventListener('click', () => { showLast = !showLast; render(); });
   $('more')?.addEventListener('click', () => { shown += VISIBLE_STEP; render(); });
   $('view').querySelectorAll('[data-mn]').forEach(b => b.addEventListener('click', () => {
@@ -503,7 +583,9 @@ function render() {
     render();
   }));
   $('view').querySelectorAll('[data-sun]').forEach(b => b.addEventListener('click', () => {
+    dayKey = b.dataset.sun;
     $('day-body').innerHTML = sundayCard(parseKey(b.dataset.sun), classList());
+    bindSubButtons($('day-body'));
     $('day-dlg').showModal();
   }));
   $('fill')?.addEventListener('click', () => fillPattern().catch(fail));

@@ -426,7 +426,8 @@ function renderSundays() {
       `<option value="__sub"${isSub ? ' selected' : ''}>Sub (type a name)…</option>`).join('');
     return `<div class="row"><strong style="flex:0 0 90px">${fmtSunday(d)}</strong><select data-sun="${key}">${opts}</select>` +
       `<input type="text" class="sub-in" data-subname="${key}" placeholder="Sub's name" value="${esc(cl?.sub || '')}"${isSub ? '' : ' hidden'}>` +
-      `<select data-swap="${key}" aria-label="Swap request"${cl ? '' : ' disabled'}><option value="">No swap needed</option><option value="partial"${swapKind(cl) === 'partial' ? ' selected' : ''}>One teacher needs a sub</option><option value="full"${swapKind(cl) === 'full' ? ' selected' : ''}>Whole team needs a sub</option></select></div>`;
+      `<select data-swap="${key}" aria-label="Swap request"${cl ? '' : ' disabled'}><option value="">No swap needed</option><option value="partial"${swapKind(cl) === 'partial' ? ' selected' : ''}>One teacher needs a sub</option><option value="full"${swapKind(cl) === 'full' ? ' selected' : ''}>Whole team needs a sub</option></select>` +
+      `${cl?.subs?.length ? `<span class="hint">Subs so far: ${esc(cl.subs.join(' & '))}</span>` : ''}${cl?.coverName ? `<span class="hint">Covered by ${esc(cl.coverName)}</span>` : ''}</div>`;
   });
 }
 
@@ -538,7 +539,10 @@ $('sundays').addEventListener('change', async e => {
     const name = t.value.trim();
     if (name) { await set(path(t.dataset.subname), { sub: name, by: actor }); markSaved(`[data-sun="${t.dataset.subname}"]`); }
   } else if (t.dataset.swap) {
-    await update(path(t.dataset.swap), { swap: t.value || null, swapFor: null });
+    // Choosing here also clears any subs who had signed up, so the request starts fresh.
+    const k = t.dataset.swap, was = data.sundays?.[k]?.[selClass] || {};
+    await update(path(k), { swap: t.value || null, swapFor: t.value === 'partial' ? (was.coverFor || null) : null,
+                            coverName: null, coverFor: null, covered: null, guest: null, subs: null });
     markSaved(`[data-swap="${t.dataset.swap}"]`);
   }
 });

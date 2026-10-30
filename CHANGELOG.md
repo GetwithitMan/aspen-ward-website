@@ -18,6 +18,12 @@ Four people-in-a-browser test runs (older teacher, team of three on a phone, pre
   people the password is first name + last initial. Boxes clear on sign-out. Visitor hint to sign in.
 - **Give up needs a second tap.** Save errors show a banner, not a popup that freezes the page.
 - **Phone Month view:** classes are small round dots; the whole Sunday cell opens the popup.
+- **Outside subs can sign themselves up.** On any class line with a sub request, anyone (no login) can tap
+  **I can sub**, type first and last name, and tap Sign me up. A request for one teacher needs one sub
+  ("Jane covering for Kim"); a whole-team request needs one sub per teacher and shows
+  "Sub 1 of 2 signed up, 1 more needed" until it is full, then turns mint ("Jane Smith & Tom Lee (sub)").
+  First tap wins; the same name can't sign up twice. Admin sees the subs in Change a Sunday and choosing a
+  swap option there clears them.
 - **Open Sundays** are bold and darker, not pale italics.
 - **Admin:** banner pinned to the bottom after Add teacher / Reset password (readable credentials);
   reset password, remove from class, and duplicate names ask first; duplicate class names refused;
