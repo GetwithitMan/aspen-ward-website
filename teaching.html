@@ -91,7 +91,8 @@ input { font: inherit; width: 100%; padding: 11px 12px; border: 1px solid var(--
 .card.off { background: var(--surface-muted); }
 .card.fifth { border-top: 3px solid #8fb8d9; }
 .tag5 { display: inline-block; font-size: .7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; color: #2f5f86; background: #e4f0f9; border-radius: 6px; padding: 1px 6px; margin-left: 8px; vertical-align: 2px; }
-.row .date .tag5 { display: block; margin: 2px 0 0; width: fit-content; }
+.tagh { display: inline-block; font-size: .7rem; font-weight: 700; letter-spacing: .02em; color: #8a4b6b; background: #f7e8ef; border-radius: 6px; padding: 1px 6px; margin-left: 8px; vertical-align: 2px; }
+.row .date .tag5, .row .date .tagh { display: block; margin: 2px 0 0; width: fit-content; }
 .card.off .note { font-style: normal; font-weight: 600; margin: 0; }
 .row.off { background: var(--surface-muted); color: var(--ink-muted); }
 .row .note { margin: 2px 0 0; }
@@ -190,6 +191,10 @@ const todayKey = dateKey(sundays[0]);
 const classList = () => Object.entries(data.classes || {})
   .map(([id, c]) => ({ id, ...c }))
   .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+// A holiday that falls on a Sunday (Easter, Mother's Day...) gets a small tag.
+const holCache = {};
+const holidayOn = d => (holCache[d.getFullYear()] ||= holidaysFor(d.getFullYear())).get(dateKey(d));
+const holTag = d => holidayOn(d) ? `<span class="tagh">${esc(holidayOn(d))}</span>` : '';
 const noteFor = key => data.notes?.[key] || null;
 const claim = (key, classId) => data.sundays?.[key]?.[classId] || null;
 const claimPath = (key, classId) => ref(db, `teaching/sundays/${key}/${classId}`);
@@ -314,9 +319,9 @@ function sundayCard(d, classes) {
   const key = dateKey(d), note = noteFor(key);
   const today = key === todayKey ? ' today' : '';
   if (note?.noClass) {
-    return `<div class="card off${today}"><h3>${fmtSunday(d)}</h3><p class="note">${esc(note.text || 'No classes')}</p></div>`;
+    return `<div class="card off${today}"><h3>${fmtSunday(d)}${holTag(d)}</h3><p class="note">${esc(note.text || 'No classes')}</p></div>`;
   }
-  let html = `<div class="card${today}${isFifth(d) ? ' fifth' : ''}"><h3>${fmtSunday(d)}${isFifth(d) ? '<span class="tag5">5th Sunday</span>' : ''}</h3>`;
+  let html = `<div class="card${today}${isFifth(d) ? ' fifth' : ''}"><h3>${fmtSunday(d)}${isFifth(d) ? '<span class="tag5">5th Sunday</span>' : ''}${holTag(d)}</h3>`;
   if (note?.text) html += `<p class="note">${esc(note.text)}</p>`;
   for (const c of classes) {
     const cl = claim(key, c.id);
@@ -427,7 +432,7 @@ function renderMine() {
     }
     if (suggest) cls_ += ' suggest';
     if (note?.text) state += `<p class="note">${esc(note.text)}</p>`;
-    html += `<div class="${cls_}"><span class="date">${fmtSunday(d)}${isFifth(d) ? '<span class="tag5">5th Sunday</span>' : ''}</span><span class="state">${state}</span><span class="acts">${acts}</span></div>`;
+    html += `<div class="${cls_}"><span class="date">${fmtSunday(d)}${isFifth(d) ? '<span class="tag5">5th Sunday</span>' : ''}${holTag(d)}</span><span class="state">${state}</span><span class="acts">${acts}</span></div>`;
   }
   return html + '</div>';
 }

@@ -31,6 +31,8 @@ everyone else sees who is teaching each class each week.
   default). Month is a full calendar grid with a colour chip per class on each
   Sunday (tap one for the full detail), prev/next month buttons, and US holidays
   plus Easter labelled on their day.
+- **Sunday holidays** (Easter, Mother's Day, Father's Day, Christmas...) get a small tag on
+  that Sunday's card in the list, too.
 - **5th Sundays** carry a small "5th Sunday" tag and a blue top edge.
 - **Partial or full subs:** on a pair, either teacher can tap **I need a sub** (just
   them; shows "Needs 1 sub (Brian)") or **We both need a sub**. A classmate on another
