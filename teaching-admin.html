@@ -40,9 +40,12 @@ code { background: var(--surface-muted); padding: 2px 6px; border-radius: 6px; }
 .form input[type=text], .form input[type=password] { flex: 1 1 180px; }
 .err { color: var(--error); min-height: 1.3em; margin: 4px 0 0; }
 .sub-in { flex: 1 1 160px; }
-.mates { display: flex; flex-wrap: wrap; gap: 6px 16px; padding: 4px 0; }
-.mates label { display: flex; align-items: center; gap: 6px; }
-.preview { flex: 1 1 100%; margin: 0; }
+details.dd { flex: 1 1 220px; }
+details.dd > summary { cursor: pointer; border: 1px solid var(--stroke); border-radius: 10px; padding: 8px 12px; min-height: 40px; background: var(--surface); list-style: none; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+details.dd > summary::-webkit-details-marker { display: none; }
+details.dd > summary::after { content: '▾'; color: var(--ink-muted); }
+.ddmenu { display: flex; flex-direction: column; gap: 6px; padding: 10px 12px; }
+.ddmenu label { display: flex; align-items: center; gap: 8px; }
 .row input[type=text] { flex: 1 1 160px; }
 details.sect > summary { list-style: none; cursor: pointer; display: flex; align-items: center; gap: 8px; }
 details.sect > summary::-webkit-details-marker { display: none; }
@@ -75,23 +78,21 @@ details[open] > .month-head::before { transform: rotate(90deg); }
     <div id="creds"></div>
 
     <h2>People</h2>
-    <p class="hint">A password is the person's first name plus last initial (Kitrick Galloway: <code>kitrickg</code>). Reset puts it back to that.</p>
+    <p class="hint">A password is the person's first name plus last initial (Kitrick Galloway: <code>kitrickg</code>). Reset puts it back to that. Under <strong>Teaches with</strong>, tick the people who teach together (3 at most); unticking someone separates them. The group's name updates for everyone in it.</p>
     <div class="panel" id="people"></div>
 
     <h2>Add a teacher</h2>
-    <p class="hint">Teachers, subs and Primary presidency. Under the name, tick who they team teach with (up to 2, for a group of 3). The group shares its Sundays and is named by first name and last initial, like <em>Kitrick G., Jordan T. &amp; Brian L.</em> Presidency members can manage this page.</p>
+    <p class="hint">Teachers, subs and Primary presidency. To make two or three people teach together, use <strong>Teaches with</strong> on their row in the People list above.</p>
     <div class="panel"><form class="form" id="add">
       <input type="text" id="add-name" placeholder="Full name" required>
       <select id="add-class"></select>
-      <div id="add-mates" style="flex:1 1 100%" hidden></div>
       <label><input type="checkbox" id="add-pres"> Primary presidency</label>
       <button class="primary" type="submit">Add</button>
     </form></div>
-    <p class="hint" id="add-preview"></p>
     <p class="err" id="add-err" role="alert"></p>
 
     <details class="sect"><summary><h2>Classes and teams</h2></summary>
-    <p class="hint">Rename a class, change a team's name or usual Sundays, add or remove teams, or reorder classes. A team's usual Sundays drive the “Sign up my usual Sundays” button. To move a teacher to a different team, use the <strong>Move to</strong> menu in the People list. A team or class can only be deleted once nobody is in it.</p>
+    <p class="hint">Rename, reorder, add or delete classes, and set each teaching group's usual Sundays (this drives the “Sign up my usual Sundays” button). Who teaches with whom is set in the People list. A class can only be deleted once nobody is in it.</p>
     <div class="panel" id="classes"></div>
     <div class="panel" style="margin-top:12px"><form class="form" id="add-class-form">
       <input type="text" id="new-class" placeholder="New class name" required>
@@ -129,6 +130,7 @@ let loaded = false;
 let monthsSeeded = false;
 const openMonths = new Set();   // 'n:<month>' (notes) / 's:<month>' (sundays) currently expanded
 const openGroups = new Set();
+const openDD = new Set();        // usernames whose Teaches with menu is open
 const openClasses = new Set();  // class ids expanded in Classes and teams   // class ids expanded in the People list; all start collapsed
 
 const classList = () => Object.entries(data.classes).map(([id, c]) => ({ id, ...c })).sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
@@ -174,14 +176,20 @@ function render() {
 
   // people, grouped by class; presidency members with no class go last
   let html = '';
-  // Move to: any team in any class, or Presidency members (no class)
-  const moveOptions = p => '<option value="|">Presidency members</option>' +
-    classList().flatMap(c => Object.entries(c.teams || {}).map(([tid, t]) =>
-      `<option value="${esc(c.id)}|${esc(tid)}"${p.classId === c.id && p.teamId === tid ? ' selected' : ''}>${esc(c.name)} — ${esc(t.label)}</option>`)).join('');
+  const classOptions = p => '<option value="">Presidency members</option>' +
+    classList().map(c => `<option value="${esc(c.id)}"${p.classId === c.id ? ' selected' : ''}>${esc(c.name)}</option>`).join('');
   const row = ([u, p]) => {
     const team = data.classes[p.classId]?.teams?.[p.teamId];
     const pres = p.role === 'presidency';
-    return `<div class="row"><span class="grow"><strong>${esc(p.name)}</strong>${pres ? '<span class="badge">Presidency</span>' : ''}<br><span class="hint">${esc(team?.label || '')}</span></span><code>${esc(u)}</code><select data-move="${esc(u)}" aria-label="Move ${esc(p.name)} to">${moveOptions(p)}</select><button data-reset="${esc(u)}">Reset password</button><button class="danger" data-remove="${esc(u)}">Remove</button></div>`;
+    // Everyone else in the same class can be ticked as someone this person teaches with.
+    const mates = p.classId ? Object.entries(data.people).filter(([x, q]) => x !== u && q.classId === p.classId)
+      .sort((a, b) => a[1].name.localeCompare(b[1].name)) : [];
+    const linked = mates.filter(([, q]) => q.teamId === p.teamId);
+    const dd = mates.length
+      ? `<details class="dd" data-dd="${esc(u)}"${openDD.has(u) ? ' open' : ''}><summary>Teaches with: ${linked.length ? esc(linked.map(([, q]) => groupLabel([q.name])).join(', ')) : 'no one'}</summary><div class="ddmenu">${mates.map(([x, q]) =>
+          `<label><input type="checkbox" data-link="${esc(u)}|${esc(x)}"${q.teamId === p.teamId ? ' checked' : ''}> ${esc(q.name)}</label>`).join('')}</div></details>`
+      : '';
+    return `<div class="row"><span class="grow"><strong>${esc(p.name)}</strong>${pres ? '<span class="badge">Presidency</span>' : ''}<br><span class="hint">${esc(team?.label || '')}</span></span><code>${esc(u)}</code><select data-classof="${esc(u)}" aria-label="Class for ${esc(p.name)}">${classOptions(p)}</select>${dd}<button data-reset="${esc(u)}">Reset password</button><button class="danger" data-remove="${esc(u)}">Remove</button></div>`;
   };
   const group = (id, title, members) => `<details data-group="${esc(id)}"${openGroups.has(id) ? ' open' : ''}><summary class="cls-head">${esc(title)} <span class="count">${members.length}</span></summary>` +
     (members.length ? members.map(row).join('') : '<div class="row hint">No one yet.</div>') + '</details>';
@@ -193,7 +201,6 @@ function render() {
   const prevClass = $('add-class').value;
   $('add-class').innerHTML = '<option value="">Presidency members</option>' +
     classList().map(c => `<option value="${esc(c.id)}"${c.id === prevClass ? ' selected' : ''}>${esc(c.name)}</option>`).join('');
-  renderTeamOptions();
 
   $('sun-class').innerHTML = classList().map(c => `<option value="${esc(c.id)}"${c.id === selClass ? ' selected' : ''}>${esc(c.name)}</option>`).join('');
   renderSundays();
@@ -201,64 +208,93 @@ function render() {
   renderClasses();
 }
 
-// Team teaching: tick up to two people the new teacher teaches with. They join that
-// group (one team, shared Sundays), and the group is named from everyone's first name
-// and last initial. Ticking no one makes a group of one, for a regular sub.
+// ---------- Teaching groups ----------
+// A group is the people sharing one team id: they share its Sundays and its name, which
+// is built from each person's first name + last initial. Everything is set per person
+// (the Teaches with menu), and the group's name follows automatically.
 const teamPeople = (classId, teamId) =>
   Object.entries(data.people).filter(([, p]) => p.classId === classId && p.teamId === teamId);
 
-function renderTeamOptions() {
-  const classId = $('add-class').value;
-  const c = data.classes[classId];
-  const keep = new Set([...$('add-mates').querySelectorAll(':checked')].map(i => i.dataset.mate));
-  $('add-mates').hidden = !c;
-  if (!c) { $('add-mates').innerHTML = ''; updatePreview(); return; }
-  const mates = Object.entries(data.people).filter(([, p]) => p.classId === classId && c.teams?.[p.teamId])
-    .sort((a, b) => a[1].name.localeCompare(b[1].name));
-  $('add-mates').innerHTML = '<span class="hint">Teaches with (up to 2):</span><div class="mates">' + (mates.length ? mates.map(([u, p]) =>
-    `<label><input type="checkbox" data-mate="${esc(u)}"${keep.has(u) ? ' checked' : ''}> ${esc(p.name)}</label>`).join('') : '<span class="hint">No one in this class yet.</span>') + '</div>';
-  updatePreview();
+// Names on a team in their original order, then anyone added.
+function orderedNames(classId, teamId, { add = [], exclude = null } = {}) {
+  const on = teamPeople(classId, teamId).filter(([u]) => u !== exclude).map(([, p]) => p.name);
+  const names = (data.classes[classId]?.teams?.[teamId]?.members || []).filter(n => on.includes(n));
+  for (const n of [...on, ...add]) if (!names.includes(n)) names.push(n);
+  return names;
 }
-
-// Live "Group name: ..." under the form, built the same way it will be saved.
-function pickedMates() { return [...$('add-mates').querySelectorAll(':checked')].map(i => i.dataset.mate); }
-function groupNamesFor(newName) {
-  const picked = pickedMates();
-  const teamId = picked.length ? data.people[picked[0]]?.teamId : null;
-  const existing = teamId ? teamPeople($('add-class').value, teamId).map(([, p]) => p.name) : [];
-  return [...existing, newName];
-}
-function updatePreview() {
-  const name = $('add-name').value.trim();
-  $('add-preview').textContent = name && $('add-class').value ? `Group name: ${groupLabel(groupNamesFor(name))}` : '';
-}
-$('add-mates').addEventListener('change', e => {
-  if (pickedMates().length > MAX_TEAM - 1) e.target.checked = false;   // new teacher + 2 = 3
-  updatePreview();
-});
-$('add-name').addEventListener('input', updatePreview);
-
-// Rebuild a team's name and member list from the people currently on it.
-async function relabelTeam(classId, teamId, { add = [], exclude = null } = {}) {
+async function relabelTeam(classId, teamId, opts = {}) {
   if (!classId || !data.classes[classId]?.teams?.[teamId]) return;
-  const names = [...teamPeople(classId, teamId).filter(([u]) => u !== exclude).map(([, p]) => p.name), ...add];
+  const names = orderedNames(classId, teamId, opts);
   if (names.length) await update(ref(db, `teaching/classes/${classId}/teams/${teamId}`), { label: groupLabel(names), members: names });
 }
-$('add-class').addEventListener('change', renderTeamOptions);
+// A team nobody is on any more goes away, unless Sundays still point at it.
+async function dropEmptyTeam(classId, teamId, exclude) {
+  if (!classId || !data.classes[classId]?.teams?.[teamId]) return;
+  if (teamPeople(classId, teamId).some(([u]) => u !== exclude)) return;
+  const used = Object.values(data.sundays).some(day => day?.[classId]?.teamId === teamId);
+  if (!used) await set(ref(db, `teaching/classes/${classId}/teams/${teamId}`), null);
+}
+
+// Tick = group a with b; untick = b leaves a's group.
+async function setLink(a, b, on) {
+  const pa = data.people[a], pb = data.people[b];
+  if (!pa || !pb || !pa.classId || pa.classId !== pb.classId) return;
+  const cid = pa.classId, writes = {};
+  if (on) {
+    if (pa.teamId === pb.teamId) return;
+    const na = teamPeople(cid, pa.teamId), nb = teamPeople(cid, pb.teamId);
+    if (na.length + nb.length > MAX_TEAM) { alert(`A group can have ${MAX_TEAM} people at most.`); render(); return; }
+    // The bigger group keeps its team id; the other joins it, Sundays and all.
+    const [dest, src, moving] = na.length > nb.length ? [pa.teamId, pb.teamId, nb] : [pb.teamId, pa.teamId, na];
+    for (const [u] of moving) writes[`people/${u}/teamId`] = dest;
+    for (const [key, day] of Object.entries(data.sundays)) if (day?.[cid]?.teamId === src) writes[`sundays/${key}/${cid}/teamId`] = dest;
+    const destTeam = data.classes[cid].teams[dest], srcTeam = data.classes[cid].teams[src];
+    if (!destTeam.pattern && srcTeam?.pattern) writes[`classes/${cid}/teams/${dest}/pattern`] = srcTeam.pattern;
+    writes[`classes/${cid}/teams/${src}`] = null;
+    await update(ref(db, 'teaching'), writes);
+    await relabelTeam(cid, dest, { add: moving.map(([, p]) => p.name) });
+  } else {
+    if (pa.teamId !== pb.teamId) return;
+    const newTeam = `s-${b}-${Date.now().toString(36)}`;
+    writes[`people/${b}/teamId`] = newTeam;
+    writes[`classes/${cid}/teams/${newTeam}`] = { label: groupLabel([pb.name]), members: [pb.name] };
+    await update(ref(db, 'teaching'), writes);
+    await relabelTeam(cid, pa.teamId, { exclude: b });
+  }
+}
+
+// Changing someone's class puts them in a group of their own there.
+async function changeClass(u, classId) {
+  const p = data.people[u];
+  if ((p.classId || '') === classId) return;
+  const writes = {};
+  if (classId) {
+    const newTeam = `s-${u}-${Date.now().toString(36)}`;
+    writes[`people/${u}/classId`] = classId;
+    writes[`people/${u}/teamId`] = newTeam;
+    writes[`classes/${classId}/teams/${newTeam}`] = { label: groupLabel([p.name]), members: [p.name] };
+  } else {
+    // No class means a presidency member.
+    writes[`people/${u}/classId`] = null; writes[`people/${u}/teamId`] = null; writes[`people/${u}/role`] = 'presidency';
+  }
+  await update(ref(db, 'teaching'), writes);
+  await relabelTeam(p.classId, p.teamId, { exclude: u });
+  await dropEmptyTeam(p.classId, p.teamId, u);
+}
 
 // ---------- Classes and teams ----------
 function renderClasses() {
   const list = classList();
   $('classes').innerHTML = list.map((c, i) => {
-    const teams = Object.entries(c.teams || {});
+    // Only groups someone is actually on; the name is automatic, so just the usual Sundays is editable.
+    const teams = Object.entries(c.teams || {}).filter(([tid]) => teamPeople(c.id, tid).length);
     const teamRows = teams.map(([tid, t]) => {
-      const n = Object.values(data.people).filter(p => p.classId === c.id && p.teamId === tid).length;
       const opts = PATTERNS.map(pt => `<option value="${pt.key}"${patternKey(t.pattern) === pt.key ? ' selected' : ''}>${esc(pt.label)}</option>`).join('');
-      return `<div class="row"><input type="text" data-tlabel="${esc(c.id)}|${esc(tid)}" value="${esc(t.label)}" aria-label="Team name"><select data-tpat="${esc(c.id)}|${esc(tid)}" aria-label="Usual Sundays">${opts}</select><span class="hint">${n} ${n === 1 ? 'person' : 'people'}</span><button class="danger" data-delteam="${esc(c.id)}|${esc(tid)}">Delete team</button></div>`;
+      return `<div class="row"><span class="grow"><strong>${esc(t.label)}</strong></span><select data-tpat="${esc(c.id)}|${esc(tid)}" aria-label="Usual Sundays for ${esc(t.label)}">${opts}</select></div>`;
     }).join('');
-    return `<details data-class="${esc(c.id)}"${openClasses.has(c.id) ? ' open' : ''}><summary class="cls-head">${esc(c.name)} <span class="count">${teams.length} ${teams.length === 1 ? 'team' : 'teams'}</span></summary>` +
+    return `<details data-class="${esc(c.id)}"${openClasses.has(c.id) ? ' open' : ''}><summary class="cls-head">${esc(c.name)} <span class="count">${teams.length} ${teams.length === 1 ? 'group' : 'groups'}</span></summary>` +
       `<div class="row"><input type="text" data-cname="${esc(c.id)}" value="${esc(c.name)}" aria-label="Class name"><button data-up="${esc(c.id)}"${i === 0 ? ' disabled' : ''} aria-label="Move up">↑</button><button data-down="${esc(c.id)}"${i === list.length - 1 ? ' disabled' : ''} aria-label="Move down">↓</button><button class="danger" data-delclass="${esc(c.id)}">Delete class</button></div>` +
-      teamRows + `<div class="row"><button data-addteam="${esc(c.id)}">+ Add a team</button></div></details>`;
+      teamRows + `</details>`;
   }).join('') || '<div class="row hint">No classes yet.</div>';
 }
 $('classes').addEventListener('toggle', e => {
@@ -273,10 +309,6 @@ $('classes').addEventListener('change', async e => {
   if (d.cname) {
     const name = t.value.trim();
     if (name) await update(ref(db, `teaching/classes/${d.cname}`), { name });
-    else renderClasses();
-  } else if (d.tlabel) {
-    const [cid, tid] = d.tlabel.split('|'), label = t.value.trim();
-    if (label) await update(ref(db, `teaching/classes/${cid}/teams/${tid}`), { label });
     else renderClasses();
   } else if (d.tpat) {
     const [cid, tid] = d.tpat.split('|');
@@ -295,13 +327,6 @@ $('classes').addEventListener('click', async e => {
     const order = list.map(c => c.id);
     [order[i], order[j]] = [order[j], order[i]];
     await update(ref(db, 'teaching/classes'), Object.fromEntries(order.map((cid, n) => [`${cid}/order`, n])));
-  } else if (d.addteam) {
-    await set(ref(db, `teaching/classes/${d.addteam}/teams/t${Date.now().toString(36)}`), { label: 'New team', members: [] });
-    openClasses.add(d.addteam);
-  } else if (d.delteam) {
-    const [cid, tid] = d.delteam.split('|'), n = peopleIn(cid, tid).length;
-    if (n) { alert(`Move the ${n} ${n === 1 ? 'person' : 'people'} on this team to another team first (People list, Move to).`); return; }
-    if (confirm('Delete this team? Sundays it already has will show as "Unknown" until reassigned.')) await set(ref(db, `teaching/classes/${cid}/teams/${tid}`), null);
   } else if (d.delclass) {
     const n = peopleIn(d.delclass).length;
     if (n) { alert(`${n} ${n === 1 ? 'person is' : 'people are'} still in this class. Move them first (People list, Move to).`); return; }
@@ -382,22 +407,16 @@ $('people').addEventListener('toggle', e => {
   if (id) e.target.open ? openGroups.add(id) : openGroups.delete(id);
 }, true);
 
-const renderPeopleSoon = () => setTimeout(render, 0);   // put a refused Move-to menu back
-
 $('people').addEventListener('change', async e => {
-  const u = e.target.dataset.move;
-  if (!u) return;
-  const [classId, teamId] = e.target.value.split('|');
-  const from = data.people[u];
-  if (classId && teamPeople(classId, teamId).filter(([x]) => x !== u).length >= MAX_TEAM) {
-    alert(`That team already has ${MAX_TEAM} people.`); renderPeopleSoon(); return;
-  }
-  // No class means a presidency member; moving into a class keeps any presidency access.
-  await update(ref(db, `teaching/people/${u}`), classId ? { classId, teamId } : { classId: null, teamId: null, role: 'presidency' });
-  // Keep both teams' names in step with who is on them.
-  await relabelTeam(from.classId, from.teamId, { exclude: u });
-  if (classId) await relabelTeam(classId, teamId, { add: [from.name], exclude: u });
+  const d = e.target.dataset;
+  if (d.link) { const [a, b] = d.link.split('|'); await setLink(a, b, e.target.checked); }
+  else if (d.classof) await changeClass(d.classof, e.target.value);
 });
+// Keep a Teaches with menu open while ticking several people (the list rebuilds on every change).
+$('people').addEventListener('toggle', e => {
+  const u = e.target.dataset.dd;
+  if (u) e.target.open ? openDD.add(u) : openDD.delete(u);
+}, true);
 
 $('people').addEventListener('click', async e => {
   const { reset, remove } = e.target.dataset;
@@ -412,6 +431,7 @@ $('people').addEventListener('click', async e => {
       const gone = people[remove];
       await set(ref(db, `teaching/people/${remove}`), null);
       await relabelTeam(gone.classId, gone.teamId, { exclude: remove });
+      await dropEmptyTeam(gone.classId, gone.teamId, remove);
     }
   }
 });
@@ -434,23 +454,13 @@ $('add').addEventListener('submit', async e => {
   const person = { name };
   if (pres) person.role = 'presidency';
   if (classId) {
-    const picked = pickedMates();
-    let teamId;
-    if (!picked.length) {
-      teamId = `s-${username}`;
-      await set(ref(db, `teaching/classes/${classId}/teams/${teamId}`), { label: groupLabel([name]), members: [name] });
-    } else {
-      const teams = new Set(picked.map(u => data.people[u].teamId));
-      if (teams.size > 1) { err.textContent = 'Those people are on different teams. Pick people from one team.'; return; }
-      teamId = [...teams][0];
-      if (teamPeople(classId, teamId).length >= MAX_TEAM) { err.textContent = `That team already has ${MAX_TEAM} people.`; return; }
-      await relabelTeam(classId, teamId, { add: [name] });
-    }
+    const teamId = `s-${username}`;
+    await set(ref(db, `teaching/classes/${classId}/teams/${teamId}`), { label: groupLabel([name]), members: [name] });
     person.classId = classId; person.teamId = teamId;
   }
   const password = makePassword(name);
   await savePerson(username, person, password);
-  $('add').reset(); renderTeamOptions(); updatePreview();
+  $('add').reset();
   showCreds(name, username, password);
 });
 
