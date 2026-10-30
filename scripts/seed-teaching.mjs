@@ -53,7 +53,7 @@ for (const c of CLASSES) for (const [ti, t] of c.teams.entries()) for (const nam
   // Devin and Dana Reed would both be "dreed": the later one gets two letters.
   if (people[username]) username = (name.slice(0, 2) + name.split(' ').pop()).toLowerCase();
   const password = makePassword(name);
-  people[username] = { name, classId: c.id, teamId: `t${ti + 1}`, hash: await hashLogin(username, password) };
+  people[username] = { name, memberships: { [c.id]: `t${ti + 1}` }, hash: await hashLogin(username, password) };
   csv.push([name, c.name, username, password].map(v => `"${v}"`).join(','));
 }
 

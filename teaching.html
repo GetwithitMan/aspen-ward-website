@@ -170,13 +170,14 @@ input { font: inherit; width: 100%; padding: 11px 12px; border: 1px solid var(--
 <script type="module">
 import { db } from '/js/firebase.js';
 import { ref, onValue, update, set, runTransaction } from 'https://www.gstatic.com/firebasejs/11.7.3/firebase-database.js';
-import { upcomingSundays, dateKey, fmtSunday, fmtMonth, hashLogin, isPatternSunday, claimLabel, swapKind, firstName, isFifth, holidaysFor, parseKey } from '/js/teaching.js';
+import { upcomingSundays, dateKey, fmtSunday, fmtMonth, hashLogin, isPatternSunday, claimLabel, swapKind, firstName, isFifth, holidaysFor, parseKey, membershipsOf } from '/js/teaching.js';
 
 const SESSION_KEY = 'teaching-login';
 const VISIBLE_STEP = 12;
 
 let data = { classes: {}, people: {}, sundays: {}, notes: {} };
-let me = null;            // { username, name, classId, teamId }
+let me = null;            // { username, name, role, memberships: { classId: teamId } }
+let myClass = null;       // which of their classes the My class view shows
 let view = 'mine';        // 'mine' | 'all'
 let shown = VISIBLE_STEP; // Sundays visible in the Everyone view
 let layout = 'list';     // 'list' (default) | 'month' — the Everyone view only
@@ -195,6 +196,13 @@ const classList = () => Object.entries(data.classes || {})
 const holCache = {};
 const holidayOn = d => (holCache[d.getFullYear()] ||= holidaysFor(d.getFullYear())).get(dateKey(d));
 const holTag = d => holidayOn(d) ? `<span class="tagh">${esc(holidayOn(d))}</span>` : '';
+const hasClass = () => !!me && Object.keys(me.memberships).length > 0;
+// The class (and the group within it) the My class view is showing.
+const cur = () => {
+  const ids = Object.keys(me.memberships);
+  const classId = ids.includes(myClass) ? myClass : ids[0];
+  return { classId, teamId: me.memberships[classId] };
+};
 const noteFor = key => data.notes?.[key] || null;
 const claim = (key, classId) => data.sundays?.[key]?.[classId] || null;
 const claimPath = (key, classId) => ref(db, `teaching/sundays/${key}/${classId}`);
@@ -206,7 +214,7 @@ async function resolveSession() {
     const saved = JSON.parse(localStorage.getItem(SESSION_KEY) || 'null');
     const person = saved && data.people?.[saved.u];
     if (person && person.hash === saved.h) {
-      me = { username: saved.u, name: person.name, classId: person.classId, teamId: person.teamId, role: person.role };
+      me = { username: saved.u, name: person.name, memberships: membershipsOf(person), role: person.role };
     }
   } catch { /* storage blocked or corrupt: stay signed out */ }
 }
@@ -223,7 +231,8 @@ $('login-form').addEventListener('submit', async e => {
   try { localStorage.setItem(SESSION_KEY, JSON.stringify({ u, h })); } catch { /* still signed in this visit */ }
   $('login').close();
   await resolveSession();
-  view = me?.classId ? 'mine' : 'all';
+  myClass = null;
+  view = hasClass() ? 'mine' : 'all';
   render();
 });
 $('day-close').addEventListener('click', () => $('day-dlg').close());
@@ -240,36 +249,37 @@ function signOut() {
 // Claims go through a transaction so two people tapping the same Sunday at once
 // cannot both win; the loser's tap is simply a no-op and the page updates.
 async function takeSunday(key) {
-  await runTransaction(claimPath(key, me.classId), cur =>
-    cur === null ? { teamId: me.teamId, by: me.username } : undefined);
+  await runTransaction(claimPath(key, cur().classId), cur =>
+    cur === null ? { teamId: cur().teamId, by: me.username } : undefined);
 }
-async function giveUp(key) { await set(claimPath(key, me.classId), null); }
+async function giveUp(key) { await set(claimPath(key, cur().classId), null); }
 // kind: 'full' (the whole team needs cover), 'partial' (just me), or null to cancel.
 async function setSwap(key, kind) {
-  await update(claimPath(key, me.classId), kind === 'partial'
+  await update(claimPath(key, cur().classId), kind === 'partial'
     ? { swap: 'partial', swapFor: me.name }
     : { swap: kind || null, swapFor: null });
 }
 // Covering a full swap takes the whole Sunday; covering a partial one fills in for
 // the one teacher and the pair keeps teaching.
 async function coverSunday(key) {
-  await runTransaction(claimPath(key, me.classId), cur => {
+  await runTransaction(claimPath(key, cur().classId), cur => {
     const kind = swapKind(cur);
     if (!kind) return undefined;
     if (kind === 'partial') {
       const { swap, swapFor, ...rest } = cur;
       return { ...rest, coverName: me.name, coverFor: swapFor || '', covered: true };
     }
-    return { teamId: me.teamId, by: me.username, covered: true };
+    return { teamId: cur().teamId, by: me.username, covered: true };
   });
 }
 async function fillPattern() {
-  const team = data.classes[me.classId].teams[me.teamId];
+  const { classId, teamId } = cur();
+  const team = data.classes[classId].teams[teamId];
   const writes = {};
   for (const d of sundays) {
     const key = dateKey(d);
-    if (isPatternSunday(team, d) && !claim(key, me.classId) && !noteFor(key)?.noClass) {
-      writes[`${key}/${me.classId}`] = { teamId: me.teamId, by: me.username };
+    if (isPatternSunday(team, d) && !claim(key, classId) && !noteFor(key)?.noClass) {
+      writes[`${key}/${classId}`] = { teamId, by: me.username };
     }
   }
   if (Object.keys(writes).length) await update(ref(db, 'teaching/sundays'), writes);
@@ -284,19 +294,23 @@ function renderChrome() {
   $('signin')?.addEventListener('click', () => { $('login-err').textContent = ''; $('login').showModal(); $('u').focus(); });
 
   $('bar').innerHTML =
-    (me && me.classId
+    (hasClass()
       ? `<div class="tabs"><button data-v="mine" aria-pressed="${view === 'mine'}">My class</button><button data-v="all" aria-pressed="${view === 'all'}">Everyone</button></div>`
+      : '') +
+    (view === 'mine' && Object.keys(me.memberships).length > 1
+      ? `<select id="my-class" class="layout" aria-label="Class">${Object.keys(me.memberships).map(id => `<option value="${esc(id)}"${id === cur().classId ? ' selected' : ''}>${esc(data.classes[id]?.name || id)}</option>`).join('')}</select>`
       : '') +
     (view === 'all'
       ? `<div class="tabs layout"><button data-l="list" aria-pressed="${layout === 'list'}">List</button><button data-l="month" aria-pressed="${layout === 'month'}">Month</button></div>`
       : '');
   $('bar').querySelectorAll('[data-v]').forEach(b => b.addEventListener('click', () => { view = b.dataset.v; render(); }));
+  $('my-class')?.addEventListener('change', e => { myClass = e.target.value; render(); });
   $('bar').querySelectorAll('[data-l]').forEach(b => b.addEventListener('click', () => { layout = b.dataset.l; render(); }));
 
   const key = (c, label) => `<span><i style="background:${c}"></i>${label}</span>`;
   $('legend').innerHTML = key('var(--filled)', 'Filled') + key('var(--covered)', 'Covered after a swap, or by a sub') +
     key('var(--swap)', 'Needs a sub or swap') + key('#fff', 'Open') +
-    (view === 'mine' && me?.classId ? '<span>★ In your usual pattern</span>' : '');
+    (view === 'mine' && hasClass() ? '<span>★ In your usual pattern</span>' : '');
 }
 
 // Open = white. Filled = green. Filled by a cover or a sub = a slightly different
@@ -386,9 +400,10 @@ function renderMonth(classes) {
 }
 
 function renderMine() {
-  const cls = data.classes?.[me.classId];
+  const { classId, teamId } = cur();
+  const cls = data.classes?.[classId];
   if (!cls) return '<p class="empty">Your class could not be found. Please tell the ward clerk.</p>';
-  const team = cls.teams[me.teamId];
+  const team = cls.teams[teamId];
   $('title').textContent = cls.name;
   $('lede').textContent = `Signed in as ${me.name}. You teach with ${team.label}.`;
 
@@ -400,7 +415,7 @@ function renderMine() {
   html += '<div class="rows">';
   for (const d of sundays) {
     const key = dateKey(d);
-    const cl = claim(key, me.classId);
+    const cl = claim(key, classId);
     const suggest = isPatternSunday(team, d);
     const note = noteFor(key);
     let cls_ = 'row', state = '', acts = '';
@@ -411,7 +426,7 @@ function renderMine() {
     if (!cl) {
       state = '<span class="hint">Open</span>';
       acts = `<button class="primary" data-a="take" data-k="${key}">Take this Sunday</button>`;
-    } else if (cl.teamId === me.teamId) {
+    } else if (cl.teamId === teamId) {
       cls_ += lineState(cl);
       const kind = swapKind(cl);
       const pair = (team.members || []).length > 1;
@@ -427,7 +442,7 @@ function renderMine() {
     } else {
       cls_ += lineState(cl);
       const kind = swapKind(cl);
-      state = `${esc(claimLabel(data.classes, me.classId, cl))}${swapBadge(cl)}`;
+      state = `${esc(claimLabel(data.classes, classId, cl))}${swapBadge(cl)}`;
       if (kind) acts = `<button class="primary" data-a="cover" data-k="${key}">${kind === 'partial' ? `I’ll cover ${esc(firstName(cl.swapFor) || 'them')}` : 'I’ll cover it'}</button>`;
     }
     if (suggest) cls_ += ' suggest';
@@ -439,9 +454,9 @@ function renderMine() {
 
 function render() {
   if (!loaded) return;
-  if (!me || !me.classId) view = 'all';
+  if (!hasClass()) view = 'all';
   renderChrome();
-  $('view').innerHTML = view === 'mine' && me?.classId ? renderMine() : renderAll();
+  $('view').innerHTML = view === 'mine' && hasClass() ? renderMine() : renderAll();
 
   $('more')?.addEventListener('click', () => { shown += VISIBLE_STEP; render(); });
   $('view').querySelectorAll('[data-mn]').forEach(b => b.addEventListener('click', () => {

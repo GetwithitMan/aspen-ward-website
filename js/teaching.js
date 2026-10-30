@@ -2,7 +2,9 @@
 //
 // Database shape, all under /teaching:
 //   classes/{classId}  { name, order, teams: { t1: { label, members[], pattern } } }
-//   people/{username}  { name, classId?, teamId?, role?, hash }   role 'presidency' = admin; class optional
+//   people/{username}  { name, memberships?: { classId: teamId }, role?, hash }   a person can teach in
+//     several classes, each with its own group; role 'presidency' = admin. (Older records had
+//     classId/teamId directly; membershipsOf reads both.)
 //   sundays/{YYYY-MM-DD}/{classId}  { teamId | sub, by, swap?, swapFor?, coverName?, coverFor?, covered? }
 //     sub = typed-in substitute; swap = 'full' | 'partial' (true = full); coverName/coverFor = a sub covering one of a pair
 //
@@ -88,6 +90,9 @@ export function groupLabel(names) {
 }
 
 export const MAX_TEAM = 3;   // most people on one team
+
+// The classes a person teaches in, as { classId: teamId }.
+export const membershipsOf = p => p?.memberships || (p?.classId ? { [p.classId]: p.teamId } : {});
 
 export const firstName = n => String(n || '').trim().split(/\s+/)[0];
 

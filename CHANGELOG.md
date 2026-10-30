@@ -42,11 +42,14 @@ everyone else sees who is teaching each class each week.
   delete classes and teams, rename a team, and set its usual Sundays. People can be
   moved between teams from the People list (**Move to**).
 - **Add a teacher** form (renamed). A new teacher starts as a group of one.
+- **Several classes per person:** someone who teaches Nursery one Sunday and CTR another is
+  ticked for both classes in **Add a teacher** (or **+ Also teaches in…** on their row). They are
+  listed under each class with a separate **Teaches with** group in each; **Leave this class**
+  drops one. On `/teaching` they get a class menu in **My class**.
 - **Teaches with** (People list): each person's row has a menu of the others in their class.
   Tick someone to group them (3 at most; Sundays and sign-ups join the bigger group); untick
   to separate. The group's name is first name + last initial of each ("Kitrick G., Jordan T.
-  & Brian L.") and updates for everyone in it. A **class** menu on the row moves someone
-  to another class or to Presidency members. Removing someone updates their group's name.
+  & Brian L.") and updates for everyone in it. Removing someone updates their group's name.
 - **Classes and teams** is now just rename / reorder / add / delete classes plus each
   group's usual Sundays.
 - **Admin lists collapse:** People by class (with a head count); **Notes for a Sunday**
