@@ -50,8 +50,9 @@ everyone else sees who is teaching each class each week.
   Tick someone to group them (3 at most; Sundays and sign-ups join the bigger group); untick
   to separate. The group's name is first name + last initial of each ("Kitrick G., Jordan T.
   & Brian L.") and updates for everyone in it. Removing someone updates their group's name.
-- **Classes and teams** is now just rename / reorder / add / delete classes plus each
-  group's usual Sundays.
+- **One place for people and classes:** the separate Classes and teams section is gone. Open a
+  class in **People and classes** to rename it, reorder it (↑ ↓), delete it, or see its groups, each
+  with its **Usual Sundays**; **Add class** sits under the list.
 - **Admin lists collapse:** People by class (with a head count); **Notes for a Sunday**
   and **Change a Sunday or add a sub** start closed and open one month at a time.
 - **Sunday notes:** the admin can put a note on any Sunday (shown on the public

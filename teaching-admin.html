@@ -40,6 +40,9 @@ code { background: var(--surface-muted); padding: 2px 6px; border-radius: 6px; }
 .form input[type=text], .form input[type=password] { flex: 1 1 180px; }
 .err { color: var(--error); min-height: 1.3em; margin: 4px 0 0; }
 .sub-in { flex: 1 1 160px; }
+.row.member { padding-left: 30px; }
+.row.ghead { background: #fbfdf8; border-top: 1px solid var(--stroke); }
+.row.ghead strong { flex: 1 1 200px; }
 details.dd { flex: 1 1 220px; }
 details.dd > summary { cursor: pointer; border: 1px solid var(--stroke); border-radius: 10px; padding: 8px 12px; min-height: 40px; background: var(--surface); list-style: none; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 details.dd > summary::-webkit-details-marker { display: none; }
@@ -77,9 +80,13 @@ details[open] > .month-head::before { transform: rotate(90deg); }
   <div id="app" hidden>
     <div id="creds"></div>
 
-    <h2>People</h2>
-    <p class="hint">A password is the person's first name plus last initial (Kitrick Galloway: <code>kitrickg</code>). Reset puts it back to that. Someone who teaches several classes is listed under each one. Under <strong>Teaches with</strong>, tick the people who teach together in that class (3 at most); unticking someone separates them. The group's name updates for everyone in it.</p>
+    <h2>People and classes</h2>
+    <p class="hint">Open a class to see who teaches in it. People who teach together are grouped under one name, with their <strong>Usual Sundays</strong>. Tick people under <strong>Teaches with</strong> to group them (3 at most); untick to separate them. Someone in two classes is listed under both. A password is first name plus last initial (<code>kitrickg</code>); Reset puts it back.</p>
     <div class="panel" id="people"></div>
+    <div class="panel" style="margin-top:12px"><form class="form" id="add-class-form">
+      <input type="text" id="new-class" placeholder="New class name" required>
+      <button class="primary" type="submit">Add class</button>
+    </form></div>
 
     <h2>Add a teacher</h2>
     <p class="hint">Teachers, subs and Primary presidency. Tick every class they teach in (someone who teaches Nursery one Sunday and CTR another is ticked for both). They show under each class, and each class has its own <strong>Teaches with</strong>.</p>
@@ -90,15 +97,6 @@ details[open] > .month-head::before { transform: rotate(90deg); }
       <button class="primary" type="submit">Add</button>
     </form></div>
     <p class="err" id="add-err" role="alert"></p>
-
-    <details class="sect"><summary><h2>Classes and teams</h2></summary>
-    <p class="hint">Rename, reorder, add or delete classes, and set each teaching group's usual Sundays (this drives the “Sign up my usual Sundays” button). Who teaches with whom is set in the People list. A class can only be deleted once nobody is in it.</p>
-    <div class="panel" id="classes"></div>
-    <div class="panel" style="margin-top:12px"><form class="form" id="add-class-form">
-      <input type="text" id="new-class" placeholder="New class name" required>
-      <button class="primary" type="submit">Add class</button>
-    </form></div>
-    </details>
 
     <details class="sect"><summary><h2>Notes for a Sunday</h2></summary>
     <p class="hint">A note shows on the public calendar for that Sunday (“Ward conference — lessons are short”). Tick <strong>No classes</strong> for a Sunday with no teaching, such as stake conference; the day is greyed out and teachers cannot sign up.</p>
@@ -131,7 +129,6 @@ let monthsSeeded = false;
 const openMonths = new Set();   // 'n:<month>' (notes) / 's:<month>' (sundays) currently expanded
 const openGroups = new Set();
 const openDD = new Set();        // 'username|classId' of Teaches with menus that are open
-const openClasses = new Set();  // class ids expanded in Classes and teams   // class ids expanded in the People list; all start collapsed
 
 const classList = () => Object.entries(data.classes).map(([id, c]) => ({ id, ...c })).sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
 
@@ -195,11 +192,23 @@ function render() {
     const inOther = Object.keys(m).filter(id => id !== cid && data.classes[id]).map(id => data.classes[id].name);
     const leave = cid && (Object.keys(m).filter(id => data.classes[id]).length > 1 || pres)
       ? `<button data-leave="${esc(u)}|${esc(cid)}">Leave this class</button>` : '';
-    return `<div class="row"><span class="grow"><strong>${esc(p.name)}</strong>${pres ? '<span class="badge">Presidency</span>' : ''}<br><span class="hint">${esc(team?.label || '')}${inOther.length ? ` · also in ${esc(inOther.join(', '))}` : ''}</span></span><code>${esc(u)}</code>${dd}${also}${leave}<button data-reset="${esc(u)}">Reset password</button><button class="danger" data-remove="${esc(u)}">Remove</button></div>`;
+    return `<div class="row member"><span class="grow"><strong>${esc(p.name)}</strong>${pres ? '<span class="badge">Presidency</span>' : ''}<br><span class="hint">${cid ? '' : esc(team?.label || '')}${inOther.length ? `also in ${esc(inOther.join(', '))}` : ''}</span></span><code>${esc(u)}</code>${dd}${also}${leave}<button data-reset="${esc(u)}">Reset password</button><button class="danger" data-remove="${esc(u)}">Remove</button></div>`;
   };
   const group = (id, title, members) => `<details data-group="${esc(id)}"${openGroups.has(id) ? ' open' : ''}><summary class="cls-head">${esc(title)} <span class="count">${members.length}</span></summary>` +
     (members.length ? members.map(m => row(m, id === '__none' ? null : id)).join('') : '<div class="row hint">No one yet.</div>') + '</details>';
-  for (const c of classList()) html += group(c.id, c.name, Object.entries(data.people).filter(([, p]) => membershipsOf(p)[c.id] !== undefined));
+  const classes = classList();
+  classes.forEach((c, i) => {
+    const members = Object.entries(data.people).filter(([, p]) => membershipsOf(p)[c.id] !== undefined);
+    // people who share a team id teach together: one header per group, then its people
+    const byTeam = new Map();
+    for (const m of members) { const t = membershipsOf(m[1])[c.id]; if (!byTeam.has(t)) byTeam.set(t, []); byTeam.get(t).push(m); }
+    const groups = [...byTeam].map(([tid, ms]) => {
+      const pat = PATTERNS.map(pt => `<option value="${pt.key}"${patternKey(c.teams?.[tid]?.pattern) === pt.key ? ' selected' : ''}>${esc(pt.label)}</option>`).join('');
+      return `<div class="row ghead"><strong>${esc(c.teams?.[tid]?.label || '')}</strong><span class="hint">Usual Sundays</span><select data-tpat="${esc(c.id)}|${esc(tid)}" aria-label="Usual Sundays">${pat}</select></div>` + ms.map(m => row(m, c.id)).join('');
+    }).join('');
+    const settings = `<div class="row"><input type="text" data-cname="${esc(c.id)}" value="${esc(c.name)}" aria-label="Class name"><button data-up="${esc(c.id)}"${i === 0 ? ' disabled' : ''} aria-label="Move class up">↑</button><button data-down="${esc(c.id)}"${i === classes.length - 1 ? ' disabled' : ''} aria-label="Move class down">↓</button><button class="danger" data-delclass="${esc(c.id)}">Delete class</button></div>`;
+    html += `<details data-group="${esc(c.id)}"${openGroups.has(c.id) ? ' open' : ''}><summary class="cls-head">${esc(c.name)} <span class="count">${members.length}</span></summary>${settings}${groups || '<div class="row hint">No one yet.</div>'}</details>`;
+  });
   const noClass = Object.entries(data.people).filter(([, p]) => !Object.keys(membershipsOf(p)).some(id => data.classes[id]));
   if (noClass.length) html += group('__none', 'Presidency members', noClass);
   $('people').innerHTML = html;
@@ -209,7 +218,6 @@ function render() {
   $('sun-class').innerHTML = classList().map(c => `<option value="${esc(c.id)}"${c.id === selClass ? ' selected' : ''}>${esc(c.name)}</option>`).join('');
   renderSundays();
   renderNotes();
-  renderClasses();
 }
 
 // ---------- Teaching groups ----------
@@ -308,57 +316,7 @@ function updateAddSummary() {
 }
 $('add-class-menu').addEventListener('change', updateAddSummary);
 
-// ---------- Classes and teams ----------
-function renderClasses() {
-  const list = classList();
-  $('classes').innerHTML = list.map((c, i) => {
-    // Only groups someone is actually on; the name is automatic, so just the usual Sundays is editable.
-    const teams = Object.entries(c.teams || {}).filter(([tid]) => teamPeople(c.id, tid).length);
-    const teamRows = teams.map(([tid, t]) => {
-      const opts = PATTERNS.map(pt => `<option value="${pt.key}"${patternKey(t.pattern) === pt.key ? ' selected' : ''}>${esc(pt.label)}</option>`).join('');
-      return `<div class="row"><span class="grow"><strong>${esc(t.label)}</strong></span><select data-tpat="${esc(c.id)}|${esc(tid)}" aria-label="Usual Sundays for ${esc(t.label)}">${opts}</select></div>`;
-    }).join('');
-    return `<details data-class="${esc(c.id)}"${openClasses.has(c.id) ? ' open' : ''}><summary class="cls-head">${esc(c.name)} <span class="count">${teams.length} ${teams.length === 1 ? 'group' : 'groups'}</span></summary>` +
-      `<div class="row"><input type="text" data-cname="${esc(c.id)}" value="${esc(c.name)}" aria-label="Class name"><button data-up="${esc(c.id)}"${i === 0 ? ' disabled' : ''} aria-label="Move up">↑</button><button data-down="${esc(c.id)}"${i === list.length - 1 ? ' disabled' : ''} aria-label="Move down">↓</button><button class="danger" data-delclass="${esc(c.id)}">Delete class</button></div>` +
-      teamRows + `</details>`;
-  }).join('') || '<div class="row hint">No classes yet.</div>';
-}
-$('classes').addEventListener('toggle', e => {
-  const id = e.target.dataset.class;
-  if (id) e.target.open ? openClasses.add(id) : openClasses.delete(id);
-}, true);
-
 const peopleIn = (classId, teamId) => Object.values(data.people).filter(p => mem(p)[classId] !== undefined && (teamId === undefined || mem(p)[classId] === teamId));
-
-$('classes').addEventListener('change', async e => {
-  const t = e.target, d = t.dataset;
-  if (d.cname) {
-    const name = t.value.trim();
-    if (name) await update(ref(db, `teaching/classes/${d.cname}`), { name });
-    else renderClasses();
-  } else if (d.tpat) {
-    const [cid, tid] = d.tpat.split('|');
-    const pt = PATTERNS.find(x => x.key === t.value);
-    await update(ref(db, `teaching/classes/${cid}/teams/${tid}`), { pattern: pt ? pt.value : null });
-  }
-});
-
-$('classes').addEventListener('click', async e => {
-  const d = e.target.dataset;
-  const list = classList();
-  if (d.up || d.down) {
-    const id = d.up || d.down, i = list.findIndex(c => c.id === id), j = d.up ? i - 1 : i + 1;
-    if (j < 0 || j >= list.length) return;
-    // Renumber from the current order so ties or gaps can never leave two classes swapped wrongly.
-    const order = list.map(c => c.id);
-    [order[i], order[j]] = [order[j], order[i]];
-    await update(ref(db, 'teaching/classes'), Object.fromEntries(order.map((cid, n) => [`${cid}/order`, n])));
-  } else if (d.delclass) {
-    const n = peopleIn(d.delclass).length;
-    if (n) { alert(`${n} ${n === 1 ? 'person is' : 'people are'} still in this class. Move them first (People list, Move to).`); return; }
-    if (confirm(`Delete the class "${data.classes[d.delclass].name}"? Its past and future Sundays disappear from the calendar.`)) await set(ref(db, `teaching/classes/${d.delclass}`), null);
-  }
-});
 
 $('add-class-form').addEventListener('submit', async e => {
   e.preventDefault();
@@ -367,7 +325,7 @@ $('add-class-form').addEventListener('submit', async e => {
   const order = Math.max(-1, ...classList().map(c => c.order ?? 0)) + 1;
   const id = `c${Date.now().toString(36)}`;
   await set(ref(db, `teaching/classes/${id}`), { name, order, teams: {} });
-  openClasses.add(id);
+  openGroups.add(id);
   $('add-class-form').reset();
 });
 
@@ -437,6 +395,15 @@ $('people').addEventListener('change', async e => {
   const d = e.target.dataset;
   if (d.link) { const [a, b, cid] = d.link.split('|'); await setLink(a, b, cid, e.target.checked); }
   else if (d.addcls && e.target.value) await addToClass(d.addcls, e.target.value);
+  else if (d.cname) {
+    const name = e.target.value.trim();
+    if (name) await update(ref(db, `teaching/classes/${d.cname}`), { name });
+    else render();
+  } else if (d.tpat) {
+    const [cid, tid] = d.tpat.split('|');
+    const pt = PATTERNS.find(x => x.key === e.target.value);
+    await update(ref(db, `teaching/classes/${cid}/teams/${tid}`), { pattern: pt ? pt.value : null });
+  }
 });
 // Keep a Teaches with menu open while ticking several people (the list rebuilds on every change).
 $('people').addEventListener('toggle', e => {
@@ -445,12 +412,23 @@ $('people').addEventListener('toggle', e => {
 }, true);
 
 $('people').addEventListener('click', async e => {
-  const { reset, remove, leave } = e.target.dataset;
+  const { reset, remove, leave, up, down, delclass } = e.target.dataset;
   const people = data.people;
   if (reset) {
     const p = people[reset], password = makePassword(p.name);
     await savePerson(reset, withoutHash(p), password);
     showCreds(p.name, reset, password);
+  } else if (up || down) {
+    const list = classList(), id = up || down, i = list.findIndex(c => c.id === id), j = up ? i - 1 : i + 1;
+    if (j < 0 || j >= list.length) return;
+    // Renumber from the current order so ties or gaps can never leave two classes swapped wrongly.
+    const order = list.map(c => c.id);
+    [order[i], order[j]] = [order[j], order[i]];
+    await update(ref(db, 'teaching/classes'), Object.fromEntries(order.map((cid, n) => [`${cid}/order`, n])));
+  } else if (delclass) {
+    const n = peopleIn(delclass).length;
+    if (n) { alert(`${n} ${n === 1 ? 'person is' : 'people are'} still in this class. Use Leave this class (or Remove) on each of them first.`); return; }
+    if (confirm(`Delete the class "${data.classes[delclass].name}"? Its past and future Sundays disappear from the calendar.`)) await set(ref(db, `teaching/classes/${delclass}`), null);
   } else if (leave) {
     const [u, cid] = leave.split('|');
     await leaveClass(u, cid);
