@@ -272,11 +272,17 @@ async function coverSunday(key) {
     return { teamId: cur().teamId, by: me.username, covered: true };
   });
 }
+// "Sign up my usual Sundays" only covers the next few months, never the whole year, so the
+// pattern is re-confirmed each time rather than locked in far ahead.
+const FILL_MONTHS = 3;
 async function fillPattern() {
   const { classId, teamId } = cur();
   const team = data.classes[classId].teams[teamId];
   const writes = {};
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const last = new Date(today.getFullYear(), today.getMonth() + FILL_MONTHS, today.getDate());
   for (const d of sundays) {
+    if (d < today || d > last) continue;
     const key = dateKey(d);
     if (isPatternSunday(team, d) && !claim(key, classId) && !noteFor(key)?.noClass) {
       writes[`${key}/${classId}`] = { teamId, by: me.username };
@@ -409,7 +415,7 @@ function renderMine() {
 
   const canFill = team.pattern && (team.pattern.every || team.pattern.nth);
   let html = '';
-  if (canFill) html += `<p><button class="primary" id="fill">Sign up my usual Sundays</button> <span class="hint">Takes every open ★ Sunday below for your team.</span></p>`;
+  if (canFill) html += `<p><button class="primary" id="fill">Sign up my usual Sundays</button> <span class="hint">Takes your open ★ Sundays for the next 3 months. Press it again later for the months after.</span></p>`;
   else html += `<p class="hint">Tap a Sunday to take it. If you need a sub, tap “I need a sub” (just you) or “We both need a sub”, and the others in your class will see it.</p>`;
 
   html += '<div class="rows">';

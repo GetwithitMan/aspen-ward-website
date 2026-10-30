@@ -41,6 +41,7 @@ everyone else sees who is teaching each class each week.
 - **Classes and teams** can be edited in the admin: rename classes, reorder them, add or
   delete classes and teams, rename a team, and set its usual Sundays. People can be
   moved between teams from the People list (**Move to**).
+- **Sign up my usual Sundays** only fills the next 3 months (not the whole year); press it again later for the months after. It never touches past Sundays.
 - **Add a teacher** form (renamed). A new teacher starts as a group of one.
 - **Several classes per person:** someone who teaches Nursery one Sunday and CTR another is
   ticked for both classes in **Add a teacher** (or **+ Also teaches in…** on their row). They are
