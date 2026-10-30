@@ -3,7 +3,8 @@
 // Database shape, all under /teaching:
 //   classes/{classId}  { name, order, teams: { t1: { label, members[], pattern } } }
 //   people/{username}  { name, classId?, teamId?, role?, hash }   role 'presidency' = admin; class optional
-//   sundays/{YYYY-MM-DD}/{classId}  { teamId | sub, by, swap }   sub = typed-in substitute name
+//   sundays/{YYYY-MM-DD}/{classId}  { teamId | sub, by, swap?, swapFor?, coverName?, coverFor?, covered? }
+//     sub = typed-in substitute; swap = 'full' | 'partial' (true = full); coverName/coverFor = a sub covering one of a pair
 //
 // `pattern` on a team is { nth: [1, 2] } (those Sundays of the month),
 // { every: true }, or empty when the team just alternates weeks by agreement.
@@ -76,11 +77,41 @@ export function makePassword(fullName) {
   return (parts[0] + (last ? last[0] : '')).toLowerCase().replace(/[^a-z]/g, '');
 }
 
-// Who a Sunday's claim shows as: a team's label, or a typed-in sub's name.
+export const firstName = n => String(n || '').trim().split(/\s+/)[0];
+
+// A swap request is 'full' (the whole team needs cover) or 'partial' (one teacher
+// of a pair needs a sub). Older requests were stored as `true`, which means full.
+export function swapKind(claim) {
+  if (!claim || !claim.swap) return null;
+  return claim.swap === 'partial' ? 'partial' : 'full';
+}
+
+// Who a Sunday's claim shows as: a team's label, a typed-in sub's name, or the
+// team with a sub covering one of them.
 export function claimLabel(classes, classId, claim) {
   if (claim.sub) return `${claim.sub} (sub)`;
-  return classes?.[classId]?.teams?.[claim.teamId]?.label || 'Unknown';
+  const label = classes?.[classId]?.teams?.[claim.teamId]?.label || 'Unknown';
+  return claim.coverName ? `${label} (${firstName(claim.coverName)} covering for ${firstName(claim.coverFor)})` : label;
 }
+
+// Usual-Sunday patterns a team can have. `value` is what is stored on the team.
+export const PATTERNS = [
+  { key: '', label: 'No fixed pattern (alternate by agreement)', value: null },
+  { key: '12', label: '1st & 2nd Sundays', value: { nth: [1, 2] } },
+  { key: '34', label: '3rd & 4th Sundays', value: { nth: [3, 4] } },
+  { key: '23', label: '2nd & 3rd Sundays', value: { nth: [2, 3] } },
+  { key: '14', label: '1st & 4th Sundays', value: { nth: [1, 4] } },
+  { key: '13', label: '1st & 3rd Sundays', value: { nth: [1, 3] } },
+  { key: '24', label: '2nd & 4th Sundays', value: { nth: [2, 4] } },
+  { key: 'every', label: 'Every Sunday', value: { every: true } },
+];
+export function patternKey(p) {
+  if (!p) return '';
+  if (p.every) return 'every';
+  return Array.isArray(p.nth) ? p.nth.join('') : '';
+}
+
+export const isFifth = d => nthOfMonth(d) === 5;
 
 export function fmtSunday(d) {
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });

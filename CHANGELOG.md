@@ -27,6 +27,14 @@ everyone else sees who is teaching each class each week.
 - **Colours:** open classes are white, filled ones green, ones covered after a
   swap (or by a sub) a slightly different green, and a swap request stays orange
   until someone fills it.
+- **5th Sundays** carry a small "5th Sunday" tag and a blue top edge.
+- **Partial or full subs:** on a pair, either teacher can tap **I need a sub** (just
+  them; shows "Needs 1 sub (Brian)") or **We both need a sub**. A classmate on another
+  team can cover just that teacher ("Kitrick covering for Brian", the pair keeps
+  teaching) or take a full swap. The admin can set either kind on any Sunday.
+- **Classes and teams** can be edited in the admin: rename classes, reorder them, add or
+  delete classes and teams, rename a team, and set its usual Sundays. People can be
+  moved between teams from the People list (**Move to**).
 - **Add a teacher** form (renamed). Choose "Co-teaches with <person>" to put them on
   that person's team (their name is added to the team's label), or "Teaches on their
   own" for a sub. To change someone's presidency access, remove

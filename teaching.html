@@ -89,6 +89,9 @@ input { font: inherit; width: 100%; padding: 11px 12px; border: 1px solid var(--
 /* A note on a Sunday (stake conference etc.); "off" means no classes that day */
 .note { font-size: .9rem; font-style: italic; color: var(--ink-soft); margin: 0 0 8px; }
 .card.off { background: var(--surface-muted); }
+.card.fifth { border-top: 3px solid #8fb8d9; }
+.tag5 { display: inline-block; font-size: .7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; color: #2f5f86; background: #e4f0f9; border-radius: 6px; padding: 1px 6px; margin-left: 8px; vertical-align: 2px; }
+.row .date .tag5 { display: block; margin: 2px 0 0; width: fit-content; }
 .card.off .note { font-style: normal; font-weight: 600; margin: 0; }
 .row.off { background: var(--surface-muted); color: var(--ink-muted); }
 .row .note { margin: 2px 0 0; }
@@ -132,7 +135,7 @@ input { font: inherit; width: 100%; padding: 11px 12px; border: 1px solid var(--
 <script type="module">
 import { db } from '/js/firebase.js';
 import { ref, onValue, update, set, runTransaction } from 'https://www.gstatic.com/firebasejs/11.7.3/firebase-database.js';
-import { upcomingSundays, dateKey, fmtSunday, fmtMonth, hashLogin, isPatternSunday, claimLabel } from '/js/teaching.js';
+import { upcomingSundays, dateKey, fmtSunday, fmtMonth, hashLogin, isPatternSunday, claimLabel, swapKind, firstName, isFifth } from '/js/teaching.js';
 
 const SESSION_KEY = 'teaching-login';
 const VISIBLE_STEP = 12;
@@ -199,12 +202,24 @@ async function takeSunday(key) {
     cur === null ? { teamId: me.teamId, by: me.username } : undefined);
 }
 async function giveUp(key) { await set(claimPath(key, me.classId), null); }
-async function setSwap(key, on) {
-  await update(claimPath(key, me.classId), { swap: on ? true : null });
+// kind: 'full' (the whole team needs cover), 'partial' (just me), or null to cancel.
+async function setSwap(key, kind) {
+  await update(claimPath(key, me.classId), kind === 'partial'
+    ? { swap: 'partial', swapFor: me.name }
+    : { swap: kind || null, swapFor: null });
 }
+// Covering a full swap takes the whole Sunday; covering a partial one fills in for
+// the one teacher and the pair keeps teaching.
 async function coverSunday(key) {
-  await runTransaction(claimPath(key, me.classId), cur =>
-    cur && cur.swap ? { teamId: me.teamId, by: me.username, covered: true } : undefined);
+  await runTransaction(claimPath(key, me.classId), cur => {
+    const kind = swapKind(cur);
+    if (!kind) return undefined;
+    if (kind === 'partial') {
+      const { swap, swapFor, ...rest } = cur;
+      return { ...rest, coverName: me.name, coverFor: swapFor || '', covered: true };
+    }
+    return { teamId: me.teamId, by: me.username, covered: true };
+  });
 }
 async function fillPattern() {
   const team = data.classes[me.classId].teams[me.teamId];
@@ -233,7 +248,7 @@ function renderChrome() {
 
   const key = (c, label) => `<span><i style="background:${c}"></i>${label}</span>`;
   $('legend').innerHTML = key('var(--filled)', 'Filled') + key('var(--covered)', 'Covered after a swap, or by a sub') +
-    key('var(--swap)', 'Needs a swap') + key('#fff', 'Open') +
+    key('var(--swap)', 'Needs a sub or swap') + key('#fff', 'Open') +
     (view === 'mine' && me?.classId ? '<span>★ In your usual pattern</span>' : '');
 }
 
@@ -241,8 +256,15 @@ function renderChrome() {
 // green. A swap request stays orange until someone fills it.
 function lineState(cl) {
   if (!cl) return ' open';
-  if (cl.swap) return ' swap';
+  if (swapKind(cl)) return ' swap';
   return cl.covered || cl.sub ? ' covered' : ' filled';
+}
+
+function swapBadge(cl) {
+  const kind = swapKind(cl);
+  if (!kind) return '';
+  const text = kind === 'partial' ? `Needs 1 sub${cl.swapFor ? ` (${firstName(cl.swapFor)})` : ''}` : 'Needs full cover';
+  return `<span class="badge">${esc(text)}</span>`;
 }
 
 function renderAll() {
@@ -261,12 +283,12 @@ function renderAll() {
       html += `<div class="card off${key === todayKey ? ' today' : ''}"><h3>${fmtSunday(d)}</h3><p class="note">${esc(note.text || 'No classes')}</p></div>`;
       continue;
     }
-    html += `<div class="card${key === todayKey ? ' today' : ''}"><h3>${fmtSunday(d)}</h3>`;
+    html += `<div class="card${key === todayKey ? ' today' : ''}${isFifth(d) ? ' fifth' : ''}"><h3>${fmtSunday(d)}${isFifth(d) ? '<span class="tag5">5th Sunday</span>' : ''}</h3>`;
     if (note?.text) html += `<p class="note">${esc(note.text)}</p>`;
     for (const c of classes) {
       const cl = claim(key, c.id);
       const who = cl ? esc(claimLabel(data.classes, c.id, cl)) : 'Open';
-      html += `<div class="line${lineState(cl)}"><span class="cls">${esc(c.name)}</span><span class="who">${who}${cl?.swap ? '<span class="badge">Swap</span>' : ''}</span></div>`;
+      html += `<div class="line${lineState(cl)}"><span class="cls">${esc(c.name)}</span><span class="who">${who}${swapBadge(cl)}</span></div>`;
     }
     html += '</div>';
   }
@@ -285,7 +307,7 @@ function renderMine() {
   const canFill = team.pattern && (team.pattern.every || team.pattern.nth);
   let html = '';
   if (canFill) html += `<p><button class="primary" id="fill">Sign up my usual Sundays</button> <span class="hint">Takes every open ★ Sunday below for your team.</span></p>`;
-  else html += `<p class="hint">Tap a Sunday to take it. If you need someone to cover, tap “Need a swap” and the others in your class will see it.</p>`;
+  else html += `<p class="hint">Tap a Sunday to take it. If you need a sub, tap “I need a sub” (just you) or “We both need a sub”, and the others in your class will see it.</p>`;
 
   html += '<div class="rows">';
   for (const d of sundays) {
@@ -303,18 +325,26 @@ function renderMine() {
       acts = `<button class="primary" data-a="take" data-k="${key}">Take this Sunday</button>`;
     } else if (cl.teamId === me.teamId) {
       cls_ += lineState(cl);
-      state = cl.swap ? '<strong>Swap requested</strong> <span class="hint">waiting for someone to cover</span>' : '<strong>You’re teaching</strong>';
-      acts = cl.swap
-        ? `<button data-a="unswap" data-k="${key}">Cancel swap</button>`
-        : `<button class="warn" data-a="swap" data-k="${key}">Need a swap</button><button class="link" data-a="give" data-k="${key}">Give up</button>`;
+      const kind = swapKind(cl);
+      const pair = (team.members || []).length > 1;
+      state = kind
+        ? `<strong>${kind === 'partial' ? `Sub requested for ${esc(firstName(cl.swapFor) || 'one of you')}` : 'Full swap requested'}</strong> <span class="hint">waiting for someone to cover</span>`
+        : `<strong>You’re teaching</strong>${cl.coverName ? ` <span class="hint">${esc(firstName(cl.coverName))} covering for ${esc(firstName(cl.coverFor))}</span>` : ''}`;
+      acts = kind
+        ? `<button data-a="unswap" data-k="${key}">Cancel request</button>`
+        : (pair
+            ? `<button class="warn" data-a="swap-partial" data-k="${key}">I need a sub</button><button class="warn" data-a="swap-full" data-k="${key}">We both need a sub</button>`
+            : `<button class="warn" data-a="swap-full" data-k="${key}">Need a swap</button>`) +
+          `<button class="link" data-a="give" data-k="${key}">Give up</button>`;
     } else {
       cls_ += lineState(cl);
-      state = `${esc(claimLabel(data.classes, me.classId, cl))}${cl.swap ? '<span class="badge">Needs cover</span>' : ''}`;
-      if (cl.swap) acts = `<button class="primary" data-a="cover" data-k="${key}">I’ll cover it</button>`;
+      const kind = swapKind(cl);
+      state = `${esc(claimLabel(data.classes, me.classId, cl))}${swapBadge(cl)}`;
+      if (kind) acts = `<button class="primary" data-a="cover" data-k="${key}">${kind === 'partial' ? `I’ll cover ${esc(firstName(cl.swapFor) || 'them')}` : 'I’ll cover it'}</button>`;
     }
     if (suggest) cls_ += ' suggest';
     if (note?.text) state += `<p class="note">${esc(note.text)}</p>`;
-    html += `<div class="${cls_}"><span class="date">${fmtSunday(d)}</span><span class="state">${state}</span><span class="acts">${acts}</span></div>`;
+    html += `<div class="${cls_}"><span class="date">${fmtSunday(d)}${isFifth(d) ? '<span class="tag5">5th Sunday</span>' : ''}</span><span class="state">${state}</span><span class="acts">${acts}</span></div>`;
   }
   return html + '</div>';
 }
@@ -329,8 +359,9 @@ function render() {
   $('fill')?.addEventListener('click', () => fillPattern().catch(fail));
   $('view').querySelectorAll('[data-a]').forEach(b => b.addEventListener('click', () => {
     const k = b.dataset.k;
-    const act = { take: () => takeSunday(k), give: () => giveUp(k), swap: () => setSwap(k, true),
-                  unswap: () => setSwap(k, false), cover: () => coverSunday(k) }[b.dataset.a];
+    const act = { take: () => takeSunday(k), give: () => giveUp(k), 'swap-full': () => setSwap(k, 'full'),
+                  'swap-partial': () => setSwap(k, 'partial'), unswap: () => setSwap(k, null),
+                  cover: () => coverSunday(k) }[b.dataset.a];
     b.disabled = true;
     act().catch(fail);
   }));
