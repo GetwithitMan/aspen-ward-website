@@ -75,7 +75,7 @@ details[open] > .month-head::before { transform: rotate(90deg); }
     <div class="panel" id="people"></div>
 
     <h2>Add a teacher</h2>
-    <p class="hint">Teachers, substitutes and Primary presidency. Presidency members can manage this page.</p>
+    <p class="hint">Teachers, subs and Primary presidency. If they teach with someone, choose that person; they share that team's Sundays. Presidency members can manage this page.</p>
     <div class="panel"><form class="form" id="add">
       <input type="text" id="add-name" placeholder="Full name" required>
       <select id="add-class"></select>
@@ -181,13 +181,20 @@ function render() {
   renderNotes();
 }
 
-// Joining a team shares its Sundays; "Own slot" makes a team of one (a regular sub).
+// Co-teaching: pick who the new teacher teaches with and they join that person's
+// team (shared Sundays, and their name is added to the team's label on the calendar).
+// "Own slot" makes a team of one, for a regular sub.
 function renderTeamOptions() {
-  const c = data.classes[$('add-class').value];
+  const classId = $('add-class').value;
+  const c = data.classes[classId];
   const keep = $('add-team').value;
   $('add-team').hidden = !c;
-  $('add-team').innerHTML = c ? Object.entries(c.teams || {}).map(([tid, t]) =>
-    `<option value="${esc(tid)}"${tid === keep ? ' selected' : ''}>Join ${esc(t.label)}</option>`).join('') + '<option value="__own">Own slot (substitute)</option>' : '';
+  if (!c) { $('add-team').innerHTML = ''; return; }
+  const mates = Object.values(data.people).filter(p => p.classId === classId && c.teams?.[p.teamId])
+    .sort((a, b) => a.name.localeCompare(b.name));
+  $('add-team').innerHTML = mates.map(p =>
+    `<option value="${esc(p.teamId)}"${p.teamId === keep ? ' selected' : ''}>Co-teaches with ${esc(p.name)}</option>`).join('') +
+    '<option value="__own">Teaches on their own (sub)</option>';
 }
 $('add-class').addEventListener('change', renderTeamOptions);
 
@@ -289,6 +296,12 @@ $('add').addEventListener('submit', async e => {
     if (teamId === '__own') {
       teamId = `s-${username}`;
       await set(ref(db, `teaching/classes/${classId}/teams/${teamId}`), { label: name, members: [name] });
+    } else {
+      // "A & B" becomes "A, B & New"
+      const team = data.classes[classId].teams[teamId];
+      const i = team.label.lastIndexOf(' & ');
+      const label = i < 0 ? `${team.label} & ${name}` : `${team.label.slice(0, i)}, ${team.label.slice(i + 3)} & ${name}`;
+      await update(ref(db, `teaching/classes/${classId}/teams/${teamId}`), { label, members: [...(team.members || []), name] });
     }
     person.classId = classId; person.teamId = teamId;
   }

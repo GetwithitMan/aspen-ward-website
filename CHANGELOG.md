@@ -27,7 +27,9 @@ everyone else sees who is teaching each class each week.
 - **Colours:** open classes are white, filled ones green, ones covered after a
   swap (or by a sub) a slightly different green, and a swap request stays orange
   until someone fills it.
-- **Add a teacher** form (renamed). To change someone's presidency access, remove
+- **Add a teacher** form (renamed). Choose "Co-teaches with <person>" to put them on
+  that person's team (their name is added to the team's label), or "Teaches on their
+  own" for a sub. To change someone's presidency access, remove
   them and add them again with the box ticked or unticked.
 - **Admin lists collapse:** People by class (with a head count); **Notes for a Sunday**
   and **Change a Sunday or add a sub** start closed and open one month at a time.
