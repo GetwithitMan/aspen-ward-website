@@ -193,7 +193,7 @@ input { font: inherit; width: 100%; padding: 11px 12px; border: 1px solid var(--
 <script type="module">
 import { db } from '/js/firebase.js';
 import { ref, onValue, update, set, runTransaction } from 'https://www.gstatic.com/firebasejs/11.7.3/firebase-database.js';
-import { upcomingSundays, dateKey, fmtSunday, fmtMonth, hashLogin, isPatternSunday, claimLabel, swapKind, firstName, isFifth, holidaysFor, parseKey, membershipsOf, toArray } from '/js/teaching.js';
+import { upcomingSundays, dateKey, fmtSunday, fmtMonth, hashLogin, isPatternSunday, claimLabel, swapKind, firstName, isFifth, holidaysFor, parseKey, membershipsOf, toArray, TEACHERS_PER_CLASS } from '/js/teaching.js';
 
 const SESSION_KEY = 'teaching-login';
 const VISIBLE_STEP = 12;
@@ -371,13 +371,22 @@ function lineState(cl) {
 }
 
 // How many subs a request needs: one for a single teacher, one per teacher for a whole-team request.
+const teamSize = (classId, cl) => toArray(data.classes?.[classId]?.teams?.[cl?.teamId]?.members).length;
 function neededFor(classId, cl) {
   if (swapKind(cl) !== 'full') return 1;
-  return Math.max(1, toArray(data.classes?.[classId]?.teams?.[cl.teamId]?.members).length);
+  return TEACHERS_PER_CLASS;   // two or more teachers is enough, so two subs fill a whole team that can't come
+}
+// How many teachers short a normal Sunday is: a one-person team still needs a second teacher.
+function gapFor(classId, cl) {
+  if (!cl || cl.sub || !cl.teamId || swapKind(cl)) return 0;
+  return Math.max(0, TEACHERS_PER_CLASS - teamSize(classId, cl) - toArray(cl.subs).length);
 }
 function swapBadge(cl, classId) {
   const kind = swapKind(cl);
-  if (!kind) return '';
+  if (!kind) {
+    const g = gapFor(classId, cl);
+    return g ? `<span class="badge">Needs ${g === 1 ? '1 more teacher' : `${g} more teachers`}</span>` : '';
+  }
   const need = neededFor(classId, cl), subs = toArray(cl.subs);
   let text;
   if (kind === 'partial') text = `Needs a sub${cl.swapFor ? ` for ${firstName(cl.swapFor)}` : ''}`;
@@ -396,7 +405,13 @@ async function signUpSub(key, classId, name) {
   const need = neededFor(classId, claim(key, classId));
   return runTransaction(claimPath(key, classId), existing => {
     const kind = swapKind(existing);
-    if (!kind) return undefined;
+    if (!existing) return undefined;
+    if (!kind) {          // a normal Sunday that is a teacher short: add a helper
+      const subs = toArray(existing.subs);
+      if (existing.sub || !existing.teamId || subs.length >= TEACHERS_PER_CLASS - teamSize(classId, existing)) return undefined;
+      if (subs.some(n => n.toLowerCase() === name.toLowerCase())) return undefined;
+      return { ...existing, subs: [...subs, name] };
+    }
     if (kind === 'partial') {
       const { swap, swapFor, ...rest } = existing;
       return { ...rest, coverName: name, coverFor: swapFor || '', covered: true, guest: true };
@@ -420,7 +435,8 @@ function bindSubButtons(root) {
 $('sub-cancel').addEventListener('click', () => $('sub-dlg').close());
 $('sub-form').addEventListener('submit', async e => {
   e.preventDefault();
-  const clean = v => v.trim().replace(/\s+/g, ' ').slice(0, 30);
+  // Tidy the name: single spaces, and a capital letter at the start of each word ("jane smith" -> "Jane Smith").
+  const clean = v => v.trim().replace(/\s+/g, ' ').slice(0, 30).replace(/(^|[\s'-])([a-z])/g, (m, a, b) => a + b.toUpperCase());
   const first = clean($('sub-first').value), last = clean($('sub-last').value);
   if (!first || !last) { $('sub-err').textContent = 'Please type your first name AND your last name.'; return; }
   const [key, cid] = subTarget.split('|');
@@ -428,10 +444,9 @@ $('sub-form').addEventListener('submit', async e => {
   let res;
   try { res = await signUpSub(key, cid, name); }
   catch (err) { console.error(err); $('sub-err').textContent = 'That did not save. Check your connection and try again.'; return; }
-  if (!res.committed) { $('sub-err').textContent = 'Sorry, that spot was just filled, or you are already on it. Close this and look at the calendar.'; return; }
+  if (!res.committed) { $('sub-err').textContent = 'Sorry, that spot was just filled, or you are already signed up for it. Tap Cancel and look at the calendar.'; return; }
   $('sub-dlg').close();
   subSaved = subTarget;
-  if ($('day-dlg').open && dayKey) { $('day-body').innerHTML = sundayCard(parseKey(dayKey), classList()); bindSubButtons($('day-body')); }
   render();
 });
 
@@ -448,7 +463,7 @@ function sundayCard(d, classes) {
     const cl = claim(key, c.id);
     const who = cl ? esc(claimLabel(data.classes, c.id, cl)) : 'Open';
     const lineId = `${key}|${c.id}`;
-    const subBtn = swapKind(cl) && !isPast(d) ? `<button class="subbtn" data-subfor="${lineId}">I can sub</button>` : '';
+    const subBtn = (swapKind(cl) || gapFor(c.id, cl)) && !isPast(d) ? `<button class="subbtn" data-subfor="${lineId}">I can sub</button>` : '';
     const done = subSaved === lineId ? ' <span class="ok">✓ You’re signed up</span>' : '';
     html += `<div class="line${lineState(cl)}"><span class="cls">${esc(c.name)}</span><span class="who">${who}${swapBadge(cl, c.id)}${subBtn}${done}</span></div>`;
   }
@@ -480,7 +495,8 @@ function renderMonth(classes) {
   const first = sundays[0], last = sundays[sundays.length - 1];
   const minMonth = new Date(first.getFullYear(), first.getMonth(), 1);
   const maxMonth = new Date(last.getFullYear(), last.getMonth(), 1);
-  if (!monthShown || monthShown < minMonth) monthShown = minMonth;
+  if (!monthShown) { const t = parseKey(todayKey); monthShown = new Date(t.getFullYear(), t.getMonth(), 1); }
+  if (monthShown < minMonth) monthShown = minMonth;
   if (monthShown > maxMonth) monthShown = maxMonth;
 
   const y = monthShown.getFullYear(), m = monthShown.getMonth();
@@ -547,8 +563,8 @@ function renderMine() {
       const kind = swapKind(cl);
       const pair = (team.members || []).length > 1;
       state = kind
-        ? `<strong>${kind === 'partial' ? `Sub needed for ${esc(firstName(cl.swapFor) || 'one of you')}` : 'Sub needed for the whole class'}</strong> <span class="hint">${kind === 'full' && toArray(cl.subs).length ? `Sub ${toArray(cl.subs).length} of ${neededFor(classId, cl)} signed up: ${esc(toArray(cl.subs).join(' & '))}` : 'waiting for someone to cover'}</span>`
-        : `<strong>You’re teaching</strong>${cl.coverName ? ` <span class="hint">${esc(firstName(cl.coverName))} covering for ${esc(firstName(cl.coverFor))}</span>` : ''}`;
+        ? `<strong>${kind === 'partial' ? `Sub needed for ${esc(firstName(cl.swapFor) || 'one of you')}` : 'Sub needed for the whole class'}</strong> <span class="hint">${kind === 'full' && toArray(cl.subs).length ? `Sub ${toArray(cl.subs).length} of ${neededFor(classId, cl)} signed up: ${esc(toArray(cl.subs).join(' & '))}` : (kind === 'full' && neededFor(classId, cl) > 1 ? `needs ${neededFor(classId, cl)} subs` : 'waiting for someone to cover')}</span>`
+        : `<strong>You’re teaching</strong>${swapBadge(cl, classId)}${cl.coverName ? ` <span class="hint">${esc(firstName(cl.coverName))} covering for ${esc(firstName(cl.coverFor))}</span>` : ''}`;
       acts = kind
         ? `<button data-a="unswap" data-k="${key}">${kind === 'partial' && cl.swapFor && cl.swapFor !== me.name ? `Cancel ${esc(firstName(cl.swapFor))}’s sub request` : 'Cancel sub request'}</button>`
         : (pair
@@ -630,6 +646,7 @@ onValue(ref(db, 'teaching'), async snap => {
   await resolveSession();
   loaded = true;
   render();
+  if ($('day-dlg').open && dayKey) { $('day-body').innerHTML = sundayCard(parseKey(dayKey), classList()); bindSubButtons($('day-body')); }
 }, err => {
   console.error(err);
   $('view').innerHTML = '<p class="empty">The calendar could not be loaded. Please try again later.</p>';

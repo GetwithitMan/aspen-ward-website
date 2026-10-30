@@ -24,6 +24,10 @@ Four people-in-a-browser test runs (older teacher, team of three on a phone, pre
   "Sub 1 of 2 signed up, 1 more needed" until it is full, then turns mint ("Jane Smith & Tom Lee (sub)").
   First tap wins; the same name can't sign up twice. Admin sees the subs in Change a Sunday and choosing a
   swap option there clears them.
+- **Every class wants 2 or more teachers.** A Sunday taken by a one-person team shows "Needs 1 more teacher"
+  with an **I can sub** button, even with no sub request. Whole-team sub requests need 2 subs (not 3 for a team of 3).
+- Sub names are capitalised; the month pop-up refreshes right after a sign-up; Month view opens on the
+  upcoming month; clearer wording on duplicate sign-ups and "needs 2 subs".
 - **Open Sundays** are bold and darker, not pale italics.
 - **Admin:** banner pinned to the bottom after Add teacher / Reset password (readable credentials);
   reset password, remove from class, and duplicate names ask first; duplicate class names refused;

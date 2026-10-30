@@ -90,6 +90,7 @@ export function groupLabel(names) {
 }
 
 export const MAX_TEAM = 3;   // most people on one team
+export const TEACHERS_PER_CLASS = 2;   // every class wants at least this many teachers each Sunday
 
 // The classes a person teaches in, as { classId: teamId }.
 export const membershipsOf = p => p?.memberships || (p?.classId ? { [p.classId]: p.teamId } : {});
@@ -108,6 +109,8 @@ export function swapKind(claim) {
 export function claimLabel(classes, classId, claim) {
   if (claim.sub) return `${claim.sub} (sub)`;
   const label = classes?.[classId]?.teams?.[claim.teamId]?.label || 'Unknown';
+  // A team short of teachers can have outside subs fill the gap.
+  if (!claim.swap && toArray(claim.subs).length) return `${label} + ${toArray(claim.subs).join(' & ')} (sub)`;
   return claim.coverName ? `${label} (${firstName(claim.coverName)} covering for ${firstName(claim.coverFor)})` : label;
 }
 
