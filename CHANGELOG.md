@@ -1,5 +1,28 @@
 # Changelog
 
+## October 30, 2026
+
+### Teaching Calendar: smoke-test fixes
+
+Four people-in-a-browser test runs (older teacher, team of three on a phone, presidency admin, visitor).
+
+- **Fixed: "Take this Sunday" and covering a whole-class sub request failed for every teacher** (a variable
+  hid the helper that finds your class). Both work now.
+- **List starts at the coming Sunday.** A **Show last Sunday** button reveals the one just finished,
+  faded and with no buttons. Same in My class. Month view still shows it.
+- **Green "✓ Saved" stays on the line you changed** (teacher rows, the usual-Sundays button, and admin
+  rows for usual Sundays, groups, class names, notes, subs, swaps, resets). No save button to hunt for.
+- **Plain words:** "sub" everywhere (no "swap"). Buttons: Only I can't come / None of us can come / I can't come.
+  Labels: Sub needed for Kim / for the whole class. Taken by another team. You are covering.
+- **Sign-in help:** a full name as username explains the one-word username; a wrong password reminds
+  people the password is first name + last initial. Boxes clear on sign-out. Visitor hint to sign in.
+- **Give up needs a second tap.** Save errors show a banner, not a popup that freezes the page.
+- **Phone Month view:** classes are small round dots; the whole Sunday cell opens the popup.
+- **Open Sundays** are bold and darker, not pale italics.
+- **Admin:** banner pinned to the bottom after Add teacher / Reset password (readable credentials);
+  reset password, remove from class, and duplicate names ask first; duplicate class names refused;
+  "No classes" Sundays are greyed in Change a Sunday.
+
 ## October 29, 2026
 
 ### Teaching Calendar

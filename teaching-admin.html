@@ -155,9 +155,35 @@ $('gate-form').addEventListener('submit', async e => {
   render();
 });
 
-const showCreds = (name, username, password) => {
-  $('creds').innerHTML = `<div class="notice"><strong>${esc(name)}</strong> — username <code>${esc(username)}</code> password <code>${esc(password)}</code><br><span class="hint">Capitals do not matter when signing in.</span></div>`;
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+// A banner pinned to the bottom of the screen, so it is seen wherever on the long page you clicked.
+function flash(html, ms = 5000, keep, bad) {
+  let bar = $('flash');
+  if (!bar) {
+    bar = document.createElement('div'); bar.id = 'flash'; bar.setAttribute('role', 'status');
+    bar.style.cssText = 'position:fixed;left:16px;right:16px;bottom:16px;z-index:50;padding:14px 16px;border-radius:10px;background:#166534;color:#fff;font-size:16px;text-align:center;box-shadow:0 4px 16px rgba(0,0,0,.3)';
+    document.body.appendChild(bar);
+  }
+  bar.style.background = bad ? '#b91c1c' : '#166534';
+  bar.innerHTML = html + (keep ? ' <button type="button" id="flash-x" style="margin-left:8px">OK</button>' : '');
+  $('flash-x')?.addEventListener('click', () => bar.remove());
+  clearTimeout(bar._t); if (!keep) bar._t = setTimeout(() => bar.remove(), ms);
+}
+// A green "✓ Saved" that stays on the line that changed (it survives the page re-drawing),
+// so nobody hunts for a save button or wonders whether the click worked.
+document.head.insertAdjacentHTML('beforeend', '<style>.okmark{color:#166534;font-weight:700;margin-left:8px;white-space:nowrap}</style>');
+const savedSel = new Set();
+function applySaved() {
+  for (const sel of savedSel) {
+    const el = document.querySelector(sel); if (!el) continue;
+    const row = el.closest('.row') || el.parentElement;
+    if (row && !row.querySelector(':scope > .okmark')) row.insertAdjacentHTML('beforeend', '<span class="okmark">✓ Saved</span>');
+  }
+}
+const markSaved = sel => { savedSel.add(sel); applySaved(); };
+new MutationObserver(applySaved).observe(document.body, { childList: true, subtree: true });
+document.head.insertAdjacentHTML('beforeend', '<style>#flash code{background:rgba(255,255,255,.22);color:#fff;font-weight:700}#flash button{color:#111}</style>');
+const showCreds = (name, username, password, verb = 'Added') => {
+  flash(`${verb} <strong>${esc(name)}</strong>. Username <code>${esc(username)}</code> · password <code>${esc(password)}</code><br><span style="font-size:14px">Capitals do not matter when signing in.</span>`, 0, true);
 };
 
 async function savePerson(username, person, password) {
@@ -312,6 +338,7 @@ async function leaveClass(u, cid) {
     if (confirm(`${data.classes[cid].name} is ${p.name}'s only class, so this also deletes their login. Continue?`)) await deletePerson(u);
     return;
   }
+  if (!confirm(`Take ${p.name} out of ${data.classes[cid].name}? They stay in their other classes.`)) return;
   await update(ref(db, 'teaching'), memWrites(u, rest));
   await relabelTeam(cid, tid, { exclude: u });
   await dropEmptyTeam(cid, tid, u);
@@ -337,6 +364,7 @@ $('add-class-form').addEventListener('submit', async e => {
   e.preventDefault();
   const name = $('new-class').value.trim();
   if (!name) return;
+  if (classList().some(c => c.name.toLowerCase() === name.toLowerCase())) { flash(`There is already a class called “${esc(name)}”.`, 6000, false, true); return; }
   const order = Math.max(-1, ...classList().map(c => c.order ?? 0)) + 1;
   const id = `c${Date.now().toString(36)}`;
   await set(ref(db, `teaching/classes/${id}`), { name, order, teams: {} });
@@ -376,6 +404,7 @@ async function saveNote(key) {
   const text = row.querySelector('[data-note]').value.trim();
   const noClass = row.querySelector('[data-noclass]').checked;
   await set(ref(db, `teaching/notes/${key}`), text || noClass ? { text, noClass: noClass || null } : null);
+  markSaved(`[data-note="${key}"]`);
 }
 $('notes').addEventListener('change', e => {
   const key = e.target.dataset.note || e.target.dataset.noclass;
@@ -387,6 +416,8 @@ function renderSundays() {
   if (!c) { $('sundays').innerHTML = ''; return; }
   $('sundays').innerHTML = byMonth('s', d => {
     const key = dateKey(d);
+    const nc = data.notes?.[key]?.noClass;
+    if (nc) return `<div class="row" style="opacity:.6"><strong style="flex:0 0 90px">${fmtSunday(d)}</strong><span>No classes this day${data.notes[key].text ? ` — ${esc(data.notes[key].text)}` : ''}</span></div>`;
     const cl = data.sundays?.[key]?.[selClass];
     const isSub = cl && cl.sub !== undefined;
     const val = isSub ? '__sub' : (cl?.teamId || '');
@@ -408,16 +439,17 @@ $('people').addEventListener('toggle', e => {
 
 $('people').addEventListener('change', async e => {
   const d = e.target.dataset;
-  if (d.link) { const [a, b, cid] = d.link.split('|'); await setLink(a, b, cid, e.target.checked); }
-  else if (d.addcls && e.target.value) await addToClass(d.addcls, e.target.value);
+  if (d.link) { const [a, b, cid] = d.link.split('|'); await setLink(a, b, cid, e.target.checked); markSaved(`[data-link="${d.link}"]`); }
+  else if (d.addcls && e.target.value) { await addToClass(d.addcls, e.target.value); markSaved(`[data-addcls="${d.addcls}"]`); }
   else if (d.cname) {
     const name = e.target.value.trim();
-    if (name) await update(ref(db, `teaching/classes/${d.cname}`), { name });
+    if (name) { await update(ref(db, `teaching/classes/${d.cname}`), { name }); markSaved(`[data-cname="${d.cname}"]`); }
     else render();
   } else if (d.tpat) {
     const [cid, tid] = d.tpat.split('|');
     const pt = PATTERNS.find(x => x.key === e.target.value);
     await update(ref(db, `teaching/classes/${cid}/teams/${tid}`), { pattern: pt ? pt.value : null });
+    markSaved(`[data-tpat="${d.tpat}"]`);
   }
 });
 // Keep a Teaches with menu open while ticking several people (the list rebuilds on every change).
@@ -431,8 +463,10 @@ $('people').addEventListener('click', async e => {
   const people = data.people;
   if (reset) {
     const p = people[reset], password = makePassword(p.name);
+    if (!confirm(`Reset ${p.name}'s password back to ${password}?`)) return;
     await savePerson(reset, withoutHash(p), password);
-    showCreds(p.name, reset, password);
+    showCreds(p.name, reset, password, 'Password reset for');
+    markSaved(`[data-reset="${reset}"]`);
   } else if (up || down) {
     const list = classList(), id = up || down, i = list.findIndex(c => c.id === id), j = up ? i - 1 : i + 1;
     if (j < 0 || j >= list.length) return;
@@ -462,7 +496,9 @@ $('add').addEventListener('submit', async e => {
   const classIds = pickedClasses();
   const pres = $('add-pres').checked || !classIds.length;   // someone with no class is a presidency member
   const words = name.split(/\s+/);
-  if (words.length < 2) { err.textContent = 'Please enter a first and last name.'; return; }
+  if (words.length < 2) { err.textContent = 'Please type a first AND last name, like Jane Smith.'; return; }
+  if (Object.values(data.people).some(x => x.name.toLowerCase() === name.toLowerCase()) &&
+      !confirm(`${name} is already on the list. Add another person with the same name?`)) return;
 
   let username = makeUsername(name);
   // Two people can share an initial and surname (Devin and Dana Reed): use two letters.
@@ -483,7 +519,7 @@ $('add').addEventListener('submit', async e => {
   const password = makePassword(name);
   await savePerson(username, person, password);
   $('add').reset(); renderAddClasses();
-  showCreds(name, username, password);
+  showCreds(name, username, password, pres && !classIds.length ? 'Added (as a presidency member, no class)' : 'Added');
 });
 
 $('sun-class').addEventListener('change', e => { selClass = e.target.value; renderSundays(); });
@@ -497,11 +533,13 @@ $('sundays').addEventListener('change', async e => {
     input.hidden = v !== '__sub';
     if (v === '__sub') { input.focus(); return; }        // saved once a name is typed
     await set(path(k), v ? { teamId: v, by: actor } : null);
+    markSaved(`[data-sun="${k}"]`);
   } else if (t.dataset.subname) {
     const name = t.value.trim();
-    if (name) await set(path(t.dataset.subname), { sub: name, by: actor });
+    if (name) { await set(path(t.dataset.subname), { sub: name, by: actor }); markSaved(`[data-sun="${t.dataset.subname}"]`); }
   } else if (t.dataset.swap) {
     await update(path(t.dataset.swap), { swap: t.value || null, swapFor: null });
+    markSaved(`[data-swap="${t.dataset.swap}"]`);
   }
 });
 

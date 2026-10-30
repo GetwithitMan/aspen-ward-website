@@ -60,7 +60,7 @@ button.link { border: 0; background: none; color: var(--accent-strong); text-dec
 .line + .line { margin-top: 2px; }
 .line .cls { color: var(--ink-muted); flex: 0 0 42%; }
 .line .who { text-align: right; flex: 1; }
-.line.open .who { color: var(--ink-muted); font-style: italic; }
+.line.open .who { color: var(--ink-soft); font-weight: 600; }
 .line.filled { background: var(--filled); }
 .line.covered { background: var(--covered); }
 .line.swap { background: var(--swap); color: var(--swap-ink); }
@@ -78,6 +78,9 @@ button.link { border: 0; background: none; color: var(--accent-strong); text-dec
 .row.swap { background: var(--swap); }
 .row.suggest .date::after { content: ' ★'; color: var(--accent); }
 .hint { color: var(--ink-muted); font-size: .88rem; }
+.lastbtn { margin: 0 0 12px; }
+.card.past, .row.past { opacity: .6; }
+.ok { color: #166534; font-weight: 700; white-space: nowrap; }
 
 dialog { border: 1px solid var(--stroke); border-radius: var(--radius); padding: 24px; width: min(380px, 92vw); }
 dialog::backdrop { background: rgba(20, 30, 15, .45); }
@@ -120,7 +123,9 @@ input { font: inherit; width: 100%; padding: 11px 12px; border: 1px solid var(--
 @media (max-width: 640px) {
   .dcell { min-height: 54px; padding: 3px; }
   .hol { font-size: .56rem; }
-  .chip { font-size: 0; height: 6px; padding: 0; margin-top: 2px; }
+  .sunbtn { display: flex; flex-wrap: wrap; gap: 3px; align-content: flex-start; min-height: 48px; }
+  .sunbtn .dnum, .sunbtn .hol, .sunbtn .mnote { flex: 0 0 100%; }
+  .chip { font-size: 0; width: 11px; height: 11px; padding: 0; margin: 0; border-radius: 50%; border: 1.5px solid var(--stroke); }
   .mgrid .tag5 { display: none; }
 }
 #day-dlg { width: min(420px, 94vw); }
@@ -181,13 +186,23 @@ let myClass = null;       // which of their classes the My class view shows
 let view = 'mine';        // 'mine' | 'all'
 let shown = VISIBLE_STEP; // Sundays visible in the Everyone view
 let layout = 'list';     // 'list' (default) | 'month' — the Everyone view only
+let savedKey = null;     // the Sunday just changed: its row keeps a green “Saved” until the next change
+let fillMsg = '';        // result of “Sign up my usual Sundays”, shown beside the button
 let monthShown = null;   // first day of the month showing in the month view
 let loaded = false;
 
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-const sundays = upcomingSundays();
-const todayKey = dateKey(sundays[0]);
+// One Sunday before the rolling window too, so “last Sunday” is always there to look back at.
+const sundays = (() => { const base = upcomingSundays(); const prev = new Date(base[0]); prev.setDate(prev.getDate() - 7); return [prev, ...base]; })();
+const startOfToday = (() => { const t = new Date(); t.setHours(0, 0, 0, 0); return t; })();
+const isPast = d => d < startOfToday;
+const lastSunday = [...sundays].reverse().find(isPast);          // the most recent finished Sunday
+const todayKey = dateKey(sundays.find(d => !isPast(d)));          // this/next Sunday, highlighted
+let showLast = false;     // “Show last Sunday” button
+// What the list views show: from the coming Sunday on, plus last Sunday only when asked for.
+const visibleSundays = () => sundays.filter(d => !isPast(d) || (showLast && lastSunday && +d === +lastSunday));
+const lastBtn = () => lastSunday ? `<p class="lastbtn"><button id="last-toggle">${showLast ? 'Hide last Sunday' : `Show last Sunday (${fmtSunday(lastSunday)})`}</button></p>` : '';
 
 const classList = () => Object.entries(data.classes || {})
   .map(([id, c]) => ({ id, ...c }))
@@ -225,21 +240,26 @@ $('login-form').addEventListener('submit', async e => {
   const person = data.people?.[u];
   const h = person ? await hashLogin(u, $('p').value) : null;
   if (!person || person.hash !== h) {
-    $('login-err').textContent = 'That username or password is not right.';
+    $('login-err').textContent = /\s/.test($('u').value.trim())
+      ? 'Your username is one word, like aalder (first letter of your first name + your last name). Not your full name.'
+      : 'That username or password is not right. Your password is your first name + last initial, like anna.';
     return;
   }
   try { localStorage.setItem(SESSION_KEY, JSON.stringify({ u, h })); } catch { /* still signed in this visit */ }
   $('login').close();
+  $('u').value = ''; $('p').value = '';
   await resolveSession();
   myClass = null;
   view = hasClass() ? 'mine' : 'all';
   render();
 });
 $('day-close').addEventListener('click', () => $('day-dlg').close());
-$('login-cancel').addEventListener('click', () => $('login').close());
+$('login-cancel').addEventListener('click', () => { $('u').value = ''; $('p').value = ''; $('login').close(); });
 
 function signOut() {
   try { localStorage.removeItem(SESSION_KEY); } catch {}
+  $('u').value = ''; $('p').value = '';
+  savedKey = null; fillMsg = '';
   me = null;
   view = 'all';
   render();
@@ -249,8 +269,9 @@ function signOut() {
 // Claims go through a transaction so two people tapping the same Sunday at once
 // cannot both win; the loser's tap is simply a no-op and the page updates.
 async function takeSunday(key) {
-  await runTransaction(claimPath(key, cur().classId), cur =>
-    cur === null ? { teamId: cur().teamId, by: me.username } : undefined);
+  const { classId, teamId } = cur();
+  await runTransaction(claimPath(key, classId), existing =>
+    existing === null ? { teamId, by: me.username } : undefined);
 }
 async function giveUp(key) { await set(claimPath(key, cur().classId), null); }
 // kind: 'full' (the whole team needs cover), 'partial' (just me), or null to cancel.
@@ -262,14 +283,15 @@ async function setSwap(key, kind) {
 // Covering a full swap takes the whole Sunday; covering a partial one fills in for
 // the one teacher and the pair keeps teaching.
 async function coverSunday(key) {
-  await runTransaction(claimPath(key, cur().classId), cur => {
-    const kind = swapKind(cur);
+  const { classId, teamId } = cur();
+  await runTransaction(claimPath(key, classId), existing => {
+    const kind = swapKind(existing);
     if (!kind) return undefined;
     if (kind === 'partial') {
-      const { swap, swapFor, ...rest } = cur;
+      const { swap, swapFor, ...rest } = existing;
       return { ...rest, coverName: me.name, coverFor: swapFor || '', covered: true };
     }
-    return { teamId: cur().teamId, by: me.username, covered: true };
+    return { teamId, by: me.username, covered: true };
   });
 }
 // "Sign up my usual Sundays" only covers the next few months, never the whole year, so the
@@ -288,7 +310,10 @@ async function fillPattern() {
       writes[`${key}/${classId}`] = { teamId, by: me.username };
     }
   }
-  if (Object.keys(writes).length) await update(ref(db, 'teaching/sundays'), writes);
+  const n = Object.keys(writes).length;
+  if (n) await update(ref(db, 'teaching/sundays'), writes);
+  fillMsg = n ? `✓ Saved. Signed you up for ${n} Sunday${n === 1 ? '' : 's'}.` : '✓ Nothing new to add. Your usual Sundays are already signed up.';
+  render();
 }
 
 // ---------- rendering ----------
@@ -297,7 +322,7 @@ function renderChrome() {
     ? `<span class="hint">${esc(me.name)}</span> ${me.role === 'presidency' ? '<a href="/teaching-admin">Manage</a>' : ''} <button class="link" id="signout">Sign out</button>`
     : `<button id="signin">Teacher sign in</button>`;
   $('signout')?.addEventListener('click', signOut);
-  $('signin')?.addEventListener('click', () => { $('login-err').textContent = ''; $('login').showModal(); $('u').focus(); });
+  $('signin')?.addEventListener('click', () => { $('login-err').textContent = ''; $('u').value = ''; $('p').value = ''; $('login').showModal(); $('u').focus(); });
 
   $('bar').innerHTML =
     (hasClass()
@@ -314,8 +339,8 @@ function renderChrome() {
   $('bar').querySelectorAll('[data-l]').forEach(b => b.addEventListener('click', () => { layout = b.dataset.l; render(); }));
 
   const key = (c, label) => `<span><i style="background:${c}"></i>${label}</span>`;
-  $('legend').innerHTML = key('var(--filled)', 'Filled') + key('var(--covered)', 'Covered after a swap, or by a sub') +
-    key('var(--swap)', 'Needs a sub or swap') + key('#fff', 'Open') +
+  $('legend').innerHTML = key('var(--filled)', 'Filled') + key('var(--covered)', 'A sub is covering') +
+    key('var(--swap)', 'Needs a sub') + key('#fff', 'Open') +
     (view === 'mine' && hasClass() ? '<span>★ In your usual pattern</span>' : '');
 }
 
@@ -330,14 +355,14 @@ function lineState(cl) {
 function swapBadge(cl) {
   const kind = swapKind(cl);
   if (!kind) return '';
-  const text = kind === 'partial' ? `Needs 1 sub${cl.swapFor ? ` (${firstName(cl.swapFor)})` : ''}` : 'Needs full cover';
+  const text = kind === 'partial' ? `Needs a sub${cl.swapFor ? ` for ${firstName(cl.swapFor)}` : ''}` : 'Needs a sub for the whole class';
   return `<span class="badge">${esc(text)}</span>`;
 }
 
 // One Sunday as a card: used by the list view and the month view's pop-up.
 function sundayCard(d, classes) {
   const key = dateKey(d), note = noteFor(key);
-  const today = key === todayKey ? ' today' : '';
+  const today = (key === todayKey ? ' today' : '') + (isPast(d) ? ' past' : '');
   if (note?.noClass) {
     return `<div class="card off${today}"><h3>${fmtSunday(d)}${holTag(d)}</h3><p class="note">${esc(note.text || 'No classes')}</p></div>`;
   }
@@ -353,26 +378,27 @@ function sundayCard(d, classes) {
 
 function renderAll() {
   $('title').textContent = "Who's teaching";
-  $('lede').textContent = 'Every class, every Sunday.';
+  $('lede').textContent = me ? 'Every class, every Sunday.' : 'Every class, every Sunday. Teachers: tap “Teacher sign in” to take a Sunday or ask for a sub.';
   const classes = classList();
   if (!classes.length) return '<p class="empty">The calendar has not been set up yet.</p>';
   if (layout === 'month') return renderMonth(classes);
 
-  let html = '', month = '';
-  for (const d of sundays.slice(0, shown)) {
+  let html = lastBtn(), month = '';
+  const vis = visibleSundays();
+  for (const d of vis.slice(0, shown + (showLast ? 1 : 0))) {
     const m = fmtMonth(d);
     if (m !== month) { if (month) html += '</div>'; html += `<h2 class="month">${m}</h2><div class="cards">`; month = m; }
     html += sundayCard(d, classes);
   }
   html += '</div>';
-  if (shown < sundays.length) html += `<p style="text-align:center;margin-top:20px"><button id="more">Show more Sundays</button></p>`;
+  if (shown + (showLast ? 1 : 0) < vis.length) html += `<p style="text-align:center;margin-top:20px"><button id="more">Show more Sundays</button></p>`;
   return html;
 }
 
 // Full-month grid. Sundays show a colour chip per class (tap one for the detail);
 // holidays are labelled on their day.
 function renderMonth(classes) {
-  const first = parseKey(todayKey), last = sundays[sundays.length - 1];
+  const first = sundays[0], last = sundays[sundays.length - 1];
   const minMonth = new Date(first.getFullYear(), first.getMonth(), 1);
   const maxMonth = new Date(last.getFullYear(), last.getMonth(), 1);
   if (!monthShown || monthShown < minMonth) monthShown = minMonth;
@@ -389,9 +415,9 @@ function renderMonth(classes) {
   for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
     const key = dateKey(d), name = hol.get(key), note = noteFor(key);
     const isSun = sundaySet.has(key);
-    let inner = `<span class="dnum">${d.getDate()}</span>${name ? `<span class="hol">${esc(name)}</span>` : ''}`;
+    let inner = isSun ? '' : `<span class="dnum">${d.getDate()}</span>${name ? `<span class="hol">${esc(name)}</span>` : ''}`;
     if (isSun) {
-      inner += `<button class="sunbtn" data-sun="${key}" aria-label="Who is teaching on ${fmtSunday(d)}">`;
+      inner += `<button class="sunbtn" data-sun="${key}" aria-label="Who is teaching on ${fmtSunday(d)}"><span class="dnum">${d.getDate()}</span>${name ? `<span class="hol">${esc(name)}</span>` : ''}`;
       if (note?.noClass) inner += `<span class="mnote">${esc(note.text || 'No classes')}</span>`;
       else {
         inner += classes.map(c => `<span class="chip${lineState(claim(key, c.id))}">${esc(c.name)}</span>`).join('');
@@ -411,17 +437,22 @@ function renderMine() {
   if (!cls) return '<p class="empty">Your class could not be found. Please tell the ward clerk.</p>';
   const team = cls.teams[teamId];
   $('title').textContent = cls.name;
-  $('lede').textContent = `Signed in as ${me.name}. You teach with ${team.label}.`;
+  const others = (team.members || []).filter(n => n !== me.name);
+  $('lede').textContent = `Signed in as ${me.name}.` + (others.length ? ` You teach with ${others.join(' & ')}.` : '');
 
   const canFill = team.pattern && (team.pattern.every || team.pattern.nth);
-  let html = '';
-  if (canFill) html += `<p><button class="primary" id="fill">Sign up my usual Sundays</button> <span class="hint">Takes your open ★ Sundays for the next 3 months. Press it again later for the months after.</span></p>`;
-  else html += `<p class="hint">Tap a Sunday to take it. If you need a sub, tap “I need a sub” (just you) or “We both need a sub”, and the others in your class will see it.</p>`;
+  let html = lastBtn();
+  if (canFill) html += `<p><button class="primary" id="fill">Sign up my usual Sundays</button> <span class="hint">Takes your open ★ Sundays for the next 3 months. Press it again later for the months after.</span> <strong class="ok">${esc(fillMsg)}</strong></p>`;
+  else html += `<p class="hint">Tap “Take this Sunday” to sign up. If you can’t make a Sunday you took, tap the orange button on that Sunday (“Only I can’t come” or “None of us can come”) and everyone will see you need a sub.</p>`;
 
   html += '<div class="rows">';
-  for (const d of sundays) {
+  for (const d of visibleSundays()) {
     const key = dateKey(d);
     const cl = claim(key, classId);
+    if (isPast(d)) {   // last Sunday, for looking back only: no buttons
+      html += `<div class="row past"><span class="date">${fmtSunday(d)}</span><span class="state">${cl ? esc(claimLabel(data.classes, classId, cl)) : 'Nobody signed up'} <span class="hint">(finished)</span></span></div>`;
+      continue;
+    }
     const suggest = isPatternSunday(team, d);
     const note = noteFor(key);
     let cls_ = 'row', state = '', acts = '';
@@ -430,27 +461,28 @@ function renderMine() {
       continue;
     }
     if (!cl) {
-      state = '<span class="hint">Open</span>';
+      state = '<strong>Open</strong>';
       acts = `<button class="primary" data-a="take" data-k="${key}">Take this Sunday</button>`;
     } else if (cl.teamId === teamId) {
       cls_ += lineState(cl);
       const kind = swapKind(cl);
       const pair = (team.members || []).length > 1;
       state = kind
-        ? `<strong>${kind === 'partial' ? `Sub requested for ${esc(firstName(cl.swapFor) || 'one of you')}` : 'Full swap requested'}</strong> <span class="hint">waiting for someone to cover</span>`
+        ? `<strong>${kind === 'partial' ? `Sub needed for ${esc(firstName(cl.swapFor) || 'one of you')}` : 'Sub needed for the whole class'}</strong> <span class="hint">waiting for someone to cover</span>`
         : `<strong>You’re teaching</strong>${cl.coverName ? ` <span class="hint">${esc(firstName(cl.coverName))} covering for ${esc(firstName(cl.coverFor))}</span>` : ''}`;
       acts = kind
-        ? `<button data-a="unswap" data-k="${key}">Cancel request</button>`
+        ? `<button data-a="unswap" data-k="${key}">${kind === 'partial' && cl.swapFor && cl.swapFor !== me.name ? `Cancel ${esc(firstName(cl.swapFor))}’s sub request` : 'Cancel sub request'}</button>`
         : (pair
-            ? `<button class="warn" data-a="swap-partial" data-k="${key}">I need a sub</button><button class="warn" data-a="swap-full" data-k="${key}">We both need a sub</button>`
-            : `<button class="warn" data-a="swap-full" data-k="${key}">Need a swap</button>`) +
-          `<button class="link" data-a="give" data-k="${key}">Give up</button>`;
+            ? `<button class="warn" data-a="swap-partial" data-k="${key}">Only I can’t come</button><button class="warn" data-a="swap-full" data-k="${key}">None of us can come</button>`
+            : `<button class="warn" data-a="swap-full" data-k="${key}">I can’t come</button>`) +
+          `<button class="link" data-a="give" data-k="${key}">Give up this Sunday</button>`;
     } else {
       cls_ += lineState(cl);
       const kind = swapKind(cl);
-      state = `${esc(claimLabel(data.classes, classId, cl))}${swapBadge(cl)}`;
+      state = `${esc(claimLabel(data.classes, classId, cl))}${swapBadge(cl)}${kind ? '' : cl.coverName === me.name ? ' <span class="hint">you are covering</span>' : ' <span class="hint">taken by another team</span>'}`;
       if (kind) acts = `<button class="primary" data-a="cover" data-k="${key}">${kind === 'partial' ? `I’ll cover ${esc(firstName(cl.swapFor) || 'them')}` : 'I’ll cover it'}</button>`;
     }
+    if (key === savedKey) state += ' <span class="ok">✓ Saved</span>';
     if (suggest) cls_ += ' suggest';
     if (note?.text) state += `<p class="note">${esc(note.text)}</p>`;
     html += `<div class="${cls_}"><span class="date">${fmtSunday(d)}${isFifth(d) ? '<span class="tag5">5th Sunday</span>' : ''}${holTag(d)}</span><span class="state">${state}</span><span class="acts">${acts}</span></div>`;
@@ -464,6 +496,7 @@ function render() {
   renderChrome();
   $('view').innerHTML = view === 'mine' && hasClass() ? renderMine() : renderAll();
 
+  $('last-toggle')?.addEventListener('click', () => { showLast = !showLast; render(); });
   $('more')?.addEventListener('click', () => { shown += VISIBLE_STEP; render(); });
   $('view').querySelectorAll('[data-mn]').forEach(b => b.addEventListener('click', () => {
     monthShown = new Date(monthShown.getFullYear(), monthShown.getMonth() + Number(b.dataset.mn), 1);
@@ -479,14 +512,31 @@ function render() {
     const act = { take: () => takeSunday(k), give: () => giveUp(k), 'swap-full': () => setSwap(k, 'full'),
                   'swap-partial': () => setSwap(k, 'partial'), unswap: () => setSwap(k, null),
                   cover: () => coverSunday(k) }[b.dataset.a];
+    if (b.dataset.a === 'give' && !b.dataset.armed) {
+      b.dataset.armed = '1'; b.textContent = 'Tap again to give it up';
+      setTimeout(() => { if (b.isConnected) { delete b.dataset.armed; b.textContent = 'Give up this Sunday'; } }, 4000);
+      return;
+    }
     b.disabled = true;
-    act().catch(fail);
+    act().then(() => { savedKey = k; render(); }).catch(fail);
   }));
+}
+
+function toast(msg, bad) {
+  let bar = document.getElementById('saveError');
+  if (!bar) {
+    bar = document.createElement('div'); bar.id = 'saveError'; bar.setAttribute('role', 'alert');
+    document.body.appendChild(bar);
+  }
+  bar.style.cssText = `position:fixed;left:16px;right:16px;bottom:16px;z-index:50;padding:14px 16px;border-radius:10px;background:${bad ? '#b91c1c' : '#166534'};color:#fff;font-size:16px;text-align:center`;
+  bar.textContent = msg;
+  clearTimeout(bar._t); bar._t = setTimeout(() => bar.remove(), 6000);
 }
 
 function fail(err) {
   console.error(err);
-  alert('That did not save. Check your connection and try again.');
+  // A banner, not alert(): a native popup freezes the page and confuses people.
+  toast('That did not save. Check your connection and try again.', true);
   render();
 }
 
