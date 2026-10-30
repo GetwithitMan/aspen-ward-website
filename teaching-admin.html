@@ -168,11 +168,11 @@ function render() {
     (members.length ? members.map(row).join('') : '<div class="row hint">No one yet.</div>') + '</details>';
   for (const c of classList()) html += group(c.id, c.name, Object.entries(data.people).filter(([, p]) => p.classId === c.id));
   const noClass = Object.entries(data.people).filter(([, p]) => !data.classes[p.classId]);
-  if (noClass.length) html += group('__none', 'No class', noClass);
+  if (noClass.length) html += group('__none', 'Presidency members', noClass);
   $('people').innerHTML = html;
 
   const prevClass = $('add-class').value;
-  $('add-class').innerHTML = '<option value="">No class (presidency only)</option>' +
+  $('add-class').innerHTML = '<option value="">Presidency members</option>' +
     classList().map(c => `<option value="${esc(c.id)}"${c.id === prevClass ? ' selected' : ''}>${esc(c.name)}</option>`).join('');
   renderTeamOptions();
 
@@ -279,8 +279,7 @@ $('add').addEventListener('submit', async e => {
   const err = $('add-err'); err.textContent = '';
   const name = $('add-name').value.trim();
   const classId = $('add-class').value;
-  const pres = $('add-pres').checked;
-  if (!classId && !pres) { err.textContent = 'Pick a class, or tick Primary presidency.'; return; }
+  const pres = $('add-pres').checked || !classId;   // someone with no class is a presidency member
   const words = name.split(/\s+/);
   if (words.length < 2) { err.textContent = 'Please enter a first and last name.'; return; }
 

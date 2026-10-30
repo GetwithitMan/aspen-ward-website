@@ -23,7 +23,7 @@ everyone else sees who is teaching each class each week.
 - **Primary presidency:** a person can be marked Presidency (admin). They sign in
   to `/teaching-admin` with their own login (no ward admin password), can also
   teach, add people and subs, reset passwords, and assign any team, or a typed-in
-  sub's name, to any Sunday. A person can have no class at all.
+  sub's name, to any Sunday. A presidency member with no class is listed under **Presidency members**.
 - **Colours:** open classes are white, filled ones green, ones covered after a
   swap (or by a sub) a slightly different green, and a swap request stays orange
   until someone fills it.
