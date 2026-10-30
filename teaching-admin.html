@@ -40,6 +40,16 @@ code { background: var(--surface-muted); padding: 2px 6px; border-radius: 6px; }
 .form input[type=text], .form input[type=password] { flex: 1 1 180px; }
 .err { color: var(--error); min-height: 1.3em; margin: 4px 0 0; }
 .sub-in { flex: 1 1 160px; }
+details.sect > summary { list-style: none; cursor: pointer; display: flex; align-items: center; gap: 8px; }
+details.sect > summary::-webkit-details-marker { display: none; }
+details.sect > summary::before { content: '▶'; font-size: .8rem; color: var(--ink-muted); transition: transform .15s; }
+details.sect[open] > summary::before { transform: rotate(90deg); }
+details.sect > summary h2 { margin: 32px 0 10px; }
+.month-head { background: var(--surface-muted); font-weight: 700; padding: 10px 14px; border-top: 1px solid var(--stroke); cursor: pointer; list-style: none; display: flex; align-items: center; gap: 8px; }
+.month-head::-webkit-details-marker { display: none; }
+.month-head::before { content: '▶'; font-size: .7rem; color: var(--ink-muted); transition: transform .15s; }
+details[open] > .month-head::before { transform: rotate(90deg); }
+.panel > details:first-child > .month-head { border-top: 0; }
 </style>
 </head>
 <body>
@@ -75,21 +85,23 @@ code { background: var(--surface-muted); padding: 2px 6px; border-radius: 6px; }
     </form></div>
     <p class="err" id="add-err" role="alert"></p>
 
-    <h2>Notes for a Sunday</h2>
+    <details class="sect"><summary><h2>Notes for a Sunday</h2></summary>
     <p class="hint">A note shows on the public calendar for that Sunday (“Ward conference — lessons are short”). Tick <strong>No classes</strong> for a Sunday with no teaching, such as stake conference; the day is greyed out and teachers cannot sign up.</p>
     <div class="panel" id="notes"></div>
+    </details>
 
-    <h2>Change a Sunday</h2>
+    <details class="sect"><summary><h2>Change a Sunday or add a sub</h2></summary>
     <p class="hint">Assign any team to any Sunday, or type in a sub's name. Clear it to make it open.</p>
     <p><select id="sun-class"></select></p>
     <div class="panel" id="sundays"></div>
+    </details>
   </div>
 </div>
 
 <script type="module">
 import { db } from '/js/firebase.js';
 import { ref, onValue, set, update } from 'https://www.gstatic.com/firebasejs/11.7.3/firebase-database.js';
-import { upcomingSundays, dateKey, fmtSunday, hashLogin, makeUsername, makePassword } from '/js/teaching.js';
+import { upcomingSundays, dateKey, fmtSunday, fmtMonth, hashLogin, makeUsername, makePassword } from '/js/teaching.js';
 
 const SESSION_KEY = 'teaching-login'; // shared with /teaching, so one sign-in covers both
 const $ = id => document.getElementById(id);
@@ -100,6 +112,8 @@ let data = { classes: {}, people: {}, sundays: {}, notes: {} };
 let selClass = null;
 let actor = sessionStorage.getItem('admin-auth') === 'true' ? 'admin' : null;
 let loaded = false;
+let monthsSeeded = false;
+const openMonths = new Set();   // 'n:<month>' (notes) / 's:<month>' (sundays) currently expanded
 const openGroups = new Set();   // class ids expanded in the People list; all start collapsed
 
 const classList = () => Object.entries(data.classes).map(([id, c]) => ({ id, ...c })).sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
@@ -177,11 +191,30 @@ function renderTeamOptions() {
 }
 $('add-class').addEventListener('change', renderTeamOptions);
 
+// One collapsible block per month. The first month starts open; after that the
+// list remembers what you opened, since it is rebuilt whenever the data changes.
+function byMonth(prefix, rowHtml) {
+  if (!monthsSeeded) { monthsSeeded = true; openMonths.add(`n:${fmtMonth(sundays[0])}`); openMonths.add(`s:${fmtMonth(sundays[0])}`); }
+  const groups = new Map();
+  for (const d of sundays) {
+    const m = fmtMonth(d);
+    groups.set(m, (groups.get(m) || '') + rowHtml(d));
+  }
+  return [...groups].map(([m, rows]) =>
+    `<details data-month="${prefix}:${esc(m)}"${openMonths.has(`${prefix}:${m}`) ? ' open' : ''}><summary class="month-head">${esc(m)}</summary>${rows}</details>`).join('');
+}
+for (const id of ['notes', 'sundays']) {
+  $(id).addEventListener('toggle', e => {
+    const k = e.target.dataset.month;
+    if (k) e.target.open ? openMonths.add(k) : openMonths.delete(k);
+  }, true);
+}
+
 function renderNotes() {
-  $('notes').innerHTML = sundays.map(d => {
+  $('notes').innerHTML = byMonth('n', d => {
     const key = dateKey(d), n = data.notes[key] || {};
     return `<div class="row"><strong style="flex:0 0 90px">${fmtSunday(d)}</strong><input type="text" class="sub-in" data-note="${key}" placeholder="Note (optional)" maxlength="140" value="${esc(n.text || '')}"><label><input type="checkbox" data-noclass="${key}"${n.noClass ? ' checked' : ''}> No classes</label></div>`;
-  }).join('');
+  });
 }
 
 // Saves one Sunday's note from its row; an empty note with the box unticked removes it.
@@ -199,7 +232,7 @@ $('notes').addEventListener('change', e => {
 function renderSundays() {
   const c = data.classes[selClass];
   if (!c) { $('sundays').innerHTML = ''; return; }
-  $('sundays').innerHTML = sundays.map(d => {
+  $('sundays').innerHTML = byMonth('s', d => {
     const key = dateKey(d);
     const cl = data.sundays?.[key]?.[selClass];
     const isSub = cl && cl.sub !== undefined;
@@ -210,7 +243,7 @@ function renderSundays() {
     return `<div class="row"><strong style="flex:0 0 90px">${fmtSunday(d)}</strong><select data-sun="${key}">${opts}</select>` +
       `<input type="text" class="sub-in" data-subname="${key}" placeholder="Sub's name" value="${esc(cl?.sub || '')}"${isSub ? '' : ' hidden'}>` +
       `<label><input type="checkbox" data-swap="${key}"${cl?.swap ? ' checked' : ''}${cl ? '' : ' disabled'}> needs swap</label></div>`;
-  }).join('');
+  });
 }
 
 // `toggle` does not bubble, so listen in the capture phase to remember what is open

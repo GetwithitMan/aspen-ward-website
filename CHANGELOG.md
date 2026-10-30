@@ -27,7 +27,8 @@ everyone else sees who is teaching each class each week.
 - **Colours:** open classes are white, filled ones green, ones covered after a
   swap (or by a sub) a slightly different green, and a swap request stays orange
   until someone fills it.
-- **Admin People list** collapses by class (with a head count); click a class to open it.
+- **Admin lists collapse:** People by class (with a head count); **Notes for a Sunday**
+  and **Change a Sunday or add a sub** start closed and open one month at a time.
 - **Sunday notes:** the admin can put a note on any Sunday (shown on the public
   calendar and in teachers' lists) and tick **No classes** (stake conference, etc.)
   to grey the day out so nobody can sign up for it.
