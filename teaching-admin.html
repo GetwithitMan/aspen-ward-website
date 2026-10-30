@@ -74,7 +74,7 @@ details[open] > .month-head::before { transform: rotate(90deg); }
     <p class="hint">A password is the person's first name plus last initial (Kitrick Galloway: <code>kitrickg</code>). Reset puts it back to that.</p>
     <div class="panel" id="people"></div>
 
-    <h2>Add a person</h2>
+    <h2>Add a teacher</h2>
     <p class="hint">Teachers, substitutes and Primary presidency. Presidency members can manage this page.</p>
     <div class="panel"><form class="form" id="add">
       <input type="text" id="add-name" placeholder="Full name" required>
@@ -162,7 +162,7 @@ function render() {
   const row = ([u, p]) => {
     const team = data.classes[p.classId]?.teams?.[p.teamId];
     const pres = p.role === 'presidency';
-    return `<div class="row"><span class="grow"><strong>${esc(p.name)}</strong>${pres ? '<span class="badge">Presidency</span>' : ''}<br><span class="hint">${esc(team?.label || '')}</span></span><code>${esc(u)}</code><button data-reset="${esc(u)}">Reset password</button><button data-role="${esc(u)}">${pres ? 'Remove presidency' : 'Make presidency'}</button><button class="danger" data-remove="${esc(u)}">Remove</button></div>`;
+    return `<div class="row"><span class="grow"><strong>${esc(p.name)}</strong>${pres ? '<span class="badge">Presidency</span>' : ''}<br><span class="hint">${esc(team?.label || '')}</span></span><code>${esc(u)}</code><button data-reset="${esc(u)}">Reset password</button><button class="danger" data-remove="${esc(u)}">Remove</button></div>`;
   };
   const group = (id, title, members) => `<details data-group="${esc(id)}"${openGroups.has(id) ? ' open' : ''}><summary class="cls-head">${esc(title)} <span class="count">${members.length}</span></summary>` +
     (members.length ? members.map(row).join('') : '<div class="row hint">No one yet.</div>') + '</details>';
@@ -254,16 +254,12 @@ $('people').addEventListener('toggle', e => {
 }, true);
 
 $('people').addEventListener('click', async e => {
-  const { reset, remove, role } = e.target.dataset;
+  const { reset, remove } = e.target.dataset;
   const people = data.people;
   if (reset) {
     const p = people[reset], password = makePassword(p.name);
     await savePerson(reset, withoutHash(p), password);
     showCreds(p.name, reset, password);
-  } else if (role) {
-    const p = people[role];
-    if (p.role === 'presidency' && role === actor) { alert('You cannot remove your own presidency access.'); return; }
-    await update(ref(db, `teaching/people/${role}`), { role: p.role === 'presidency' ? null : 'presidency' });
   } else if (remove) {
     if (remove === actor) { alert('You cannot remove yourself.'); return; }
     if (confirm(`Remove ${people[remove].name}? Their Sundays stay on the calendar.`)) await set(ref(db, `teaching/people/${remove}`), null);
