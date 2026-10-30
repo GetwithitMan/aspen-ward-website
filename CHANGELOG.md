@@ -41,9 +41,10 @@ everyone else sees who is teaching each class each week.
 - **Classes and teams** can be edited in the admin: rename classes, reorder them, add or
   delete classes and teams, rename a team, and set its usual Sundays. People can be
   moved between teams from the People list (**Move to**).
-- **Add a teacher** form (renamed). Choose "Co-teaches with <person>" to put them on
-  that person's team (their name is added to the team's label), or "Teaches on their
-  own" for a sub. To change someone's presidency access, remove
+- **Add a teacher** form (renamed). Under the name, tick up to two people they team
+  teach with (a group of 3 at most), or none for a group of one (a sub). The group is
+  named from first name + last initial of each ("Kitrick G., Jordan T. & Brian L."), with
+  a live preview. Adding, removing or moving someone rebuilds that team's name. To change someone's presidency access, remove
   them and add them again with the box ticked or unticked.
 - **Admin lists collapse:** People by class (with a head count); **Notes for a Sunday**
   and **Change a Sunday or add a sub** start closed and open one month at a time.

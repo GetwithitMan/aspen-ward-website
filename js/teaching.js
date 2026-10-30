@@ -77,6 +77,18 @@ export function makePassword(fullName) {
   return (parts[0] + (last ? last[0] : '')).toLowerCase().replace(/[^a-z]/g, '');
 }
 
+// A team's name from its members: first name + last initial of each,
+// "Kitrick G., Jordan T. & Brian L."
+export function groupLabel(names) {
+  const short = names.map(n => {
+    const w = String(n).trim().split(/\s+/);
+    return w.length > 1 ? `${w[0]} ${w[w.length - 1][0].toUpperCase()}.` : w[0];
+  });
+  return short.length < 3 ? short.join(' & ') : `${short.slice(0, -1).join(', ')} & ${short[short.length - 1]}`;
+}
+
+export const MAX_TEAM = 3;   // most people on one team
+
 export const firstName = n => String(n || '').trim().split(/\s+/)[0];
 
 // A swap request is 'full' (the whole team needs cover) or 'partial' (one teacher

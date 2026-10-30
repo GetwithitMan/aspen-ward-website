@@ -40,6 +40,9 @@ code { background: var(--surface-muted); padding: 2px 6px; border-radius: 6px; }
 .form input[type=text], .form input[type=password] { flex: 1 1 180px; }
 .err { color: var(--error); min-height: 1.3em; margin: 4px 0 0; }
 .sub-in { flex: 1 1 160px; }
+.mates { display: flex; flex-wrap: wrap; gap: 6px 16px; padding: 4px 0; }
+.mates label { display: flex; align-items: center; gap: 6px; }
+.preview { flex: 1 1 100%; margin: 0; }
 .row input[type=text] { flex: 1 1 160px; }
 details.sect > summary { list-style: none; cursor: pointer; display: flex; align-items: center; gap: 8px; }
 details.sect > summary::-webkit-details-marker { display: none; }
@@ -76,14 +79,15 @@ details[open] > .month-head::before { transform: rotate(90deg); }
     <div class="panel" id="people"></div>
 
     <h2>Add a teacher</h2>
-    <p class="hint">Teachers, subs and Primary presidency. If they teach with someone, choose that person; they share that team's Sundays. Presidency members can manage this page.</p>
+    <p class="hint">Teachers, subs and Primary presidency. Under the name, tick who they team teach with (up to 2, for a group of 3). The group shares its Sundays and is named by first name and last initial, like <em>Kitrick G., Jordan T. &amp; Brian L.</em> Presidency members can manage this page.</p>
     <div class="panel"><form class="form" id="add">
       <input type="text" id="add-name" placeholder="Full name" required>
       <select id="add-class"></select>
-      <select id="add-team"></select>
+      <div id="add-mates" style="flex:1 1 100%" hidden></div>
       <label><input type="checkbox" id="add-pres"> Primary presidency</label>
       <button class="primary" type="submit">Add</button>
     </form></div>
+    <p class="hint" id="add-preview"></p>
     <p class="err" id="add-err" role="alert"></p>
 
     <details class="sect"><summary><h2>Classes and teams</h2></summary>
@@ -111,7 +115,7 @@ details[open] > .month-head::before { transform: rotate(90deg); }
 <script type="module">
 import { db } from '/js/firebase.js';
 import { ref, onValue, set, update } from 'https://www.gstatic.com/firebasejs/11.7.3/firebase-database.js';
-import { upcomingSundays, dateKey, fmtSunday, fmtMonth, hashLogin, makeUsername, makePassword, swapKind, PATTERNS, patternKey } from '/js/teaching.js';
+import { upcomingSundays, dateKey, fmtSunday, fmtMonth, hashLogin, makeUsername, makePassword, groupLabel, MAX_TEAM, swapKind, PATTERNS, patternKey } from '/js/teaching.js';
 
 const SESSION_KEY = 'teaching-login'; // shared with /teaching, so one sign-in covers both
 const $ = id => document.getElementById(id);
@@ -197,20 +201,48 @@ function render() {
   renderClasses();
 }
 
-// Co-teaching: pick who the new teacher teaches with and they join that person's
-// team (shared Sundays, and their name is added to the team's label on the calendar).
-// "Own slot" makes a team of one, for a regular sub.
+// Team teaching: tick up to two people the new teacher teaches with. They join that
+// group (one team, shared Sundays), and the group is named from everyone's first name
+// and last initial. Ticking no one makes a group of one, for a regular sub.
+const teamPeople = (classId, teamId) =>
+  Object.entries(data.people).filter(([, p]) => p.classId === classId && p.teamId === teamId);
+
 function renderTeamOptions() {
   const classId = $('add-class').value;
   const c = data.classes[classId];
-  const keep = $('add-team').value;
-  $('add-team').hidden = !c;
-  if (!c) { $('add-team').innerHTML = ''; return; }
-  const mates = Object.values(data.people).filter(p => p.classId === classId && c.teams?.[p.teamId])
-    .sort((a, b) => a.name.localeCompare(b.name));
-  $('add-team').innerHTML = mates.map(p =>
-    `<option value="${esc(p.teamId)}"${p.teamId === keep ? ' selected' : ''}>Co-teaches with ${esc(p.name)}</option>`).join('') +
-    '<option value="__own">Teaches on their own (sub)</option>';
+  const keep = new Set([...$('add-mates').querySelectorAll(':checked')].map(i => i.dataset.mate));
+  $('add-mates').hidden = !c;
+  if (!c) { $('add-mates').innerHTML = ''; updatePreview(); return; }
+  const mates = Object.entries(data.people).filter(([, p]) => p.classId === classId && c.teams?.[p.teamId])
+    .sort((a, b) => a[1].name.localeCompare(b[1].name));
+  $('add-mates').innerHTML = '<span class="hint">Teaches with (up to 2):</span><div class="mates">' + (mates.length ? mates.map(([u, p]) =>
+    `<label><input type="checkbox" data-mate="${esc(u)}"${keep.has(u) ? ' checked' : ''}> ${esc(p.name)}</label>`).join('') : '<span class="hint">No one in this class yet.</span>') + '</div>';
+  updatePreview();
+}
+
+// Live "Group name: ..." under the form, built the same way it will be saved.
+function pickedMates() { return [...$('add-mates').querySelectorAll(':checked')].map(i => i.dataset.mate); }
+function groupNamesFor(newName) {
+  const picked = pickedMates();
+  const teamId = picked.length ? data.people[picked[0]]?.teamId : null;
+  const existing = teamId ? teamPeople($('add-class').value, teamId).map(([, p]) => p.name) : [];
+  return [...existing, newName];
+}
+function updatePreview() {
+  const name = $('add-name').value.trim();
+  $('add-preview').textContent = name && $('add-class').value ? `Group name: ${groupLabel(groupNamesFor(name))}` : '';
+}
+$('add-mates').addEventListener('change', e => {
+  if (pickedMates().length > MAX_TEAM - 1) e.target.checked = false;   // new teacher + 2 = 3
+  updatePreview();
+});
+$('add-name').addEventListener('input', updatePreview);
+
+// Rebuild a team's name and member list from the people currently on it.
+async function relabelTeam(classId, teamId, { add = [], exclude = null } = {}) {
+  if (!classId || !data.classes[classId]?.teams?.[teamId]) return;
+  const names = [...teamPeople(classId, teamId).filter(([u]) => u !== exclude).map(([, p]) => p.name), ...add];
+  if (names.length) await update(ref(db, `teaching/classes/${classId}/teams/${teamId}`), { label: groupLabel(names), members: names });
 }
 $('add-class').addEventListener('change', renderTeamOptions);
 
@@ -350,12 +382,21 @@ $('people').addEventListener('toggle', e => {
   if (id) e.target.open ? openGroups.add(id) : openGroups.delete(id);
 }, true);
 
+const renderPeopleSoon = () => setTimeout(render, 0);   // put a refused Move-to menu back
+
 $('people').addEventListener('change', async e => {
   const u = e.target.dataset.move;
   if (!u) return;
   const [classId, teamId] = e.target.value.split('|');
+  const from = data.people[u];
+  if (classId && teamPeople(classId, teamId).filter(([x]) => x !== u).length >= MAX_TEAM) {
+    alert(`That team already has ${MAX_TEAM} people.`); renderPeopleSoon(); return;
+  }
   // No class means a presidency member; moving into a class keeps any presidency access.
   await update(ref(db, `teaching/people/${u}`), classId ? { classId, teamId } : { classId: null, teamId: null, role: 'presidency' });
+  // Keep both teams' names in step with who is on them.
+  await relabelTeam(from.classId, from.teamId, { exclude: u });
+  if (classId) await relabelTeam(classId, teamId, { add: [from.name], exclude: u });
 });
 
 $('people').addEventListener('click', async e => {
@@ -367,7 +408,11 @@ $('people').addEventListener('click', async e => {
     showCreds(p.name, reset, password);
   } else if (remove) {
     if (remove === actor) { alert('You cannot remove yourself.'); return; }
-    if (confirm(`Remove ${people[remove].name}? Their Sundays stay on the calendar.`)) await set(ref(db, `teaching/people/${remove}`), null);
+    if (confirm(`Remove ${people[remove].name}? Their Sundays stay on the calendar.`)) {
+      const gone = people[remove];
+      await set(ref(db, `teaching/people/${remove}`), null);
+      await relabelTeam(gone.classId, gone.teamId, { exclude: remove });
+    }
   }
 });
 const withoutHash = ({ hash, ...rest }) => rest;
@@ -389,22 +434,23 @@ $('add').addEventListener('submit', async e => {
   const person = { name };
   if (pres) person.role = 'presidency';
   if (classId) {
-    let teamId = $('add-team').value;
-    if (teamId === '__own') {
+    const picked = pickedMates();
+    let teamId;
+    if (!picked.length) {
       teamId = `s-${username}`;
-      await set(ref(db, `teaching/classes/${classId}/teams/${teamId}`), { label: name, members: [name] });
+      await set(ref(db, `teaching/classes/${classId}/teams/${teamId}`), { label: groupLabel([name]), members: [name] });
     } else {
-      // "A & B" becomes "A, B & New"
-      const team = data.classes[classId].teams[teamId];
-      const i = team.label.lastIndexOf(' & ');
-      const label = i < 0 ? `${team.label} & ${name}` : `${team.label.slice(0, i)}, ${team.label.slice(i + 3)} & ${name}`;
-      await update(ref(db, `teaching/classes/${classId}/teams/${teamId}`), { label, members: [...(team.members || []), name] });
+      const teams = new Set(picked.map(u => data.people[u].teamId));
+      if (teams.size > 1) { err.textContent = 'Those people are on different teams. Pick people from one team.'; return; }
+      teamId = [...teams][0];
+      if (teamPeople(classId, teamId).length >= MAX_TEAM) { err.textContent = `That team already has ${MAX_TEAM} people.`; return; }
+      await relabelTeam(classId, teamId, { add: [name] });
     }
     person.classId = classId; person.teamId = teamId;
   }
   const password = makePassword(name);
   await savePerson(username, person, password);
-  $('add').reset(); renderTeamOptions();
+  $('add').reset(); renderTeamOptions(); updatePreview();
   showCreds(name, username, password);
 });
 
