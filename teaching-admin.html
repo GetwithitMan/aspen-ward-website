@@ -190,9 +190,9 @@ function render() {
     const also = others.length
       ? `<select data-addcls="${esc(u)}" aria-label="Also teaches in"><option value="">+ Also teaches in…</option>${others.map(c => `<option value="${esc(c.id)}">${esc(c.name)}</option>`).join('')}</select>` : '';
     const inOther = Object.keys(m).filter(id => id !== cid && data.classes[id]).map(id => data.classes[id].name);
-    const leave = cid && (Object.keys(m).filter(id => data.classes[id]).length > 1 || pres)
-      ? `<button data-leave="${esc(u)}|${esc(cid)}">Leave this class</button>` : '';
-    return `<div class="row member"><span class="grow"><strong>${esc(p.name)}</strong>${pres ? '<span class="badge">Presidency</span>' : ''}<br><span class="hint">${cid ? '' : esc(team?.label || '')}${inOther.length ? `also in ${esc(inOther.join(', '))}` : ''}</span></span><code>${esc(u)}</code>${dd}${also}${leave}<button data-reset="${esc(u)}">Reset password</button><button class="danger" data-remove="${esc(u)}">Remove</button></div>`;
+    return `<div class="row member"><span class="grow"><strong>${esc(p.name)}</strong>${pres ? '<span class="badge">Presidency</span>' : ''}<br><span class="hint">${cid ? '' : esc(team?.label || '')}${inOther.length ? `also in ${esc(inOther.join(', '))}` : ''}</span></span><code>${esc(u)}</code>${dd}${also}<button data-reset="${esc(u)}">Reset password</button>${cid
+      ? `<button class="danger" data-leave="${esc(u)}|${esc(cid)}">Remove from this class</button>`
+      : `<button class="danger" data-remove="${esc(u)}">Delete login</button>`}</div>`;
   };
   const group = (id, title, members) => `<details data-group="${esc(id)}"${openGroups.has(id) ? ' open' : ''}><summary class="cls-head">${esc(title)} <span class="count">${members.length}</span></summary>` +
     (members.length ? members.map(m => row(m, id === '__none' ? null : id)).join('') : '<div class="row hint">No one yet.</div>') + '</details>';
@@ -293,10 +293,25 @@ async function addToClass(u, cid) {
   await update(ref(db, 'teaching'), writes);
 }
 
+// Deleting a login removes the person from every class; each group's name is rebuilt.
+async function deletePerson(u) {
+  const gone = data.people[u];
+  await set(ref(db, `teaching/people/${u}`), null);
+  for (const [cid, tid] of Object.entries(mem(gone))) {
+    await relabelTeam(cid, tid, { exclude: u });
+    await dropEmptyTeam(cid, tid, u);
+  }
+}
+
+// Takes a person out of ONE class only. If it was their only class, the login goes too.
 async function leaveClass(u, cid) {
   const p = data.people[u], tid = mem(p)[cid];
   const rest = { ...mem(p) }; delete rest[cid];
-  if (!Object.keys(rest).length && p.role !== 'presidency') { alert('This is their only class. Use Remove to delete them instead.'); return; }
+  if (!Object.keys(rest).filter(id => data.classes[id]).length && p.role !== 'presidency') {
+    if (u === actor) { alert('You cannot remove yourself.'); return; }
+    if (confirm(`${data.classes[cid].name} is ${p.name}'s only class, so this also deletes their login. Continue?`)) await deletePerson(u);
+    return;
+  }
   await update(ref(db, 'teaching'), memWrites(u, rest));
   await relabelTeam(cid, tid, { exclude: u });
   await dropEmptyTeam(cid, tid, u);
@@ -427,21 +442,15 @@ $('people').addEventListener('click', async e => {
     await update(ref(db, 'teaching/classes'), Object.fromEntries(order.map((cid, n) => [`${cid}/order`, n])));
   } else if (delclass) {
     const n = peopleIn(delclass).length;
-    if (n) { alert(`${n} ${n === 1 ? 'person is' : 'people are'} still in this class. Use Leave this class (or Remove) on each of them first.`); return; }
+    if (n) { alert(`${n} ${n === 1 ? 'person is' : 'people are'} still in this class. Use Remove from this class on each of them first.`); return; }
     if (confirm(`Delete the class "${data.classes[delclass].name}"? Its past and future Sundays disappear from the calendar.`)) await set(ref(db, `teaching/classes/${delclass}`), null);
   } else if (leave) {
     const [u, cid] = leave.split('|');
     await leaveClass(u, cid);
   } else if (remove) {
     if (remove === actor) { alert('You cannot remove yourself.'); return; }
-    if (confirm(`Remove ${people[remove].name}? Their Sundays stay on the calendar.`)) {
-      const gone = people[remove];
-      await set(ref(db, `teaching/people/${remove}`), null);
-      for (const [cid, tid] of Object.entries(mem(gone))) {
-        await relabelTeam(cid, tid, { exclude: remove });
-        await dropEmptyTeam(cid, tid, remove);
-      }
-    }
+    const names = Object.keys(mem(people[remove])).map(id => data.classes[id]?.name).filter(Boolean);
+    if (confirm(`Delete ${people[remove].name}'s login${names.length ? ` (and remove them from ${names.join(' and ')})` : ''}? Their Sundays stay on the calendar.`)) await deletePerson(remove);
   }
 });
 const withoutHash = ({ hash, ...rest }) => rest;

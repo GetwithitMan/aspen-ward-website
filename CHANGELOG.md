@@ -50,6 +50,9 @@ everyone else sees who is teaching each class each week.
   Tick someone to group them (3 at most; Sundays and sign-ups join the bigger group); untick
   to separate. The group's name is first name + last initial of each ("Kitrick G., Jordan T.
   & Brian L.") and updates for everyone in it. Removing someone updates their group's name.
+- **Remove from this class** (red button on a person's row) now removes them from that class
+  only; their other classes and groups are untouched. If it is their only class, it asks before
+  also deleting their login. People with no class (Presidency members) get **Delete login**.
 - **One place for people and classes:** the separate Classes and teams section is gone. Open a
   class in **People and classes** to rename it, reorder it (↑ ↓), delete it, or see its groups, each
   with its **Usual Sundays**; **Add class** sits under the list.
