@@ -27,6 +27,10 @@ everyone else sees who is teaching each class each week.
 - **Colours:** open classes are white, filled ones green, ones covered after a
   swap (or by a sub) a slightly different green, and a swap request stays orange
   until someone fills it.
+- **Month view:** on the Everyone view, a **List | Month** switch (List stays the
+  default). Month is a full calendar grid with a colour chip per class on each
+  Sunday (tap one for the full detail), prev/next month buttons, and US holidays
+  plus Easter labelled on their day.
 - **5th Sundays** carry a small "5th Sunday" tag and a blue top edge.
 - **Partial or full subs:** on a pair, either teacher can tap **I need a sub** (just
   them; shows "Needs 1 sub (Brian)") or **We both need a sub**. A classmate on another

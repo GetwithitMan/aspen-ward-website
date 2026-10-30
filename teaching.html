@@ -95,6 +95,35 @@ input { font: inherit; width: 100%; padding: 11px 12px; border: 1px solid var(--
 .card.off .note { font-style: normal; font-weight: 600; margin: 0; }
 .row.off { background: var(--surface-muted); color: var(--ink-muted); }
 .row .note { margin: 2px 0 0; }
+.layout { margin-left: auto; }
+.mbar { display: flex; align-items: center; justify-content: space-between; margin: 4px 0 12px; }
+.mbar strong { font-size: 1.15rem; }
+.mbar button { min-width: 44px; }
+.mgrid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
+.mhead { text-align: center; font-size: .78rem; font-weight: 700; color: var(--ink-muted); padding: 4px 0; }
+.dcell { background: var(--surface); border: 1px solid var(--stroke); border-radius: 10px; min-height: 64px; padding: 4px 5px; font-size: .8rem; overflow: hidden; }
+.dcell.other { background: transparent; border-color: transparent; color: var(--ink-muted); }
+.dcell.today { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
+.dnum { font-weight: 600; }
+.hol { display: block; font-size: .66rem; line-height: 1.2; color: #8a4b6b; margin-top: 1px; }
+.dcell.sunday { background: var(--surface); border-color: var(--accent); cursor: pointer; }
+.dcell.sunday.off { background: var(--surface-muted); }
+.sunbtn { display: block; width: 100%; text-align: left; background: none; border: 0; padding: 0; min-height: 0; border-radius: 6px; font-size: inherit; }
+.sunbtn:hover { background: none; }
+.chip { display: block; font-size: .66rem; line-height: 1.25; padding: 1px 4px; margin-top: 2px; border-radius: 4px; border: 1px solid var(--stroke); background: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.chip.filled { background: var(--filled); }
+.chip.covered { background: var(--covered); }
+.chip.swap { background: var(--swap); border-color: var(--swap-stroke); }
+.mnote { display: block; font-size: .66rem; font-style: italic; color: var(--ink-soft); margin-top: 2px; }
+.mgrid .tag5 { margin: 2px 0 0; font-size: .6rem; }
+@media (max-width: 640px) {
+  .dcell { min-height: 54px; padding: 3px; }
+  .hol { font-size: .56rem; }
+  .chip { font-size: 0; height: 6px; padding: 0; margin-top: 2px; }
+  .mgrid .tag5 { display: none; }
+}
+#day-dlg { width: min(420px, 94vw); }
+#day-dlg .card { border: 0; padding: 0; }
 .empty { padding: 24px; color: var(--ink-muted); text-align: center; }
 </style>
 </head>
@@ -117,6 +146,11 @@ input { font: inherit; width: 100%; padding: 11px 12px; border: 1px solid var(--
   <div id="view"><p class="empty">Loading…</p></div>
 </main>
 
+<dialog id="day-dlg">
+  <div id="day-body"></div>
+  <div class="dlg-acts"><button type="button" id="day-close">Close</button></div>
+</dialog>
+
 <dialog id="login">
   <form method="dialog" id="login-form">
     <h2>Teacher sign in</h2>
@@ -135,7 +169,7 @@ input { font: inherit; width: 100%; padding: 11px 12px; border: 1px solid var(--
 <script type="module">
 import { db } from '/js/firebase.js';
 import { ref, onValue, update, set, runTransaction } from 'https://www.gstatic.com/firebasejs/11.7.3/firebase-database.js';
-import { upcomingSundays, dateKey, fmtSunday, fmtMonth, hashLogin, isPatternSunday, claimLabel, swapKind, firstName, isFifth } from '/js/teaching.js';
+import { upcomingSundays, dateKey, fmtSunday, fmtMonth, hashLogin, isPatternSunday, claimLabel, swapKind, firstName, isFifth, holidaysFor, parseKey } from '/js/teaching.js';
 
 const SESSION_KEY = 'teaching-login';
 const VISIBLE_STEP = 12;
@@ -144,6 +178,8 @@ let data = { classes: {}, people: {}, sundays: {}, notes: {} };
 let me = null;            // { username, name, classId, teamId }
 let view = 'mine';        // 'mine' | 'all'
 let shown = VISIBLE_STEP; // Sundays visible in the Everyone view
+let layout = 'list';     // 'list' (default) | 'month' — the Everyone view only
+let monthShown = null;   // first day of the month showing in the month view
 let loaded = false;
 
 const $ = id => document.getElementById(id);
@@ -185,6 +221,7 @@ $('login-form').addEventListener('submit', async e => {
   view = me?.classId ? 'mine' : 'all';
   render();
 });
+$('day-close').addEventListener('click', () => $('day-dlg').close());
 $('login-cancel').addEventListener('click', () => $('login').close());
 
 function signOut() {
@@ -241,10 +278,15 @@ function renderChrome() {
   $('signout')?.addEventListener('click', signOut);
   $('signin')?.addEventListener('click', () => { $('login-err').textContent = ''; $('login').showModal(); $('u').focus(); });
 
-  $('bar').innerHTML = me && me.classId
-    ? `<div class="tabs"><button data-v="mine" aria-pressed="${view === 'mine'}">My class</button><button data-v="all" aria-pressed="${view === 'all'}">Everyone</button></div>`
-    : '';
+  $('bar').innerHTML =
+    (me && me.classId
+      ? `<div class="tabs"><button data-v="mine" aria-pressed="${view === 'mine'}">My class</button><button data-v="all" aria-pressed="${view === 'all'}">Everyone</button></div>`
+      : '') +
+    (view === 'all'
+      ? `<div class="tabs layout"><button data-l="list" aria-pressed="${layout === 'list'}">List</button><button data-l="month" aria-pressed="${layout === 'month'}">Month</button></div>`
+      : '');
   $('bar').querySelectorAll('[data-v]').forEach(b => b.addEventListener('click', () => { view = b.dataset.v; render(); }));
+  $('bar').querySelectorAll('[data-l]').forEach(b => b.addEventListener('click', () => { layout = b.dataset.l; render(); }));
 
   const key = (c, label) => `<span><i style="background:${c}"></i>${label}</span>`;
   $('legend').innerHTML = key('var(--filled)', 'Filled') + key('var(--covered)', 'Covered after a swap, or by a sub') +
@@ -267,34 +309,75 @@ function swapBadge(cl) {
   return `<span class="badge">${esc(text)}</span>`;
 }
 
+// One Sunday as a card: used by the list view and the month view's pop-up.
+function sundayCard(d, classes) {
+  const key = dateKey(d), note = noteFor(key);
+  const today = key === todayKey ? ' today' : '';
+  if (note?.noClass) {
+    return `<div class="card off${today}"><h3>${fmtSunday(d)}</h3><p class="note">${esc(note.text || 'No classes')}</p></div>`;
+  }
+  let html = `<div class="card${today}${isFifth(d) ? ' fifth' : ''}"><h3>${fmtSunday(d)}${isFifth(d) ? '<span class="tag5">5th Sunday</span>' : ''}</h3>`;
+  if (note?.text) html += `<p class="note">${esc(note.text)}</p>`;
+  for (const c of classes) {
+    const cl = claim(key, c.id);
+    const who = cl ? esc(claimLabel(data.classes, c.id, cl)) : 'Open';
+    html += `<div class="line${lineState(cl)}"><span class="cls">${esc(c.name)}</span><span class="who">${who}${swapBadge(cl)}</span></div>`;
+  }
+  return html + '</div>';
+}
+
 function renderAll() {
   $('title').textContent = "Who's teaching";
   $('lede').textContent = 'Every class, every Sunday.';
   const classes = classList();
   if (!classes.length) return '<p class="empty">The calendar has not been set up yet.</p>';
+  if (layout === 'month') return renderMonth(classes);
 
   let html = '', month = '';
   for (const d of sundays.slice(0, shown)) {
-    const key = dateKey(d);
     const m = fmtMonth(d);
     if (m !== month) { if (month) html += '</div>'; html += `<h2 class="month">${m}</h2><div class="cards">`; month = m; }
-    const note = noteFor(key);
-    if (note?.noClass) {
-      html += `<div class="card off${key === todayKey ? ' today' : ''}"><h3>${fmtSunday(d)}</h3><p class="note">${esc(note.text || 'No classes')}</p></div>`;
-      continue;
-    }
-    html += `<div class="card${key === todayKey ? ' today' : ''}${isFifth(d) ? ' fifth' : ''}"><h3>${fmtSunday(d)}${isFifth(d) ? '<span class="tag5">5th Sunday</span>' : ''}</h3>`;
-    if (note?.text) html += `<p class="note">${esc(note.text)}</p>`;
-    for (const c of classes) {
-      const cl = claim(key, c.id);
-      const who = cl ? esc(claimLabel(data.classes, c.id, cl)) : 'Open';
-      html += `<div class="line${lineState(cl)}"><span class="cls">${esc(c.name)}</span><span class="who">${who}${swapBadge(cl)}</span></div>`;
-    }
-    html += '</div>';
+    html += sundayCard(d, classes);
   }
   html += '</div>';
   if (shown < sundays.length) html += `<p style="text-align:center;margin-top:20px"><button id="more">Show more Sundays</button></p>`;
   return html;
+}
+
+// Full-month grid. Sundays show a colour chip per class (tap one for the detail);
+// holidays are labelled on their day.
+function renderMonth(classes) {
+  const first = parseKey(todayKey), last = sundays[sundays.length - 1];
+  const minMonth = new Date(first.getFullYear(), first.getMonth(), 1);
+  const maxMonth = new Date(last.getFullYear(), last.getMonth(), 1);
+  if (!monthShown || monthShown < minMonth) monthShown = minMonth;
+  if (monthShown > maxMonth) monthShown = maxMonth;
+
+  const y = monthShown.getFullYear(), m = monthShown.getMonth();
+  const start = new Date(y, m, 1 - new Date(y, m, 1).getDay());
+  const end = new Date(y, m + 1, 0); end.setDate(end.getDate() + (6 - end.getDay()));
+  const hol = new Map([...holidaysFor(y - 1), ...holidaysFor(y), ...holidaysFor(y + 1)]);
+  const sundaySet = new Set(sundays.map(dateKey));
+
+  let html = `<div class="mbar"><button data-mn="-1" aria-label="Previous month"${monthShown <= minMonth ? ' disabled' : ''}>‹</button><strong>${fmtMonth(monthShown)}</strong><button data-mn="1" aria-label="Next month"${monthShown >= maxMonth ? ' disabled' : ''}>›</button></div><div class="mgrid">`;
+  for (const w of ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']) html += `<div class="mhead">${w}</div>`;
+  for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+    const key = dateKey(d), name = hol.get(key), note = noteFor(key);
+    const isSun = sundaySet.has(key);
+    let inner = `<span class="dnum">${d.getDate()}</span>${name ? `<span class="hol">${esc(name)}</span>` : ''}`;
+    if (isSun) {
+      inner += `<button class="sunbtn" data-sun="${key}" aria-label="Who is teaching on ${fmtSunday(d)}">`;
+      if (note?.noClass) inner += `<span class="mnote">${esc(note.text || 'No classes')}</span>`;
+      else {
+        inner += classes.map(c => `<span class="chip${lineState(claim(key, c.id))}">${esc(c.name)}</span>`).join('');
+        if (isFifth(d)) inner += '<span class="tag5">5th</span>';
+        if (note?.text) inner += `<span class="mnote">${esc(note.text)}</span>`;
+      }
+      inner += '</button>';
+    }
+    html += `<div class="dcell${d.getMonth() === m ? '' : ' other'}${key === todayKey ? ' today' : ''}${isSun ? ' sunday' : ''}${isSun && note?.noClass ? ' off' : ''}">${inner}</div>`;
+  }
+  return html + '</div>';
 }
 
 function renderMine() {
@@ -356,6 +439,14 @@ function render() {
   $('view').innerHTML = view === 'mine' && me?.classId ? renderMine() : renderAll();
 
   $('more')?.addEventListener('click', () => { shown += VISIBLE_STEP; render(); });
+  $('view').querySelectorAll('[data-mn]').forEach(b => b.addEventListener('click', () => {
+    monthShown = new Date(monthShown.getFullYear(), monthShown.getMonth() + Number(b.dataset.mn), 1);
+    render();
+  }));
+  $('view').querySelectorAll('[data-sun]').forEach(b => b.addEventListener('click', () => {
+    $('day-body').innerHTML = sundayCard(parseKey(b.dataset.sun), classList());
+    $('day-dlg').showModal();
+  }));
   $('fill')?.addEventListener('click', () => fillPattern().catch(fail));
   $('view').querySelectorAll('[data-a]').forEach(b => b.addEventListener('click', () => {
     const k = b.dataset.k;

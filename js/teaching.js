@@ -113,6 +113,46 @@ export function patternKey(p) {
 
 export const isFifth = d => nthOfMonth(d) === 5;
 
+// ---------- Holidays (shown on the month view) ----------
+const nthWeekday = (y, m, wd, n) => new Date(y, m, 1 + ((wd - new Date(y, m, 1).getDay() + 7) % 7) + (n - 1) * 7);
+const lastWeekday = (y, m, wd) => {
+  const last = new Date(y, m + 1, 0);
+  return new Date(y, m, last.getDate() - ((last.getDay() - wd + 7) % 7));
+};
+// Gregorian Easter (Meeus/Jones/Butcher).
+function easter(y) {
+  const a = y % 19, b = Math.floor(y / 100), c = y % 100, d = Math.floor(b / 4), e = b % 4;
+  const f = Math.floor((b + 8) / 25), g = Math.floor((b - f + 1) / 3);
+  const h = (19 * a + b - d - g + 15) % 30, i = Math.floor(c / 4), k = c % 4;
+  const l = (32 + 2 * e + 2 * i - h - k) % 7, m = Math.floor((a + 11 * h + 22 * l) / 451);
+  const month = Math.floor((h + l - 7 * m + 114) / 31), day = ((h + l - 7 * m + 114) % 31) + 1;
+  return new Date(y, month - 1, day);
+}
+
+// Map of "YYYY-MM-DD" -> holiday name for one year.
+export function holidaysFor(y) {
+  const list = [
+    [new Date(y, 0, 1), "New Year's Day"],
+    [nthWeekday(y, 0, 1, 3), 'Martin Luther King Jr. Day'],
+    [nthWeekday(y, 1, 1, 3), "Presidents' Day"],
+    [easter(y), 'Easter'],
+    [nthWeekday(y, 4, 0, 2), "Mother's Day"],
+    [lastWeekday(y, 4, 1), 'Memorial Day'],
+    [new Date(y, 5, 19), 'Juneteenth'],
+    [nthWeekday(y, 5, 0, 3), "Father's Day"],
+    [new Date(y, 6, 4), 'Independence Day'],
+    [nthWeekday(y, 8, 1, 1), 'Labor Day'],
+    [nthWeekday(y, 9, 1, 2), 'Columbus Day'],
+    [new Date(y, 9, 31), 'Halloween'],
+    [new Date(y, 10, 11), 'Veterans Day'],
+    [nthWeekday(y, 10, 4, 4), 'Thanksgiving'],
+    [new Date(y, 11, 24), 'Christmas Eve'],
+    [new Date(y, 11, 25), 'Christmas'],
+    [new Date(y, 11, 31), "New Year's Eve"],
+  ];
+  return new Map(list.map(([d, name]) => [dateKey(d), name]));
+}
+
 export function fmtSunday(d) {
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
