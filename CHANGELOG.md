@@ -28,6 +28,7 @@ Four people-in-a-browser test runs (older teacher, team of three on a phone, pre
   with an **I can sub** button, even with no sub request. Whole-team sub requests need 2 subs (not 3 for a team of 3).
 - Sub names are capitalised; the month pop-up refreshes right after a sign-up; Month view opens on the
   upcoming month; clearer wording on duplicate sign-ups and "needs 2 subs".
+- **This week stands out:** the upcoming Sunday has a thick green border, a shadow and a "This week's teaching assignments" label (list, month pop-up, and My class).
 - **Open Sundays** are bold and darker, not pale italics.
 - **Admin:** banner pinned to the bottom after Add teacher / Reset password (readable credentials);
   reset password, remove from class, and duplicate names ask first; duplicate class names refused;

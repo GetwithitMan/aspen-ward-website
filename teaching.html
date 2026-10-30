@@ -55,7 +55,9 @@ button.link { border: 0; background: none; color: var(--accent-strong); text-dec
 .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 12px; }
 .card { background: var(--surface); border: 1px solid var(--stroke); border-radius: var(--radius); padding: 14px 16px; }
 .card h3 { margin: 0 0 8px; font-size: 1rem; }
-.card.today { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
+.card.today { border: 3px solid var(--accent); box-shadow: 0 0 0 4px var(--accent-soft), 0 8px 20px rgba(28, 47, 17, .16); }
+.thisweek { display: block; font-size: .78rem; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; color: var(--accent-strong); margin: 0 0 6px; }
+.row.thisweek-row { box-shadow: inset 6px 0 0 var(--accent); }
 .line { display: flex; justify-content: space-between; gap: 10px; padding: 5px 8px; border-radius: 8px; font-size: .9rem; }
 .line + .line { margin-top: 2px; }
 .line .cls { color: var(--ink-muted); flex: 0 0 42%; }
@@ -455,9 +457,10 @@ function sundayCard(d, classes) {
   const key = dateKey(d), note = noteFor(key);
   const today = (key === todayKey ? ' today' : '') + (isPast(d) ? ' past' : '');
   if (note?.noClass) {
-    return `<div class="card off${today}"><h3>${fmtSunday(d)}${holTag(d)}</h3><p class="note">${esc(note.text || 'No classes')}</p></div>`;
+    return `<div class="card off${today}">${key === todayKey && !isPast(d) ? '<span class="thisweek">This week</span>' : ''}<h3>${fmtSunday(d)}${holTag(d)}</h3><p class="note">${esc(note.text || 'No classes')}</p></div>`;
   }
-  let html = `<div class="card${today}${isFifth(d) ? ' fifth' : ''}"><h3>${fmtSunday(d)}${isFifth(d) ? '<span class="tag5">5th Sunday</span>' : ''}${holTag(d)}</h3>`;
+  const wk = key === todayKey && !isPast(d) ? '<span class="thisweek">This week’s teaching assignments</span>' : '';
+  let html = `<div class="card${today}${isFifth(d) ? ' fifth' : ''}">${wk}<h3>${fmtSunday(d)}${isFifth(d) ? '<span class="tag5">5th Sunday</span>' : ''}${holTag(d)}</h3>`;
   if (note?.text) html += `<p class="note">${esc(note.text)}</p>`;
   for (const c of classes) {
     const cl = claim(key, c.id);
@@ -580,7 +583,8 @@ function renderMine() {
     if (key === savedKey) state += ' <span class="ok">✓ Saved</span>';
     if (suggest) cls_ += ' suggest';
     if (note?.text) state += `<p class="note">${esc(note.text)}</p>`;
-    html += `<div class="${cls_}"><span class="date">${fmtSunday(d)}${isFifth(d) ? '<span class="tag5">5th Sunday</span>' : ''}${holTag(d)}</span><span class="state">${state}</span><span class="acts">${acts}</span></div>`;
+    if (key === todayKey) cls_ += ' thisweek-row';
+    html += `<div class="${cls_}"><span class="date">${key === todayKey ? '<span class="thisweek">This week</span>' : ''}${fmtSunday(d)}${isFifth(d) ? '<span class="tag5">5th Sunday</span>' : ''}${holTag(d)}</span><span class="state">${state}</span><span class="acts">${acts}</span></div>`;
   }
   return html + '</div>';
 }
